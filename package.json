@@ -1,0 +1,120 @@
+{
+  "name": "@study-lenses/embody",
+  "version": "1.0.0",
+  "description": "Give life to JavaScript code through execution tracing. Sister library to @study-lenses/examine for static analysis.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
+    },
+    "./config": {
+      "import": "./dist/config/index.js",
+      "types": "./dist/config/index.d.ts"
+    },
+    "./core/events": {
+      "import": "./dist/core/events.js",
+      "types": "./dist/core/events.d.ts"
+    },
+    "./core/state": {
+      "import": "./dist/core/state.js",
+      "types": "./dist/core/state.d.ts"
+    },
+    "./advice": {
+      "import": "./dist/advice/index.js",
+      "types": "./dist/advice/index.d.ts"
+    },
+    "./utils/serializer": {
+      "import": "./dist/utils/serializer.js",
+      "types": "./dist/utils/serializer.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "test:types": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.js",
+    "lint:fix": "eslint src --ext .ts,.js --fix",
+    "format": "prettier --write \"**/*.{ts,js,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,js,json,md}\"",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run clean && npm run build",
+    "example": "node examples/basic.js"
+  },
+  "keywords": [
+    "embody",
+    "examine",
+    "study-lenses",
+    "javascript",
+    "tracer",
+    "execution",
+    "instrumentation",
+    "aran",
+    "debugging",
+    "functional",
+    "typescript",
+    "dynamic-analysis",
+    "educational"
+  ],
+  "author": "Study Lenses Project",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/colevandersWands/embody.git"
+  },
+  "bugs": {
+    "url": "https://github.com/colevandersWands/embody/issues"
+  },
+  "homepage": "https://github.com/colevandersWands/embody#readme",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "package.json"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.28.5",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "babel-jest": "^30.2.0",
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-import": "^2.0.0",
+    "jest": "^30.2.0",
+    "prettier": "^3.0.0",
+    "ts-jest": "^29.4.5",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "aran": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "aran": {
+      "optional": false
+    }
+  },
+  "optionalDependencies": {
+    "source-map-support": "^0.5.21"
+  },
+  "browserslist": [
+    "node >= 16"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
