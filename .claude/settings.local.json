@@ -14,7 +14,16 @@
       "Bash(git commit:*)",
       "Bash(npm run lint)",
       "Bash(git checkout:*)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(tree:*)",
+      "Bash(open http://localhost:8080)",
+      "Bash(curl:*)",
+      "Bash(js-beautify)",
+      "Read(//Users/master/Documents/0-teach-code/**)",
+      "Read(//Users/master/Documents/**)",
+      "Bash(python3:*)",
+      "Bash(open http://localhost:8081)",
+      "Bash(open http://localhost:8081/test-highlight.html)"
     ],
     "deny": [],
     "ask": []
