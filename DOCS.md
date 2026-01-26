@@ -12,7 +12,7 @@ Complete API reference and usage guide for the `@study-lenses/embody` execution 
   - [Presets](#presets)
   - [Configuration Options](#configuration-options)
 - [Advanced Usage](#advanced-usage)
-  - [Internals Namespace](#internals-namespace)
+  - [Pipeline Namespace](#pipeline-namespace)
   - [Currying Patterns](#currying-patterns)
   - [Object-Threading](#object-threading)
 - [TypeScript Types](#typescript-types)
@@ -48,18 +48,18 @@ import { embody } from '@study-lenses/embody';
 // 1. Both parameters - immediate execution
 const trace = embody({
   code: 'let x = 5; console.log(x);',
-  config: { preset: 'detailed' }
+  config: { presets: 'detailed' }
 });
 
 // 2. Config-first currying - reuse config for multiple traces
-const tracer = embody({ config: { preset: 'overview' } });
+const tracer = embody({ config: { presets: 'overview' } });
 const trace1 = tracer({ code: 'let x = 5' });
 const trace2 = tracer({ code: 'const y = 10' });
 
 // 3. Code-first currying - apply different configs to same code
 const codeTracer = embody({ code: 'let x = 5' });
-const overview = codeTracer({ config: { preset: 'overview' } });
-const detailed = codeTracer({ config: { preset: 'detailed' } });
+const overview = codeTracer({ config: { presets: 'overview' } });
+const detailed = codeTracer({ config: { presets: 'detailed' } });
 ```
 
 ### `squint({ steps?, config? })`
@@ -93,18 +93,36 @@ import { squint } from '@study-lenses/embody';
 // Filter existing trace
 const filtered = squint({
   steps: existingTrace,
-  config: { variables: { filter: ['counter'] } }
+  config: {
+    lang: {
+      bindings: { filter: { include: ['counter'] } }
+    }
+  }
 });
 
 // Reuse filter configuration
-const filter = squint({ config: { variables: { filter: ['x', 'y'] } } });
+const filter = squint({
+  config: {
+    lang: {
+      bindings: { filter: { include: ['x', 'y'] } }
+    }
+  }
+});
 const filtered1 = filter({ steps: trace1 });
 const filtered2 = filter({ steps: trace2 });
 
 // Apply different filters to same trace
 const stepsFilter = squint({ steps: existingTrace });
-const varsOnly = stepsFilter({ config: { variables: true, functions: false } });
-const funcsOnly = stepsFilter({ config: { variables: false, functions: true } });
+const varsOnly = stepsFilter({
+  config: {
+    lang: { bindings: true, functions: false }
+  }
+});
+const funcsOnly = stepsFilter({
+  config: {
+    lang: { bindings: false, functions: true }
+  }
+});
 ```
 
 ### Default Export
@@ -126,17 +144,17 @@ Useful for quick scripts or when you don't need configuration or source code in 
 
 Three educational presets provide different levels of detail:
 
-| Preset | Description | Use Case |
-|--------|-------------|----------|
-| `overview` | Minimal noise, beginner-friendly | Focus on program behavior (functions, basic control flow) |
-| `detailed` | Balanced intermediate analysis | Add variable tracking and scopes (default) |
-| `exhaustive` | Maximum information | All features enabled for deep analysis |
+| Preset       | Description                      | Use Case                                                  |
+| ------------ | -------------------------------- | --------------------------------------------------------- |
+| `overview`   | Minimal noise, beginner-friendly | Focus on program behavior (functions, basic control flow) |
+| `detailed`   | Balanced intermediate analysis   | Add variable tracking and scopes (default)                |
+| `exhaustive` | Maximum information              | All features enabled for deep analysis                    |
 
 ```typescript
 // Using presets
-embody({ code: myCode, config: { preset: 'overview' } });
-embody({ code: myCode, config: { preset: 'detailed' } });  // Default
-embody({ code: myCode, config: { preset: 'exhaustive' } });
+embody({ code: myCode, config: { presets: 'overview' } });
+embody({ code: myCode, config: { presets: 'detailed' } }); // Default
+embody({ code: myCode, config: { presets: 'exhaustive' } });
 ```
 
 ### Configuration Options
@@ -144,6 +162,8 @@ embody({ code: myCode, config: { preset: 'exhaustive' } });
 For complete configuration options and structure, see [config/README.md](./config/README.md).
 
 Configuration follows these principles:
+
+- **Two-layer structure**: `meta` (output format) and `lang` (JavaScript features to trace)
 - **Presets**: Three educational presets (`overview`, `detailed`, `exhaustive`) provide different levels of detail
 - **Boolean shorthand**: All sections support `true` (enable all) or `false` (disable all)
 - **Granular control**: Each feature can be configured with specific options
@@ -153,14 +173,16 @@ Example configurations:
 
 ```typescript
 // Use a preset
-embody({ code: myCode, config: { preset: 'detailed' } });
+embody({ code: myCode, config: { presets: 'detailed' } });
 
 // Track only specific variables
 embody({
   code: myCode,
   config: {
-    variables: {
-      filter: ['result', 'counter', 'index']
+    lang: {
+      bindings: {
+        filter: { include: ['result', 'counter', 'index'] }
+      }
     }
   }
 });
@@ -169,30 +191,49 @@ embody({
 embody({
   code: myCode,
   config: {
-    preset: 'overview',
-    controlFlow: true,
-    variables: false,
-    functions: { calls: true, declarations: false }
+    presets: 'overview',
+    lang: {
+      controlFlow: true,
+      bindings: false,
+      functions: {
+        events: { call: { arguments: true }, definition: false }
+      }
+    }
+  }
+});
+
+// Add timing information for async
+embody({
+  code: myCode,
+  config: {
+    meta: { timestamps: true },
+    lang: {
+      functions: {
+        events: {
+          coroutines: { await: true }
+        }
+      }
+    }
   }
 });
 ```
 
 ## Advanced Usage
 
-### Internals Namespace
+### Pipeline Namespace
 
 For fine-grained control, internal pipeline functions are exposed:
 
 ```typescript
-import { internals } from '@study-lenses/embody';
+import { pipeline } from '@study-lenses/embody';
 
 const {
-  fillConfig,   // Normalize user config to ExpandedConfig
-  instrument,   // Transform code with Aran instrumentation
-  record,       // Execute instrumented code and collect trace
-  trace,        // Full pipeline orchestrator
-  filterSteps   // Apply filters to existing trace
-} = internals;
+  fillConfig, // Normalize user config to ExpandedConfig
+  instrument, // Transform code with Aran instrumentation
+  record, // Execute instrumented code and collect trace
+  trace, // Full pipeline orchestrator
+  filterSteps // Apply filters to existing trace
+} = pipeline;
 
 // Custom pipeline usage
 const { config } = fillConfig({ config: userConfig });
@@ -206,7 +247,7 @@ Currying enables performance optimization and code reuse:
 
 ```typescript
 // Performance: Config normalization happens once
-const tracer = embody({ config: { preset: 'detailed' } });
+const tracer = embody({ config: { presets: 'detailed' } });
 // Config is cached and reused
 for (const submission of studentSubmissions) {
   const trace = tracer({ code: submission });
@@ -215,15 +256,19 @@ for (const submission of studentSubmissions) {
 
 // Flexibility: Apply multiple configs to same code
 const codeUnderTest = embody({ code: complexFunction });
-const quickCheck = codeUnderTest({ config: { preset: 'overview' } });
-const deepAnalysis = codeUnderTest({ config: { preset: 'exhaustive' } });
+const quickCheck = codeUnderTest({ config: { presets: 'overview' } });
+const deepAnalysis = codeUnderTest({ config: { presets: 'exhaustive' } });
 
 // Composition: Build specialized tracers
 const variableTracer = embody({
-  config: { variables: true, functions: false, controlFlow: false }
+  config: {
+    lang: { bindings: true, functions: false, controlFlow: false }
+  }
 });
 const functionTracer = embody({
-  config: { variables: false, functions: true, controlFlow: false }
+  config: {
+    lang: { bindings: false, functions: true, controlFlow: false }
+  }
 });
 ```
 
@@ -246,6 +291,7 @@ filterSteps: { steps, config } → { steps, config, metadata? }
 ```
 
 Each stage:
+
 - Receives an object with predetermined keys
 - Preserves input data while adding new fields
 - Returns enriched object for the next stage
@@ -284,7 +330,7 @@ interface FilterResult {
 type UserConfig = Partial<Config>;
 
 // Normalized configuration after processing
-type ExpandedConfig = Config;  // All fields resolved
+type ExpandedConfig = Config; // All fields resolved
 
 // Available preset names
 type PresetName = 'overview' | 'detailed' | 'exhaustive';
@@ -293,27 +339,39 @@ type PresetName = 'overview' | 'detailed' | 'exhaustive';
 ### Using Types
 
 ```typescript
-import type {
-  Step,
-  TraceResult,
-  UserConfig,
-  ExpandedConfig
-} from '@study-lenses/embody';
+import type { Step, TraceResult, Config, ExpandedConfig } from '@study-lenses/embody';
 
 function analyzeTrace(result: TraceResult): void {
   const { steps, config } = result;
   // Type-safe access to trace data
 }
 
-const myConfig: UserConfig = {
-  preset: 'detailed',
-  variables: { filter: ['x', 'y'] }
+const myConfig: Partial<Config> = {
+  presets: 'detailed',
+  lang: {
+    bindings: {
+      filter: { include: ['x', 'y'] }
+    }
+  }
 };
 ```
 
 ## Notes
 
+- **New Configuration Structure**: Config now uses `{ presets, meta, lang }` structure. See [config/README.md](./src/config/README.md) for details
+- Configuration is split into `meta` (output format) and `lang` (JavaScript features to trace)
+- The `presets` field replaces the old `preset` field (note the plural)
 - Async/await execution is not supported in v1.0 (planned for v2.0)
 - The library uses Aran framework for code instrumentation
 - Configuration uses graceful degradation - invalid values are ignored with sensible defaults
 - All trace events include source location and timing information
+
+### Configuration Migration
+
+For users migrating from old structure, key changes:
+
+- `preset` → `presets`
+- `variables.*` → `lang.bindings.*`
+- `functions.*` → `lang.functions.*`
+- `async.timestamps` → `meta.timestamps`
+- See full migration table in [config/README.md](./src/config/README.md#field-migration-reference)

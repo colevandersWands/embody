@@ -1,9 +1,8 @@
-import { EMPTY } from './utils/EMPTY';
-import { fillConfig } from './exports/fill-config';
-import { trace } from './exports/trace';
-
-import type { UserConfig } from './config/types';
-import type { TraceResult } from './types/api';
+import type { UserConfig } from './config/types.js';
+import EMPTY from './constants/EMPTY.js';
+import fillConfig from './pipeline/fill-config.js';
+import trace from './pipeline/trace.js';
+import type { TraceResult } from './types/api.js';
 
 /**
  * Main entry point for tracing JavaScript code execution.
@@ -35,34 +34,50 @@ import type { TraceResult } from './types/api';
  */
 
 // Function overloads for proper type inference
-export default function embody(input: { config: UserConfig; code: string }): TraceResult;
-export default function embody(input: { config: UserConfig }): (input: { code: string }) => TraceResult;
-export default function embody(input: { code: string }): (input: { config?: UserConfig }) => TraceResult;
+function embody(input: { readonly config: UserConfig; readonly code: string }): TraceResult;
+function embody(input: { readonly config: UserConfig }): (input: { readonly code: string }) => TraceResult;
+function embody(input: { readonly code: string }): (input: { readonly config?: UserConfig }) => TraceResult;
 
 // Implementation with internal EMPTY handling
-export default function embody({ config = EMPTY as any, code = EMPTY as any }: { config?: UserConfig | typeof EMPTY; code?: string | typeof EMPTY }) {
+function embody({
+  config = EMPTY as any,
+  code = EMPTY as any,
+}: {
+  readonly config?: UserConfig | typeof EMPTY;
+  readonly code?: string | typeof EMPTY;
+} = {}) {
   if (config === EMPTY && code === EMPTY) {
     throw new Error('embody was called without code or config');
   }
 
   if (code === EMPTY) {
     const { config: cachedConfig } = fillConfig({ config: config as UserConfig });
-    return function embodyWithClosedConfig({ code = EMPTY as any }: { code: string | typeof EMPTY }) {
+    return function embodyWithClosedConfig({
+      code = EMPTY as any,
+    }: {
+      readonly code: string | typeof EMPTY;
+    } = {} as { readonly code: string | typeof EMPTY }) {
       if (code === EMPTY) {
         throw new Error('embody was called with a closed config, and no code');
       }
-      return trace({ code: code as string, config: cachedConfig });
+      return trace({ code, config: cachedConfig });
     };
   }
 
   if (config === EMPTY) {
-    return function embodyWithClosedCode({ config = EMPTY as any }: { config?: UserConfig | typeof EMPTY }) {
+    return function embodyWithClosedCode({
+      config = EMPTY as any,
+    }: {
+      readonly config?: UserConfig | typeof EMPTY;
+    } = {}) {
       if (config === EMPTY) {
         throw new Error('embody was called with a closed code, and no config');
       }
-      return trace({ code: code as string, ...fillConfig({ config: config as UserConfig }) });
+      return trace({ code, ...fillConfig({ config }) });
     };
   }
 
-  return trace({ code: code as string, ...fillConfig({ config: config as UserConfig }) });
+  return trace({ code, ...fillConfig({ config }) });
 }
+
+export default embody;

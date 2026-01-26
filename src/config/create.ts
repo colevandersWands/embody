@@ -10,20 +10,22 @@
  * @see README.md for architecture overview and usage examples
  */
 
-import defaultConfig from './defaults/trace.js';
-import presets from './presets/index.js';
+import deepMerge from '../utils/deep-merge.js';
+
 import applyPreset from './apply-preset.js';
+import defaultConfig from './defaults/trace.js';
 import expandShorthand from './expand-shorthand.js';
-import { deepMerge } from '../utils/deep-merge.js';
-import { UserConfig, ExpandedConfig } from './types.js';
+import presets from './presets/index.js';
+import { Config, ExpandedConfig } from './types.js';
 
 /**
  * Checks if a value matches the expected type based on the default value
  * @param value - Value to check
  * @param defaultValue - Default value to compare type against
+ * @param key - Optional field key for special cases
  * @returns True if types match or are compatible
  */
-function isCompatibleType(value: any, defaultValue: any): boolean {
+function isCompatibleType(value: any, defaultValue: any, key?: string): boolean {
   if (value === null || value === undefined) {
     return false; // Always use defaults for null/undefined
   }
@@ -46,6 +48,11 @@ function isCompatibleType(value: any, defaultValue: any): boolean {
     return true;
   }
 
+  // Special case: location field can be string or false
+  if (key === 'location' && value === false) {
+    return true;
+  }
+
   // Arrays must match exactly
   if (Array.isArray(defaultValue)) {
     return Array.isArray(value);
@@ -62,40 +69,23 @@ function isCompatibleType(value: any, defaultValue: any): boolean {
  * @returns Valid enum value or default
  */
 function validateEnumField(key: string, value: any, defaultValue: any): any {
-  // Special enum validations for aran config
-  if (key === 'kind' && typeof value === 'string') {
-    if (['script', 'module', 'eval'].includes(value)) {
+  // Special enum validations for new Config structure
+  if (key === 'location') {
+    // location can be 'line', 'full', or false
+    if (value === 'line' || value === 'full' || value === false) {
       return value;
     }
     return defaultValue;
   }
 
-  if (key === 'globalDeclarativeRecord' && typeof value === 'string') {
-    if (['builtin', 'emulate'].includes(value)) {
+  if (key === 'presets' && typeof value === 'string') {
+    // Validate against known presets
+    if (['overview', 'detailed', 'exhaustive'].includes(value)) {
       return value;
     }
-    return defaultValue;
-  }
-
-  if (key === 'mode' && typeof value === 'string') {
-    if (['standalone', 'normal'].includes(value)) {
-      return value;
-    }
-    return defaultValue;
-  }
-
-  if (key === 'warning') {
-    if (value === false || (typeof value === 'string' && ['console', 'throw'].includes(value))) {
-      return value;
-    }
-    return defaultValue;
-  }
-
-  if (key === 'type' && typeof value === 'string') {
-    if (['script', 'module', 'eval'].includes(value)) {
-      return value;
-    }
-    return defaultValue;
+    // For unknown presets, don't fail - just pass through
+    // (graceful degradation)
+    return value;
   }
 
   // No enum validation needed - return original value
@@ -128,13 +118,16 @@ function sanitizeConfig(config: any, defaults: any): any {
     const defaultValue = defaults[key];
     const userValue = config[key];
 
-    if (!isCompatibleType(userValue, defaultValue)) {
+    if (!isCompatibleType(userValue, defaultValue, key)) {
       // Wrong type or missing - use default
       sanitized[key] = defaultValue;
     } else if (
       typeof defaultValue === 'object' &&
       defaultValue !== null &&
-      !Array.isArray(defaultValue)
+      !Array.isArray(defaultValue) &&
+      typeof userValue === 'object' &&
+      userValue !== null &&
+      !Array.isArray(userValue)
     ) {
       // Nested object - recursively sanitize
       sanitized[key] = sanitizeConfig(userValue, defaultValue);
@@ -153,27 +146,27 @@ function sanitizeConfig(config: any, defaults: any): any {
  * @param userConfig - User-provided configuration (may contain errors)
  * @returns Complete, sanitized configuration
  */
-function createConfig(userConfig: UserConfig = {}): ExpandedConfig {
+function createConfig(userConfig: Partial<Config> = {}): ExpandedConfig {
   // Clean up the user config first (remove unknown fields, fix invalid preset)
-  let cleanUserConfig = { ...userConfig };
+  const cleanUserConfig = { ...userConfig };
 
-  // Sanitize preset field specifically
-  if (cleanUserConfig.preset) {
-    if (typeof cleanUserConfig.preset !== 'string') {
-      cleanUserConfig.preset = defaultConfig.preset; // Fix wrong type preset
-    } else if (!presets[cleanUserConfig.preset]) {
-      cleanUserConfig.preset = defaultConfig.preset; // Fix invalid preset name
+  // Sanitize presets field specifically
+  if (cleanUserConfig.presets) {
+    if (typeof cleanUserConfig.presets !== 'string') {
+      cleanUserConfig.presets = defaultConfig.presets; // Fix wrong type presets
+    } else if (!presets[cleanUserConfig.presets as keyof typeof presets]) {
+      cleanUserConfig.presets = defaultConfig.presets; // Fix invalid preset name
     }
   }
 
   // Apply preset first to the user config (graceful)
   let configWithPreset = cleanUserConfig;
-  if (cleanUserConfig.preset && typeof cleanUserConfig.preset === 'string') {
+  if (cleanUserConfig.presets && typeof cleanUserConfig.presets === 'string') {
     try {
       configWithPreset = applyPreset(cleanUserConfig);
     } catch {
-      // Gracefully ignore invalid presets - use default preset value and continue
-      configWithPreset = { ...cleanUserConfig, preset: defaultConfig.preset };
+      // Gracefully ignore invalid presets - use default presets value and continue
+      configWithPreset = { ...cleanUserConfig, presets: defaultConfig.presets };
     }
   }
 

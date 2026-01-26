@@ -42,13 +42,12 @@
     "dev": "tsc --watch",
     "test": "jest",
     "test:types": "tsc --noEmit",
-    "lint": "eslint src --ext .ts,.js",
-    "lint:fix": "eslint src --ext .ts,.js --fix",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
     "format": "prettier --write \"**/*.{ts,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,js,json,md}\"",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run clean && npm run build",
-    "example": "node examples/basic.js"
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "keywords": [
     "embody",
@@ -88,16 +87,17 @@
     "@babel/preset-env": "^7.28.5",
     "@types/jest": "^30.0.0",
     "@types/node": "^20.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
     "babel-jest": "^30.2.0",
-    "eslint": "^8.0.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-import": "^2.0.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-functional": "^9.0.2",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-unicorn": "^62.0.0",
     "jest": "^30.2.0",
     "prettier": "^3.0.0",
     "ts-jest": "^29.4.5",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.53.1"
   },
   "peerDependencies": {
     "aran": "^5.0.0"

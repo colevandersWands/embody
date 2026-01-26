@@ -1,7 +1,7 @@
+import shadow from './shadow.js';
 import type { TrackerFactoryOptions, FactoryFunction } from './types.js';
-import { wrap } from './wrap.js';
-import { unwrap } from './unwrap.js';
-import { shadow } from './shadow.js';
+import unwrap from './unwrap.js';
+import wrap from './wrap.js';
 
 /**
  * Creates a reference tracking toolkit for tracer advice function integration
@@ -40,7 +40,7 @@ import { shadow } from './shadow.js';
  * // trackedPrimitive = {value: 42, id: null, secret, type: 'number'}
  * ```
  */
-export function factory(options: TrackerFactoryOptions = {}) {
+function factory(options: TrackerFactoryOptions = {}) {
   // Set up shared state
   const { record = new WeakMap(), id = 0, secret = Symbol('tracked') } = options;
 
@@ -59,3 +59,5 @@ export function factory(options: TrackerFactoryOptions = {}) {
     shadow: shadowFn
   };
 }
+
+export default factory;

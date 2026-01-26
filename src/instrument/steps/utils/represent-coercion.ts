@@ -11,9 +11,9 @@ import representValue from './represent-value.js';
  */
 export default function representCoercion(
   operator: string,
-  operands: any[],
+  operands: readonly any[],
   mode: 'full' | 'types' | 'values' | 'raw' | false
-): any[] {
+): readonly any[] {
   // Handle unary operators
   if (operands.length === 1) {
     if (operator === '!') {

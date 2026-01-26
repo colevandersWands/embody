@@ -1,21 +1,21 @@
 import representValue from '../utils/represent-value.js';
 
-interface MutatingOperatorParams {
-  operator?: string;
-  target: string; // Variable name or property path
-  oldValue?: any;
-  newValue: any;
-  operand?: any; // For compound assignments (+=, -=, etc.)
+type MutatingOperatorParams = {
+  readonly operator?: string;
+  readonly target: string; // Variable name or property path
+  readonly oldValue?: any;
+  readonly newValue: any;
+  readonly operand?: any; // For compound assignments (+=, -=, etc.)
 }
 
-interface MutatingOperatorEntry {
-  category: string;
-  kind: string;
-  operator: string;
-  target: string;
-  oldValue?: ReturnType<typeof representValue>;
-  newValue: ReturnType<typeof representValue>;
-  operand?: ReturnType<typeof representValue>;
+type MutatingOperatorEntry = {
+  readonly category: string;
+  readonly kind: string;
+  readonly operator: string;
+  readonly target: string;
+  readonly oldValue?: ReturnType<typeof representValue>;
+  readonly newValue: ReturnType<typeof representValue>;
+  readonly operand?: ReturnType<typeof representValue>;
 }
 
 /**
@@ -35,7 +35,7 @@ export default function createMutatingOperator({
   oldValue,
   newValue,
   operand
-}: MutatingOperatorParams): MutatingOperatorEntry {
+}: MutatingOperatorParams = {} as MutatingOperatorParams): MutatingOperatorEntry {
   const entry: MutatingOperatorEntry = {
     category: 'operator',
     kind: 'mutating',

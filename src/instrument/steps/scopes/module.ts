@@ -1,4 +1,4 @@
-export default function module({ event = null, bindings = null, file = null }) {
+export default function module({ event = null, bindings = null, file = null } = {}) {
   return {
     category: 'scope',
     kind: 'function',

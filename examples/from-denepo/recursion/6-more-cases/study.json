@@ -1,6 +1,0 @@
-{
-  "study": {
-    "tests": [".test.js"],
-    "trace": false
-  }
-}

@@ -3,7 +3,7 @@
  * Comprehensive test suite covering all merge scenarios and edge cases
  */
 
-import { deepMerge } from './deep-merge.js';
+import deepMerge from './deep-merge.js';
 
 describe('deepMerge', () => {
   describe('Basic Functionality', () => {

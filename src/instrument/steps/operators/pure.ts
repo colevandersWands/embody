@@ -1,13 +1,13 @@
-import representValue from '../utils/represent-value.js';
 import representCoercion from '../utils/represent-coercion.js';
+import representValue from '../utils/represent-value.js';
 
-interface PureOperatorEntry {
-  category: 'operator';
-  kind: 'pure';
-  operator: string;
-  operands?: any[];
-  result?: any;
-  coercion?: any[];
+type PureOperatorEntry = {
+  readonly category: 'operator';
+  readonly kind: 'pure';
+  readonly operator: string;
+  readonly operands?: readonly any[];
+  readonly result?: any;
+  readonly coercion?: readonly any[];
 }
 
 /**
@@ -24,17 +24,17 @@ export default function createPureOperationEntry(
     result,
     operands = []
   }: {
-    operator?: string;
-    result: any;
-    operands?: any[];
-  },
+    readonly operator?: string;
+    readonly result: any;
+    readonly operands?: readonly any[];
+  } = {} as { readonly operator?: string; readonly result: any; readonly operands?: readonly any[] },
   {
     data,
     coercion
   }: {
-    data: 'full' | 'types' | 'values' | 'raw' | false;
-    coercion: boolean;
-  }
+    readonly data: 'full' | 'types' | 'values' | 'raw' | false;
+    readonly coercion: boolean;
+  } = {} as { readonly data: 'full' | 'types' | 'values' | 'raw' | false; readonly coercion: boolean }
 ): PureOperatorEntry {
   // Create basic entry structure
   const entry: PureOperatorEntry = {

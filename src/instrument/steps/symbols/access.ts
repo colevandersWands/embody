@@ -1,4 +1,4 @@
-export function accessSymbol({ description = null }) {
+export function accessSymbol({ description = null } = {}) {
   return {
     category: 'symbol',
     kind: 'access',

@@ -5,7 +5,7 @@ import deepClone from '../../../utils/deep-clone.js';
  * For primitives: shows the theoretical chain used during property access
  * For objects/functions: shows the actual prototype chain
  */
-function getPrototypeLookup(value: any): string[] {
+function getPrototypeLookup(value: any): readonly string[] {
   if (value === null || value === undefined) return [];
 
   const valueType = typeof value;
@@ -19,7 +19,7 @@ function getPrototypeLookup(value: any): string[] {
 
   // Objects/functions: walk actual prototype chain
   if (valueType === 'object' || valueType === 'function') {
-    const lookup: string[] = [];
+    const lookup: readonly string[] = [];
     let proto = Object.getPrototypeOf(value);
 
     while (proto !== null) {

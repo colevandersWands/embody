@@ -7,168 +7,279 @@ A type-safe, modular configuration system for educational JavaScript execution t
 The configuration system follows a functional pipeline architecture:
 
 ```
-UserConfig → Preset Application → Shorthand Expansion → Validation → ExpandedConfig
+UserConfig → Preset Application → Shorthand Expansion → Sanitization → ExpandedConfig
 ```
 
 ### Core Components
 
 1. **Types** (`types.ts`) - TypeScript interfaces defining the configuration schema
-2. **Defaults** (`default.ts`) - Complete default configuration values
-3. **Presets** (`presets.ts`) - Educational preset configurations
+2. **Defaults** (`defaults/trace.ts`) - Complete default configuration values
+3. **Presets** (`presets/`) - Educational preset configurations
 4. **Expansion** (`expand-shorthand.ts`) - Boolean shorthand to object expansion
-5. **Validation** (`validate.ts`) - Configuration validation rules
-6. **Creation** (`create.ts`) - Main configuration factory function
-7. **Exports** (`index.ts`) - Public API surface
+5. **Creation** (`create.ts`) - Main configuration factory function
+6. **Exports** (`index.ts`) - Public API surface
 
 ## Design Principles
 
 ### Single Responsibility
 Each file exports exactly one thing matching its filename:
-- `default.ts` exports `defaultConfig`
-- `validate.ts` exports `validate` function
-- `presets.ts` exports `presets` object
+- `defaults/trace.ts` exports `defaultConfig`
+- `expand-shorthand.ts` exports `expandShorthand` function
+- `presets/overview.ts` exports `overview` preset
 
 ### Type Safety
 All configurations are fully typed with TypeScript, preventing runtime errors and providing excellent developer experience with autocomplete.
 
-### Educational Focus
-Configuration categories align with concepts learners see in source code rather than abstract execution details:
-- `variables` for variable operations
-- `functions` for function calls and declarations
-- `controlFlow` for branching and looping
-- `operators` for expression evaluation
+### Two-Layer Structure
+The configuration is divided into two main sections:
+- **`meta`** - Controls trace output format and limits
+- **`lang`** - Controls which JavaScript language features to trace
 
 ### Flexible Expansion
 Boolean shorthand allows simple configuration while object forms provide fine-grained control:
 ```typescript
 // Simple
-{ functions: true }
+{ lang: true }
 
 // Detailed
-{ functions: { calls: true, declarations: true, returns: false } }
+{
+  lang: {
+    bindings: true,
+    functions: { events: { call: true, return: false } }
+  }
+}
 ```
 
 ## Configuration Structure
 
-### Core Language Features
-
-#### Variables (`VariablesConfig`)
-Tracks variable operations - the foundation of programming literacy.
+The configuration has three top-level fields:
 
 ```typescript
-variables: {
-  declare: {
-    var: boolean,      // function-scoped, hoisted as undefined
-    let: boolean,      // block-scoped, temporal dead zone
-    const: boolean,    // block-scoped, immutable binding
-    function: boolean, // hoisted completely
-    implicit: boolean  // creates global without declaration
-  },
-  assign: boolean,     // variable assignments
-  read: boolean,       // variable reads
-  filter: string[]     // trace only these variable names
+interface Config {
+  presets?: string;      // Preset name to apply
+  meta?: MetaConfig;     // Output format and trace limits
+  lang?: LangConfig;     // JavaScript features to trace
 }
 ```
 
-**Expansion**: `variables: true` enables all declaration types and operations.
+### Meta Configuration (`meta`)
 
-#### Functions (`FunctionsConfig`)
-Monitors function operations - control flow and abstraction.
+Controls how the trace is formatted and limited:
+
+```typescript
+meta: {
+  // Output control
+  index?: boolean;                    // Include sequence numbers
+  location?: 'line' | 'full' | false; // Source location detail
+  ast?: boolean;                       // Include AST nodes
+  timestamps?: boolean;                // Include timing for async
+
+  // Trace limits
+  maxIterations?: number | null;      // Loop iteration limit
+  maxCallstack?: number | null;       // Recursion depth limit
+  range?: { start: number; end: number }; // Line range to trace
+
+  // Data inclusion
+  data?: {
+    type: boolean;        // Include value types
+    instance: boolean;    // Include instance info
+    value: boolean;       // Include actual values
+    lookup: boolean;      // Include prototype chain
+  };
+
+  // References
+  references?: boolean;   // Track object references
+
+  // Debug info
+  debug?: {
+    configPath: boolean;  // Show config resolution
+    AranNodeId: boolean;  // Show instrumentation IDs
+    adviceName: boolean;  // Show advice functions
+  };
+}
+```
+
+### Language Configuration (`lang`)
+
+Controls which JavaScript language features are traced:
+
+#### Bindings (`lang.bindings`)
+Variable and binding operations - the foundation of programming:
+
+```typescript
+bindings: {
+  kind?: {
+    declarative?: {
+      var: boolean;      // function-scoped
+      let: boolean;      // block-scoped
+      const: boolean;    // immutable binding
+      function: boolean; // function declarations
+      class: boolean;    // class declarations
+      import: boolean;   // imports
+    };
+    explicit?: {
+      parameters: boolean; // function parameters
+      catch: boolean;      // catch binding
+    };
+    implicit?: {
+      global: boolean;     // implicit globals
+      arguments: boolean;  // arguments object
+      callee: boolean;     // arguments.callee
+      this: boolean;       // this binding
+      newTarget: boolean;  // new.target
+      super: boolean;      // super reference
+      importMeta: boolean; // import.meta
+    };
+    with?: boolean;        // with statement
+  };
+  events?: {
+    declare: boolean;      // hoisting phase
+    available: boolean;    // when available
+    initialize: boolean;   // initialization
+    implicit: boolean;     // implicit creation
+    assign: boolean;       // assignments
+    read: boolean;         // variable reads
+  };
+  filter?: {
+    include: string[];     // only these variables
+    exclude: string[];     // except these
+  };
+}
+```
+
+#### Functions (`lang.functions`)
+Function operations and control flow:
 
 ```typescript
 functions: {
-  calls: boolean,        // function invocations
-  declarations: boolean, // function definitions
-  returns: boolean,      // return values
-  this: boolean,         // 'this' binding (advanced)
-  yield: boolean,        // generator yield expressions
-  filter: string[]       // trace only these function names
+  kind?: {
+    arrow: boolean;        // arrow functions
+    function: boolean;     // regular functions
+    method: boolean;       // object methods
+    generator: boolean;    // generators
+    builtIn: boolean;      // built-in functions
+  };
+  events?: {
+    definition: boolean;   // function creation
+    call?: {
+      arguments: boolean;  // track arguments
+    };
+    construct: boolean;    // new invocations
+    return: boolean;       // return values
+    coroutines?: {
+      await: boolean;      // await expressions
+      yield: boolean;      // yield expressions
+      yieldDelegate: boolean; // yield*
+    };
+  };
+  filter?: {
+    include: string[];
+    exclude: string[];
+  };
 }
 ```
 
-#### Control Flow (`ControlFlowConfig`)
-Traces branching and looping logic.
+#### Control Flow (`lang.controlFlow`)
+Branching and looping constructs:
 
 ```typescript
 controlFlow: {
-  conditionals: boolean, // if/else test expressions
-  loops: boolean,        // while/for condition tests
-  switches: boolean,     // switch case evaluations
-  breaks: boolean,       // break/continue statements
-  filter: string[]       // trace only these constructs
+  kind?: {
+    conditionals: boolean; // if/else
+    loops?: {
+      while: boolean;
+      for?: {
+        initialize: boolean;
+        test: boolean;
+        increment: boolean;
+      };
+      forOf: boolean;
+      forIn: boolean;
+    };
+    switch: boolean;
+  };
+  events?: {
+    test: boolean;        // condition evaluation
+    branch: boolean;      // which branch taken
+    iteration: boolean;   // loop iterations
+    jump: boolean;        // break/continue
+  };
 }
 ```
 
-#### Operators (`OperatorsConfig`)
-Grouped by interaction with values and memory.
+#### Operators (`lang.operators`)
+Expression operators:
 
 ```typescript
 operators: {
-  computing: boolean, // +, -, *, ==, <, typeof, ++, -- (calculate new values)
-  selecting: boolean, // &&, ||, ??, ?., ?: (choose between values)
-  mutating: boolean,  // =, +=, ++, -- (change variable state)
-  filter: string[]    // trace only these operator types
+  pure?: boolean;           // +, -, *, ==, typeof
+  mutating?: boolean;       // =, +=, ++, --
+  shortCircuiting?: boolean; // &&, ||, ??
+  comma?: boolean;          // comma operator
+  coercion?: boolean;       // type coercion (advanced)
+  filter?: {
+    include: string[];
+    exclude: string[];
+  };
 }
 ```
 
-**Educational Value**: Increment operators (`++`/`--`) trigger both computing AND mutating, demonstrating the difference between `++i` and `i++`.
-
-#### Other Features
-
-- **Instantiation** (`boolean`) - Object creation with `new`
-- **Syntax** (`SyntaxConfig`) - Destructuring and spread operations
-- **Data Structures** (`DataStructuresConfig`) - Property access and modification
-- **Scopes** (`ScopesConfig`) - Scope entry/exit and variable inventory
-- **Async** (`AsyncConfig`) - Await expressions and timing
-- **Modules** (`ModulesConfig`) - Import/export statements
-- **Errors** (`ErrorsConfig`) - Exception handling
-
-### Technical Configuration
-
-#### Code Targeting (`CodeRangeConfig`)
-Limit tracing to specific code ranges:
+#### Properties (`lang.properties`)
+Object and property operations:
 
 ```typescript
-codeRange: {
-  start: number | [number, number], // line or [line, char]
-  end: number | [number, number]    // line or [line, char]
+properties: {
+  create?: {
+    literal: boolean;       // object literals
+    computed: boolean;      // computed properties
+    method: boolean;        // method definitions
+    accessors?: {
+      getters: boolean;
+      setters: boolean;
+    };
+    class: boolean;         // class properties
+    static: boolean;        // static members
+    private: boolean;       // private fields
+    fields: boolean;        // class fields
+  };
+  access?: boolean;         // property reads
+  update?: boolean;         // property writes
+  remove?: boolean;         // delete operations
+  optionalChaining?: boolean; // ?.
+  lookup?: boolean;         // prototype chain (advanced)
+  filter?: string[];
 }
 ```
 
-#### Aran Integration (`AranConfig`)
-Technical configuration for the Aran instrumentation framework:
+#### Other Language Features
 
-```typescript
-aran: {
-  kind: 'script' | 'module' | 'eval',
-  globalDeclarativeRecord: 'builtin' | 'emulate',
-  adviceGlobalVariable: string,
-  initialState: unknown,
-  mode: 'standalone' | 'normal',
-  warning: 'console' | 'throw' | false
-}
-```
+- **`scopes`** - Scope creation and lifecycle
+- **`errorHandling`** - Exception handling and stack traces
+- **`matching`** - Destructuring and pattern matching
+- **`modules`** - Import/export operations
+- **`references`** - Object reference tracking
+- **`templates`** - Template literals
+- **`symbols`** - Symbol operations
+- **`classes`** - Class-specific features
+- **`dynamic`** - eval() and new Function()
+- **`meta`** - Proxy and Reflect operations
+- **`semantics`** - Language semantics enforcement
 
 ## Type System
 
 ### Primary Types
 
-- **`UserConfig`** - Partial configuration provided by users
-- **`Config`** - Complete configuration with shorthand support
-- **`ExpandedConfig`** - Fully expanded configuration (no boolean shorthand)
-
-### Utility Types
-
-- **`PresetName`** - Union of valid preset names
-- **`Presets`** - Record mapping preset names to configurations
-- **`ValidationResult`** - Validation outcome with errors
+- **`Config`** - Complete configuration with optional fields
+- **`ExpandedConfig`** - Fully expanded configuration (extends Config)
+- **`MetaConfig`** - Output format configuration
+- **`LangConfig`** - Language features configuration
 
 ### Type Relationships
 
 ```typescript
-UserConfig ⊆ Config
-Config --[expansion]--> ExpandedConfig
-Config --[validation]--> ValidationResult
+Partial<Config> → [createConfig] → ExpandedConfig
+Config → [expandShorthand] → ExpandedConfig
+Config → [applyPreset] → Config
 ```
 
 ## Expansion Rules
@@ -176,156 +287,121 @@ Config --[validation]--> ValidationResult
 The expansion system automatically converts boolean shorthand to full object configurations:
 
 ### Rule 1: `true` Expansion
-When a configuration section is set to `true`, it expands to the corresponding section in `defaultConfig`:
+When a section is set to `true`, it expands to the default configuration:
 
 ```typescript
 // Input
-{ functions: true }
+{ lang: true }
 
-// Expands to
-{ functions: { calls: true, declarations: true, returns: true, this: false, yield: true, filter: [] } }
+// Expands to full lang structure from defaults/trace.ts
+{
+  lang: {
+    semantics: true,
+    bindings: { /* ... */ },
+    functions: { /* ... */ },
+    // ... all other sections
+  }
+}
 ```
 
 ### Rule 2: `false` Expansion
-When a configuration section is set to `false`, it creates a disabled version where all boolean fields are `false` and arrays are empty:
+When a section is set to `false`, all booleans become `false` and arrays empty:
 
 ```typescript
 // Input
-{ operators: false }
+{ lang: { operators: false } }
 
 // Expands to
-{ operators: { computing: false, selecting: false, mutating: false, filter: [] } }
+{
+  lang: {
+    operators: {
+      pure: false,
+      mutating: false,
+      shortCircuiting: false,
+      comma: false,
+      coercion: false,
+      filter: { include: [], exclude: [] }
+    }
+  }
+}
 ```
 
-### Rule 3: Object Passthrough
-Object configurations are used as-is, allowing fine-grained control.
-
-### Rule 4: Recursive Expansion
-Expansion applies recursively to nested structures:
+### Rule 3: Recursive Expansion
+Expansion applies recursively at any nesting level:
 
 ```typescript
 // Input
-{ scopes: { closures: true } }
+{ lang: { bindings: { kind: { declarative: true } } } }
 
-// Expands closures boolean to its default object structure
+// Expands declarative to full structure
+{
+  lang: {
+    bindings: {
+      kind: {
+        declarative: {
+          var: true, let: true, const: true,
+          function: true, class: true, import: true
+        }
+      }
+    }
+  }
+}
 ```
 
 ## Graceful Degradation
 
-The configuration system uses **graceful degradation** instead of strict validation:
+The configuration system uses **graceful degradation** for robustness:
 
 ### Invalid Field Handling
-- **Extra fields**: Ignored completely (no errors thrown)
-- **Wrong types**: Invalid fields are ignored, defaults are used instead
-- **Missing fields**: Automatically filled from default configuration
+- **Extra fields**: Ignored completely (no errors)
+- **Wrong types**: Use defaults instead
+- **Missing fields**: Filled from defaults
+- **Invalid presets**: Ignored, defaults used
 
 ### Examples
 ```typescript
-// All of these work gracefully:
-createConfig({ invalidField: 'ignored' });                    // Extra field ignored
-createConfig({ variables: 'notBoolean' });                    // Invalid type, uses default
-createConfig({ functions: { calls: 'notBoolean' } });         // Partial object, bad fields ignored
-createConfig({ preset: 'nonexistent' });                      // Bad preset ignored, uses default
+// All work gracefully:
+createConfig({ unknownField: 'ignored' });           // Extra ignored
+createConfig({ meta: 'notObject' });                 // Uses default
+createConfig({ lang: { bindings: 'notObject' } });   // Uses default
+createConfig({ presets: 'nonexistent' });            // Uses default
 ```
-
-### Philosophy
-- **Robust**: No runtime errors from invalid configurations
-- **Predictable**: Always returns complete, valid configuration
-- **Educational**: Focuses on functionality, not error handling
-- **TypeScript-first**: Compile-time safety is the primary protection
-
-## API Contracts
-
-The configuration system makes these **guarantees**:
-
-### `createConfig(userConfig?: UserConfig): ExpandedConfig`
-
-**Input Handling**:
-- `undefined` or `{}`: Returns complete default configuration
-- Invalid fields: Ignored completely, no errors thrown
-- Wrong types: Invalid values ignored, defaults used instead
-- Partial objects: Valid fields kept, invalid fields ignored, missing fields filled from defaults
-
-**Output Guarantees**:
-- Always returns complete `ExpandedConfig` with all required fields
-- All boolean shorthand fully expanded to object form
-- All missing fields filled with sensible defaults
-- Never throws runtime errors for invalid input
-
-**Examples of Guaranteed Behavior**:
-```typescript
-// All of these return valid, complete configurations:
-createConfig();                                       // → Complete default config
-createConfig({});                                     // → Complete default config  
-createConfig({ invalidField: 'ignored' });           // → Default + extra field ignored
-createConfig({ variables: 'notBoolean' });           // → Default variables used
-createConfig({ functions: { calls: 'bad' } });       // → calls ignored, other fields from default
-createConfig({ preset: 'nonexistent' });             // → Preset ignored, default used
-createConfig({ variables: true });                   // → Expanded to full variables object
-createConfig({ preset: 'overview', variables: false }); // → Preset applied, then variables disabled
-```
-
-### Preset Application Contract
-
-**Preset Processing**:
-1. If `userConfig.preset` exists and is valid: Apply preset configuration
-2. If `userConfig.preset` is invalid: Ignore preset, use defaults
-3. User overrides always take precedence over preset values
-4. Deep merge preserves nested user customizations
-
-### Boolean Expansion Contract
-
-**Expansion Rules**:
-- `true` → Use corresponding default configuration object
-- `false` → Create disabled version (all booleans false, arrays empty)
-- Object → Use as-is, no expansion
-- Invalid values → Ignore, use default
-
-**Recursive Expansion**:
-- Works for any object field in `defaultConfig`
-- Automatically handles new configuration fields
-- No hardcoded field lists to maintain
 
 ## Presets
 
-Educational presets are organized in the `presets/` directory for better maintainability:
+Educational presets in the `presets/` directory:
 
 ```
 config/presets/
-  overview.ts      # Beginner-friendly preset
-  detailed.ts      # Intermediate analysis (default)
-  exhaustive.ts    # Advanced analysis  
-  index.ts         # Re-exports all presets
+  overview.ts      # Beginner-friendly
+  detailed.ts      # Intermediate (default)
+  exhaustive.ts    # Advanced analysis
+  index.ts         # Aggregates all presets
 ```
-
-Each preset file exports a single default configuration object optimized for specific educational scenarios:
-
-### Preset Organization
-- **One file per preset**: Easy to find and modify individual presets
-- **Clear naming**: File names match preset names exactly
-- **Pure data**: Each file exports only a POJO, no functions
-- **Self-documenting**: Comprehensive JSDoc for each preset's educational purpose
-
-Three educational presets provide different levels of detail:
 
 ### `overview` - Beginner-friendly
 Minimal noise, focus on core concepts:
-- Basic variable operations (no reads to reduce noise)
-- Function calls and declarations
-- Essential control flow
-- Basic error handling
+- Basic variables (no reads to reduce noise)
+- Function calls only
+- Simple control flow
+- Line-level locations
 
-### `detailed` - Intermediate analysis (default)
-Balanced detail for most educational scenarios:
-- Complete variable tracking
-- Full function analysis
-- All control flow constructs
-- Comprehensive error handling
+### `detailed` - Intermediate (default)
+Balanced detail for most scenarios:
+- Full variable tracking including reads
+- Complete function analysis
+- All control flow with iterations
+- Block scopes and closures
+- Stack traces for errors
 
-### `exhaustive` - Advanced analysis
-Maximum information for debugging and research:
-- All features enabled using boolean shorthand
-- Suitable for deep analysis and research
+### `exhaustive` - Advanced
+Everything enabled for deep analysis:
+- All implicit bindings (this, arguments, etc.)
+- Type coercion tracking
+- Prototype chain lookups
+- Debug information
+- Full location info [line, column]
+- AST nodes included
 
 ## Usage Patterns
 
@@ -336,233 +412,209 @@ import { createConfig } from './config';
 // Use defaults
 const config = createConfig();
 
-// Simple customization
-const config = createConfig({
-  async: { timestamps: true }
-});
+// With preset
+const config = createConfig({ presets: 'overview' });
 ```
 
-### Preset-based Configuration
+### Customization Examples
+
+#### Variable Focus
 ```typescript
-// Start with preset, customize as needed
 const config = createConfig({
-  preset: 'overview',
-  variables: {
-    filter: ['result', 'count'] // Only trace specific variables
+  presets: 'overview',
+  lang: {
+    bindings: {
+      events: { read: true }, // Enable reads
+      filter: {
+        include: ['result', 'count']
+      }
+    }
   }
 });
 ```
 
-### Educational Scenarios
-
-#### Variable Focus (Beginners)
+#### Async Execution Study
 ```typescript
-const beginnerConfig = createConfig({
-  preset: 'overview',
-  variables: {
-    read: true,
-    filter: ['userInput', 'result']
+const config = createConfig({
+  meta: {
+    timestamps: true  // Track timing
   },
-  functions: false,
-  operators: false
+  lang: {
+    functions: {
+      events: {
+        coroutines: {
+          await: true,
+          yield: true
+        }
+      }
+    }
+  }
 });
 ```
 
-#### Function Analysis (Intermediate)
+#### Performance Optimization
 ```typescript
-const functionConfig = createConfig({
-  preset: 'detailed',
-  functions: {
-    calls: true,
-    returns: true,
-    this: true,
-    filter: ['calculateTotal', 'processData']
+const config = createConfig({
+  presets: 'overview',
+  meta: {
+    index: false,      // No sequence numbers
+    ast: false,        // No AST nodes
+    data: {
+      value: false     // Don't capture values
+    }
   },
-  variables: false
+  lang: {
+    bindings: {
+      events: { read: false }  // No read tracking
+    }
+  }
 });
 ```
 
-#### Async Study (Advanced)
+#### Debugging Configuration
 ```typescript
-const asyncConfig = createConfig({
-  preset: 'detailed',
-  async: { await: true, timestamps: true },
-  functions: { calls: true, returns: true },
-  variables: { filter: ['promise', 'result', 'error'] }
+const config = createConfig({
+  presets: 'exhaustive',
+  meta: {
+    debug: {
+      configPath: true,
+      AranNodeId: true,
+      adviceName: true
+    },
+    location: 'full',  // [line, column]
+    maxCallstack: 100  // Limit recursion
+  }
 });
+```
+
+## API Contracts
+
+### `createConfig(userConfig?: Partial<Config>): ExpandedConfig`
+
+**Guarantees**:
+- Always returns complete, valid configuration
+- Never throws for invalid input
+- Boolean shorthand fully expanded
+- Missing fields filled from defaults
+- Presets applied before user overrides
+- User overrides always win
+
+**Examples**:
+```typescript
+createConfig();                              // Complete defaults
+createConfig({ presets: 'overview' });      // Preset applied
+createConfig({ lang: true });               // Expanded lang
+createConfig({ lang: false });              // Disabled lang
+createConfig({ unknownField: 'ignored' });  // Graceful handling
 ```
 
 ## Extension Guide
 
 ### Adding New Configuration Options
 
-1. **Define Types** in `types.ts`:
+1. **Update Types** in `types.ts`:
 ```typescript
-export interface NewFeatureConfig {
-  enable: boolean;
-  mode: 'basic' | 'advanced';
-  filter: string[];
+interface LangConfig {
+  // ... existing
+  newFeature?: {
+    enabled: boolean;
+    mode: 'basic' | 'advanced';
+    filter: string[];
+  } | boolean;  // Support shorthand
 }
 ```
 
-2. **Add to Main Config**:
+2. **Set Defaults** in `defaults/trace.ts`:
 ```typescript
-export interface Config {
-  // ... existing fields
-  newFeature: NewFeatureConfig | boolean;
-}
-```
-
-3. **Set Defaults** in `default.ts`:
-```typescript
-const defaultConfig: Config = {
-  // ... existing fields
+lang: {
+  // ... existing
   newFeature: {
-    enable: true,
+    enabled: true,
     mode: 'basic',
     filter: []
   }
-};
-```
-
-4. **Update Presets** in `presets/` directory as needed:
-   - Add new field to relevant preset files
-   - Each preset file exports a single default POJO
-   - Use boolean shorthand where appropriate
-
-5. **System automatically handles** the new structure:
-   - Boolean expansion works for any object field in defaults
-   - Missing fields filled from defaults
-   - Invalid fields gracefully ignored
-
-## Common Patterns
-
-### Filter Usage
-```typescript
-// Trace only specific items
-{
-  variables: { filter: ['result', 'total'] },
-  functions: { filter: ['calculate'] }
 }
 ```
 
-### Progressive Disclosure
+3. **Update Presets** as needed in `presets/`:
 ```typescript
-// Start simple
-{ preset: 'overview' }
+// In overview.ts
+lang: {
+  // ... existing
+  newFeature: false  // Disabled for beginners
+}
 
-// Add detail gradually
-{ preset: 'overview', variables: { read: true } }
-
-// Full control
-{ preset: 'overview', variables: { declare: { let: true, const: true } } }
-```
-
-### Performance Optimization
-```typescript
-// Minimal tracing for performance
-{
-  variables: { read: false },
-  operators: false,
-  async: { timestamps: false }
+// In exhaustive.ts
+lang: {
+  // ... existing
+  newFeature: true  // Full expansion
 }
 ```
 
-## Anti-Patterns
-
-❌ **Don't hardcode configuration options**
-```typescript
-// Bad - hardcoded keys
-const keys = ['variables', 'functions'];
-```
-
-✅ **Use type-driven approaches**
-```typescript
-// Good - derive from types/defaults
-const expandableKeys = Object.keys(defaultConfig).filter(isExpandable);
-```
-
-❌ **Don't mix data and functions**
-```typescript
-// Bad - functions in preset objects
-const preset = {
-  variables: true,
-  getVariables: () => { ... }  // Functions don't belong in data
-};
-```
-
-✅ **Keep presets as pure data**
-```typescript
-// Good - pure configuration objects
-const preset = {
-  variables: { declare: true, assign: true, read: true, filter: [] },
-  functions: { calls: true, returns: true, filter: [] }
-};
-```
-
-❌ **Don't create complex nested validation**
-```typescript
-// Bad - complex validation logic
-function validateComplexRules(config) {
-  // 100+ lines of nested validation
-}
-```
-
-✅ **Trust TypeScript and use graceful degradation**
-```typescript
-// Good - simple, robust approach
-function createConfig(userConfig = {}) {
-  return { ...defaultConfig, ...userConfig };  // Let defaults handle invalid values
-}
-```
+The system automatically handles:
+- Boolean expansion for new fields
+- Graceful degradation for invalid values
+- Recursive processing at any depth
 
 ## Design Philosophy
 
-The configuration system follows **KISS (Keep It Simple, Stupid)** principles:
+The configuration follows **KISS** principles:
 
 ### Core Principles
-- **Graceful degradation over strict validation**: Invalid inputs are handled gracefully, not rejected
-- **Data/function separation**: Configuration objects are pure data, functions live in separate files
-- **One export per file**: Each file exports exactly one thing matching its filename
-- **TypeScript-first**: Compile-time safety over runtime validation
-- **Recursive algorithms**: Generic, future-proof logic that adapts to configuration changes
+- **Graceful degradation** over strict validation
+- **Data/function separation** - configs are pure data
+- **Two-layer structure** - meta vs lang separation
+- **TypeScript-first** - compile-time safety
+- **Recursive algorithms** - future-proof expansion
 
 ### Simplification Decisions
-- **Removed complex validation**: 159 lines of validation replaced with graceful degradation
-- **Inlined small interfaces**: 2-3 field interfaces inlined for simplicity
-- **Organized presets**: One file per preset in dedicated directory
-- **Eliminated redundant utilities**: Removed single-purpose wrapper functions
-
-### File Organization
-```
-config/
-  README.md           # This documentation
-  index.ts           # Public API exports
-  types.ts           # TypeScript interfaces
-  default.ts         # Default configuration (core data)
-  create.ts          # Main factory function
-  apply-preset.ts    # Preset application logic
-  expand-shorthand.ts # Boolean expansion logic
-  presets/           # Preset data directory
-    overview.ts      # Beginner preset
-    detailed.ts      # Intermediate preset  
-    exhaustive.ts    # Advanced preset
-    index.ts         # Preset exports
-```
+- **No runtime validation** - TypeScript provides safety
+- **Automatic expansion** - Works for any object field
+- **Preset organization** - One file per preset
+- **Generic processing** - No hardcoded field lists
 
 ## Performance Considerations
 
-- **Expansion performed once**: During configuration creation, not during tracing
-- **No runtime validation**: Zero validation overhead during execution
-- **Filter arrays optimized**: Fast lookup during tracing operations
-- **Boolean shorthand**: Reduces configuration verbosity and complexity
-- **Pure functions**: Predictable performance, easy to optimize
+- **Expansion once** - During config creation only
+- **No validation overhead** - Graceful degradation
+- **Filter arrays optimized** - Fast runtime lookups
+- **Pure functions** - Predictable, cacheable
 
-## Error Handling Philosophy
+## Field Migration Reference
 
-**Prefer robustness over correctness**: The system prioritizes continuing to work over catching configuration errors.
+For users migrating from old flat structure to new structure:
 
-- **Invalid fields**: Silently ignored, defaults used instead
-- **Malformed inputs**: Gracefully handled, no exceptions thrown
-- **TypeScript protection**: Compile-time safety for most common errors
-- **Educational focus**: Simple, predictable behavior for learners
+| Old Field | New Location |
+|-----------|-------------|
+| `variables.*` | `lang.bindings.*` |
+| `functions.*` | `lang.functions.*` |
+| `operators.*` | `lang.operators.*` |
+| `controlFlow.*` | `lang.controlFlow.*` |
+| `dataStructures.*` | `lang.properties.*` |
+| `async.*` | `lang.functions.events.coroutines.*` |
+| `async.timestamps` | `meta.timestamps` |
+| `errors.*` | `lang.errorHandling.*` |
+| `scopes.*` | `lang.scopes.*` |
+| `modules.*` | `lang.modules.*` |
+| `codeRange.*` | `meta.range.*` |
+
+## Files Overview
+
+```
+config/
+  README.md              # This documentation
+  index.ts              # Public API exports
+  types.ts              # TypeScript interfaces
+  create.ts             # Main factory function
+  apply-preset.ts       # Preset application
+  expand-shorthand.ts   # Boolean expansion
+  defaults/
+    trace.ts            # Complete defaults
+    environment.ts      # [Reserved for Aran integration]
+  presets/
+    overview.ts         # Beginner preset
+    detailed.ts         # Intermediate preset
+    exhaustive.ts       # Advanced preset
+    index.ts           # Preset aggregation
+  test/
+    *.test.ts          # Comprehensive test suite

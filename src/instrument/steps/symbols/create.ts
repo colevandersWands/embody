@@ -1,4 +1,4 @@
-export function createSymbol({ description = null }) {
+export function createSymbol({ description = null } = {}) {
   return {
     category: 'symbol',
     kind: 'create',

@@ -1,5 +1,5 @@
+import isWrapper from './is-wrapper.js';
 import type { TrackedObject, WrapFunction } from './types.js';
-import { isWrapper } from './is-wrapper.js';
 
 /**
  * Creates a recursive wrapping function for tracking all JavaScript values
@@ -30,7 +30,7 @@ import { isWrapper } from './is-wrapper.js';
  * // trackedPrimitive = {value: 42, id: null, secret, type: 'number'}
  * ```
  */
-export const wrap: WrapFunction = (secret = Symbol('tracked'), startId = 0) => {
+const wrap: WrapFunction = (secret = Symbol('tracked'), startId = 0) => {
   let id = startId; // Mutable counter in closure
   
   /**
@@ -87,13 +87,13 @@ export const wrap: WrapFunction = (secret = Symbol('tracked'), startId = 0) => {
     } else if (referenced instanceof Map) {
       // Recursively wrap Map values (TODO: keys when key tracking is implemented)
       wrappedValue = new Map();
-      for (const [key, value] of referenced as Map<unknown, unknown>) {
+      for (const [key, value] of referenced as ReadonlyMap<unknown, unknown>) {
         wrappedValue.set(key, wrapRecursive(value, tracked));
       }
     } else if (referenced instanceof Set) {
       // Recursively wrap Set values
       wrappedValue = new Set();
-      for (const value of referenced as Set<unknown>) {
+      for (const value of referenced as ReadonlySet<unknown>) {
         wrappedValue.add(wrapRecursive(value, tracked));
       }
     } else if (typeof referenced === 'function') {
@@ -113,6 +113,8 @@ export const wrap: WrapFunction = (secret = Symbol('tracked'), startId = 0) => {
 
     (wrapper as any).value = wrappedValue;
 
-    return wrapper as TrackedObject<T>;
+    return wrapper;
   };
 };
+
+export default wrap;

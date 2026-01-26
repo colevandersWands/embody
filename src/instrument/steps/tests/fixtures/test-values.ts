@@ -45,10 +45,10 @@ export const edgeCases = {
   functions: {
     regular: function named(a: any, b: any) { return a + b; },
     arrow: (x: any) => x,
-    async: async function() { await Promise.resolve(); },
-    generator: function*() { yield 1; },
-    asyncGenerator: async function*() { yield await Promise.resolve(1); },
-    anonymous: function() {},
+    async async() { await Promise.resolve(); },
+    *generator() { yield 1; },
+    async *asyncGenerator() { yield await Promise.resolve(1); },
+    anonymous() {},
     multiline: function test(
       param1: any,
       param2: any,

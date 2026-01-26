@@ -46,7 +46,7 @@ import type { TrackedObject, ShadowFunction } from './types.js';
  * traceEvent.objectId = trackedObject.id;
  * ```
  */
-export function shadow(record: WeakMap<object, TrackedObject>, wrapFn: (value: any) => any) {
+function shadow(record: WeakMap<object, TrackedObject>, wrapFn: (value: any) => any) {
   /**
    * Shadows values by wrapping all types, storing reference types in record
    *
@@ -70,12 +70,14 @@ export function shadow(record: WeakMap<object, TrackedObject>, wrapFn: (value: a
       // in high-frequency advice function calls. The TrackedObject retains
       // its identity while capturing fresh state mutations.
       (existing as any).value = rewrapped.value;
-      return existing as TrackedObject<T>;
+      return existing;
     }
 
     // First time seeing this object - wrap and store
     const wrapped = wrapFn(value) as TrackedObject<T>;
     record.set(value as object, wrapped);
-    return wrapped as TrackedObject<T>;
+    return wrapped;
   };
 }
+
+export default shadow;

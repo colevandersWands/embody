@@ -1,3 +1,5 @@
+> mostly hallucination in here
+
 # Pointcuts: From Educational Config to Aran Join Points
 
 A comprehensive guide to understanding Aran's pointcut system and mapping our educational configuration to low-level instrumentation points.

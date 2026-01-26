@@ -6,7 +6,7 @@
 /**
  * Wrapper object structure for all tracked values (references and primitives)
  */
-export interface TrackedObject<T = unknown> {
+export type TrackedObject<T = unknown> = {
   readonly value: T;
   readonly id: number | null;
   readonly secret: symbol;
@@ -16,7 +16,7 @@ export interface TrackedObject<T = unknown> {
 /**
  * Parameters for creating a tracker factory instance
  */
-export interface TrackerFactoryOptions {
+export type TrackerFactoryOptions = {
   readonly record?: WeakMap<object, TrackedObject>;
   readonly id?: number;
   readonly secret?: symbol;
@@ -46,10 +46,10 @@ export type TrackerFunction = <T>(value: T) => TrackedObject<T>;
  */
 export type TrackableReferenceType = 
   | object
-  | unknown[]
+  | readonly unknown[]
   | Function
-  | Map<unknown, unknown>
-  | Set<unknown>
+  | ReadonlyMap<unknown, unknown>
+  | ReadonlySet<unknown>
   | WeakMap<object, unknown>
   | WeakSet<object>
   | Date
@@ -59,14 +59,14 @@ export type TrackableReferenceType =
 /**
  * Type guard to check if a value is a tracked object
  */
-export interface TrackedObjectTypeGuard {
+export type TrackedObjectTypeGuard = {
   (value: unknown, secret: symbol): value is TrackedObject<unknown>;
 }
 
 /**
  * Reference type detection utility
  */
-export interface ReferenceTypeDetector {
+export type ReferenceTypeDetector = {
   (value: unknown): value is TrackableReferenceType;
 }
 
@@ -102,16 +102,16 @@ export type ExtractWrappedType<T> = T extends TrackedObject<infer U> ? U : never
 /**
  * Result type returned by trackerFactory containing all tracking utilities
  */
-export interface TrackerFactoryResult {
-  wrap: TrackFunction;
-  unwrap: <T>(value: T) => T extends TrackedObject<infer U> ? U : T;
-  shadow: TrackerFunction;
+export type TrackerFactoryResult = {
+  readonly wrap: TrackFunction;
+  readonly unwrap: <T>(value: T) => T extends TrackedObject<infer U> ? U : T;
+  readonly shadow: TrackerFunction;
 }
 
 /**
  * Function type for the complete tracker factory
  */
-export interface TrackerFactory {
+export type TrackerFactory = {
   (options?: TrackerFactoryOptions): TrackerFactoryResult;
 }
 
@@ -146,7 +146,7 @@ export type ShadowFunction = (record: WeakMap<object, TrackedObject>, wrapFn: (v
  * Function that creates complete tracker factories
  */
 export type FactoryFunction = (options?: TrackerFactoryOptions) => {
-  wrap: ReturnType<WrapFunction>;
-  unwrap: ReturnType<UnwrapFunction>;
-  shadow: ReturnType<ShadowFunction>;
+  readonly wrap: ReturnType<WrapFunction>;
+  readonly unwrap: ReturnType<UnwrapFunction>;
+  readonly shadow: ReturnType<ShadowFunction>;
 };

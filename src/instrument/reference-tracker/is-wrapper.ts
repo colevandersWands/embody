@@ -37,7 +37,7 @@ import type { TrackedObject } from './types.js';
  * }
  * ```
  */
-export function isWrapper(obj: any): obj is TrackedObject {
+function isWrapper(obj: any): obj is TrackedObject {
   return (
     obj != null &&
     typeof obj === 'object' &&
@@ -47,3 +47,5 @@ export function isWrapper(obj: any): obj is TrackedObject {
     typeof obj.secret === 'symbol'
   );
 }
+
+export default isWrapper;

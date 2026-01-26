@@ -1,5 +1,5 @@
+import isWrapper from './is-wrapper.js';
 import type { TrackedObject, UnwrapFunction } from './types.js';
-import { isWrapper } from './is-wrapper.js';
 
 /**
  * Creates an unwrapping function for trace output generation
@@ -31,7 +31,7 @@ import { isWrapper } from './is-wrapper.js';
  * // unwrappedPrimitive = 42
  * ```
  */
-export function unwrap(secret = Symbol('tracked')) {
+function unwrap(secret = Symbol('tracked')) {
   /**
    * Recursively unwraps TrackedObjects back to original values
    *
@@ -83,7 +83,7 @@ export function unwrap(secret = Symbol('tracked')) {
         return value as T extends TrackedObject<infer U> ? U : T;
       }
 
-      const unwrappedArray: any[] = [];
+      const unwrappedArray: readonly any[] = [];
       unwrapped.set(value, unwrappedArray);
 
       // Process elements after setting cache to prevent infinite recursion
@@ -119,7 +119,7 @@ export function unwrap(secret = Symbol('tracked')) {
       unwrapped.set(value, unwrappedMap);
 
       // Process entries after setting cache to prevent infinite recursion
-      for (const [key, val] of value as Map<unknown, unknown>) {
+      for (const [key, val] of value as ReadonlyMap<unknown, unknown>) {
         // TODO: Unwrap keys when key tracking is implemented
         unwrappedMap.set(key, unwrapRecursive(val, unwrapped));
       }
@@ -151,7 +151,7 @@ export function unwrap(secret = Symbol('tracked')) {
       unwrapped.set(value, unwrappedSet);
 
       // Process items after setting cache to prevent infinite recursion
-      for (const item of value as Set<unknown>) {
+      for (const item of value as ReadonlySet<unknown>) {
         unwrappedSet.add(unwrapRecursive(item, unwrapped));
       }
       return unwrappedSet as T extends TrackedObject<infer U> ? U : T;
@@ -191,3 +191,5 @@ export function unwrap(secret = Symbol('tracked')) {
     return value as T extends TrackedObject<infer U> ? U : T;
   };
 }
+
+export default unwrap;

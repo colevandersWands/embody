@@ -1,9 +1,8 @@
-import { EMPTY } from './utils/EMPTY';
-import { filterSteps } from './exports/filter-steps';
-import { fillConfig } from './exports/fill-config';
-
-import type { UserConfig } from './config/types';
-import type { Step, FilterResult } from './types/api';
+import type { UserConfig } from './config/types.js';
+import EMPTY from './constants/EMPTY.js';
+import fillConfig from './pipeline/fill-config.js';
+import filterSteps from './pipeline/filter-steps.js';
+import type { Step, FilterResult } from './types/api.js';
 
 /**
  * Post-processing filter for existing trace steps.
@@ -41,34 +40,53 @@ import type { Step, FilterResult } from './types/api';
  */
 
 // Function overloads for proper type inference
-export default function squint(input: { steps: Step[]; config: UserConfig }): FilterResult;
-export default function squint(input: { config: UserConfig }): (input: { steps: Step[] }) => FilterResult;
-export default function squint(input: { steps: Step[] }): (input: { config?: UserConfig }) => FilterResult;
+function squint(input: { readonly steps: readonly Step[]; readonly config: UserConfig }): FilterResult;
+function squint(input: { readonly config: UserConfig }): (input: { readonly steps: readonly Step[] }) => FilterResult;
+function squint(input: { readonly steps: readonly Step[] }): (input: { readonly config?: UserConfig }) => FilterResult;
 
 // Implementation with internal EMPTY handling
-export default function squint({ steps = EMPTY as any, config = EMPTY as any }: { steps?: Step[] | typeof EMPTY; config?: UserConfig | typeof EMPTY }) {
+function squint({
+  steps = EMPTY as any,
+  config = EMPTY as any
+}: {
+  readonly steps?: readonly Step[] | typeof EMPTY;
+  readonly config?: UserConfig | typeof EMPTY;
+} = {}) {
   if (steps === EMPTY && config === EMPTY) {
     throw new Error('squint was called without steps or config');
   }
 
   if (steps === EMPTY) {
     const { config: cachedConfig } = fillConfig({ config: config as UserConfig });
-    return function squintWithClosedConfig({ steps = EMPTY as any }: { steps: Step[] | typeof EMPTY }) {
+    return function squintWithClosedConfig({
+      steps = EMPTY as any
+    }: {
+      readonly steps: readonly Step[] | typeof EMPTY;
+    } = {} as { readonly steps: readonly Step[] | typeof EMPTY }) {
       if (steps === EMPTY) {
         throw new Error('squint was called with a closed config, and no steps');
       }
-      return filterSteps({ steps: steps as Step[], config: cachedConfig });
+      return filterSteps({ steps, config: cachedConfig });
     };
   }
 
   if (config === EMPTY) {
-    return function squintWithClosedSteps({ config = EMPTY as any }: { config?: UserConfig | typeof EMPTY }) {
+    return function squintWithClosedSteps({
+      config = EMPTY as any
+    }: {
+      readonly config?: UserConfig | typeof EMPTY;
+    } = {}) {
       if (config === EMPTY) {
         throw new Error('squint was called with a closed steps, and no config');
       }
-      return filterSteps({ steps: steps as Step[], ...fillConfig({ config: config as UserConfig }) });
+      return filterSteps({
+        steps,
+        ...fillConfig({ config })
+      });
     };
   }
 
-  return filterSteps({ steps: steps as Step[], ...fillConfig({ config: config as UserConfig }) });
+  return filterSteps({ steps, ...fillConfig({ config }) });
 }
+
+export default squint;

@@ -138,6 +138,7 @@ const filtered = squint({
 
 - [**API Reference**](./DOCS.md) - Complete API documentation
 - [**Developer Guide**](./DEV.md) - Architecture and conventions
+- [**Code Conventions**](./DEV.md#codebase-conventions) - Coding standards and style guide
 - [**Configuration**](./config/README.md) - Detailed configuration options
 - [**Contributing**](./CONTRIBUTING.md) - How to contribute
 

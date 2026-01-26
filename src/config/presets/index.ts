@@ -18,10 +18,12 @@
  * @see README.md for complete preset documentation
  */
 
-import overview from './overview.js';
+import { Presets } from '../types.js';
+
 import detailed from './detailed.js';
 import exhaustive from './exhaustive.js';
-import { Presets } from '../types.js';
+import overview from './overview.js';
+
 
 /**
  * Aggregated presets object maintaining backward compatibility

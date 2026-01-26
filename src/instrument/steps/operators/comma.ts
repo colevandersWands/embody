@@ -4,13 +4,13 @@ export default function createPureOperationEntry(
   {
     operands = []
   }: {
-    operands?: any[];
-  },
+    readonly operands?: readonly any[];
+  } = {},
   {
     data
   }: {
-    data: 'full' | 'types' | 'values' | 'raw' | false;
-  }
+    readonly data: 'full' | 'types' | 'values' | 'raw' | false;
+  } = {} as { readonly data: 'full' | 'types' | 'values' | 'raw' | false }
 ): CommaOperatorEntry {
   const entry: CommaOperatorEntry = {
     category: 'operator',

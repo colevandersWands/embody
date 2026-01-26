@@ -9,8 +9,8 @@
  * @see README.md for expansion rules and examples
  */
 
-import { Config, ExpandedConfig } from './types.js';
 import defaultConfig from './defaults/trace.js';
+import { Config, ExpandedConfig } from './types.js';
 
 /**
  * Recursively creates a disabled version of an object

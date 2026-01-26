@@ -6,8 +6,8 @@
  * and the hybrid typing approach for object-threading patterns.
  */
 
-import type { UserConfig, ExpandedConfig } from '../config/types';
 import type { SpecificTraceEvent } from '../../types';
+import type { UserConfig, ExpandedConfig } from '../config/types';
 
 // ============================================================================
 // Core Types
@@ -22,10 +22,10 @@ export type Step = SpecificTraceEvent;
 /**
  * The result of a complete trace execution
  */
-export interface TraceResult {
-  code: string;
-  config: ExpandedConfig;
-  steps: Step[];
+export type TraceResult = {
+  readonly code: string;
+  readonly config: ExpandedConfig;
+  readonly steps: readonly Step[];
 }
 
 // ============================================================================
@@ -36,7 +36,7 @@ export interface TraceResult {
  * Base type for pipeline inputs that require configuration.
  * Uses intersection types to compose pipeline stages.
  */
-export type ConfiguredInput<T = {}> = T & { config: ExpandedConfig };
+export type ConfiguredInput<T = {}> = T & { readonly config: ExpandedConfig };
 
 /**
  * Base type for pipeline outputs that preserve input data.
@@ -53,30 +53,30 @@ export type PipelineOutput<TIn, TAdded> = TIn & TAdded;
 /**
  * Input type for the embody function
  */
-export interface EmbodyInput {
-  config?: UserConfig;
-  code?: string;
+export type EmbodyInput = {
+  readonly config?: UserConfig;
+  readonly code?: string;
 }
 
 /**
  * Embody with both config and code - returns trace immediately
  */
-export interface EmbodyBothParams {
-  (input: { config: UserConfig; code: string }): TraceResult;
+export type EmbodyBothParams = {
+  (input: { readonly config: UserConfig; readonly code: string }): TraceResult;
 }
 
 /**
  * Embody with only config - returns function expecting code
  */
-export interface EmbodyWithConfig {
-  (input: { config: UserConfig }): (input: { code: string }) => TraceResult;
+export type EmbodyWithConfig = {
+  (input: { readonly config: UserConfig }): (input: { readonly code: string }) => TraceResult;
 }
 
 /**
  * Embody with only code - returns function expecting config
  */
-export interface EmbodyWithCode {
-  (input: { code: string }): (input: { config?: UserConfig }) => TraceResult;
+export type EmbodyWithCode = {
+  (input: { readonly code: string }): (input: { readonly config?: UserConfig }) => TraceResult;
 }
 
 // --- squint function overloads ---
@@ -84,43 +84,43 @@ export interface EmbodyWithCode {
 /**
  * Input type for the squint function
  */
-export interface SquintInput {
-  steps?: Step[];
-  config?: UserConfig;
+export type SquintInput = {
+  readonly steps?: readonly Step[];
+  readonly config?: UserConfig;
 }
 
 /**
  * Result of filtering steps with potential metadata about the filtering
  */
-export interface FilterResult {
-  steps: Step[];
-  config: ExpandedConfig;
-  metadata?: {
-    requestedButNotPresent?: string[];
-    totalFiltered?: number;
-    filteringSummary?: Record<string, number>;
+export type FilterResult = {
+  readonly steps: readonly Step[];
+  readonly config: ExpandedConfig;
+  readonly metadata?: {
+    readonly requestedButNotPresent?: readonly string[];
+    readonly totalFiltered?: number;
+    readonly filteringSummary?: Record<string, number>;
   };
 }
 
 /**
  * Squint with both steps and config - returns filtered result immediately
  */
-export interface SquintBothParams {
-  (input: { steps: Step[]; config: UserConfig }): FilterResult;
+export type SquintBothParams = {
+  (input: { readonly steps: readonly Step[]; readonly config: UserConfig }): FilterResult;
 }
 
 /**
  * Squint with only config - returns function expecting steps
  */
-export interface SquintWithConfig {
-  (input: { config: UserConfig }): (input: { steps: Step[] }) => FilterResult;
+export type SquintWithConfig = {
+  (input: { readonly config: UserConfig }): (input: { readonly steps: readonly Step[] }) => FilterResult;
 }
 
 /**
  * Squint with only steps - returns function expecting config
  */
-export interface SquintWithSteps {
-  (input: { steps: Step[] }): (input: { config?: UserConfig }) => FilterResult;
+export type SquintWithSteps = {
+  (input: { readonly steps: readonly Step[] }): (input: { readonly config?: UserConfig }) => FilterResult;
 }
 
 // ============================================================================
@@ -129,59 +129,59 @@ export interface SquintWithSteps {
 
 // --- fillConfig ---
 
-export interface FillConfigInput {
-  config?: UserConfig;
+export type FillConfigInput = {
+  readonly config?: UserConfig;
 }
 
-export interface FillConfigOutput {
-  config: ExpandedConfig;
+export type FillConfigOutput = {
+  readonly config: ExpandedConfig;
 }
 
 // --- instrument ---
 
-export interface InstrumentInput extends ConfiguredInput<{
-  code: string;
-}> {}
+export type InstrumentInput = {} & ConfiguredInput<{
+  readonly code: string;
+}>
 
-export interface InstrumentOutput extends PipelineOutput<InstrumentInput, {
-  instrumented: string;
-}> {}
+export type InstrumentOutput = {} & PipelineOutput<InstrumentInput, {
+  readonly instrumented: string;
+}>
 
 // --- record ---
 
-export interface RecordInput extends ConfiguredInput<{
-  instrumented: string;
-}> {}
+export type RecordInput = {} & ConfiguredInput<{
+  readonly instrumented: string;
+}>
 
-export interface RecordOutput extends PipelineOutput<RecordInput, {
-  steps: Step[];
-}> {}
+export type RecordOutput = {} & PipelineOutput<RecordInput, {
+  readonly steps: readonly Step[];
+}>
 
 // --- trace ---
 
-export interface TraceInput extends ConfiguredInput<{
-  code: string;
-}> {}
+export type TraceInput = {} & ConfiguredInput<{
+  readonly code: string;
+}>
 
-export interface TraceOutput {
-  code: string;
-  config: ExpandedConfig;
-  steps: Step[];
+export type TraceOutput = {
+  readonly code: string;
+  readonly config: ExpandedConfig;
+  readonly steps: readonly Step[];
 }
 
 // --- filterSteps ---
 
-export interface FilterStepsInput extends ConfiguredInput<{
-  steps: Step[];
-}> {}
+export type FilterStepsInput = {} & ConfiguredInput<{
+  readonly steps: readonly Step[];
+}>
 
-export interface FilterStepsOutput {
-  steps: Step[];
-  config: ExpandedConfig;
-  metadata?: {
-    requestedButNotPresent?: string[];
-    totalFiltered?: number;
-    filteringSummary?: Record<string, number>;
+export type FilterStepsOutput = {
+  readonly steps: readonly Step[];
+  readonly config: ExpandedConfig;
+  readonly metadata?: {
+    readonly requestedButNotPresent?: readonly string[];
+    readonly totalFiltered?: number;
+    readonly filteringSummary?: Record<string, number>;
   };
 }
 
@@ -193,29 +193,29 @@ export interface FilterStepsOutput {
  * Main entry point for tracing JavaScript code execution.
  * Supports currying for performance optimization when reusing configurations.
  */
-export interface EmbodyFunction {
+export type EmbodyFunction = {
   // All three overloads
-  (input: { config: UserConfig; code: string }): TraceResult;
-  (input: { config: UserConfig }): (input: { code: string }) => TraceResult;
-  (input: { code: string }): (input: { config?: UserConfig }) => TraceResult;
+  (input: { readonly config: UserConfig; readonly code: string }): TraceResult;
+  (input: { readonly config: UserConfig }): (input: { readonly code: string }) => TraceResult;
+  (input: { readonly code: string }): (input: { readonly config?: UserConfig }) => TraceResult;
 }
 
 /**
  * Post-processing filter for existing trace steps.
  * Supports currying for applying same filters to multiple traces.
  */
-export interface SquintFunction {
+export type SquintFunction = {
   // All three overloads
-  (input: { steps: Step[]; config: UserConfig }): FilterResult;
-  (input: { config: UserConfig }): (input: { steps: Step[] }) => FilterResult;
-  (input: { steps: Step[] }): (input: { config?: UserConfig }) => FilterResult;
+  (input: { readonly steps: readonly Step[]; readonly config: UserConfig }): FilterResult;
+  (input: { readonly config: UserConfig }): (input: { readonly steps: readonly Step[] }) => FilterResult;
+  (input: { readonly steps: readonly Step[] }): (input: { readonly config?: UserConfig }) => FilterResult;
 }
 
 /**
  * Simple default export for quick tracing without metadata
  */
-export interface EmbodyTraceFunction {
-  (code?: string, config?: UserConfig): Step[];
+export type EmbodyTraceFunction = {
+  (code?: string, config?: UserConfig): readonly Step[];
 }
 
 // ============================================================================
@@ -225,11 +225,11 @@ export interface EmbodyTraceFunction {
 /**
  * Limits that can be configured in the meta field of config
  */
-export interface ExecutionLimits {
-  maxSteps?: number;
-  maxMemory?: number; // in MB
-  maxRecursionDepth?: number;
-  maxExecutionTime?: number; // in milliseconds
+export type ExecutionLimits = {
+  readonly maxSteps?: number;
+  readonly maxMemory?: number; // in MB
+  readonly maxRecursionDepth?: number;
+  readonly maxExecutionTime?: number; // in milliseconds
 }
 
 // ============================================================================

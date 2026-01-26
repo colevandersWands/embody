@@ -1,4 +1,4 @@
-export default function functionScope({ event = null, name = null, bindings = null }) {
+export default function functionScope({ event = null, name = null, bindings = null } = {}) {
   return {
     category: 'scope',
     kind: 'function',

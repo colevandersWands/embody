@@ -1,21 +1,21 @@
 import representValue from '../utils/represent-value.js';
 
-interface ShortCircuitingOperatorParams {
-  operator?: string;
-  left: any;
-  right?: any;
-  result: any;
-  rightEvaluated: boolean;
+type ShortCircuitingOperatorParams = {
+  readonly operator?: string;
+  readonly left: any;
+  readonly right?: any;
+  readonly result: any;
+  readonly rightEvaluated: boolean;
 }
 
-interface ShortCircuitingOperatorEntry {
-  category: string;
-  kind: string;
-  operator: string;
-  left: ReturnType<typeof representValue>;
-  right?: ReturnType<typeof representValue>;
-  result: ReturnType<typeof representValue>;
-  rightEvaluated: boolean;
+type ShortCircuitingOperatorEntry = {
+  readonly category: string;
+  readonly kind: string;
+  readonly operator: string;
+  readonly left: ReturnType<typeof representValue>;
+  readonly right?: ReturnType<typeof representValue>;
+  readonly result: ReturnType<typeof representValue>;
+  readonly rightEvaluated: boolean;
 }
 
 /**
@@ -36,7 +36,7 @@ export default function createShortCircuitingOperator({
   right,
   result,
   rightEvaluated
-}: ShortCircuitingOperatorParams): ShortCircuitingOperatorEntry {
+}: ShortCircuitingOperatorParams = {} as ShortCircuitingOperatorParams): ShortCircuitingOperatorEntry {
   const entry: ShortCircuitingOperatorEntry = {
     category: 'operator',
     kind: 'short-circuiting',

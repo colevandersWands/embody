@@ -3,7 +3,7 @@ export default function closure({
   bindings = null,
   parentName = null,
   parentCall = null // ID reference to the enclosing function call entry
-}) {
+} = {}) {
   return {
     category: 'scope',
     kind: 'function',

@@ -3,7 +3,7 @@ export default function block({
   bindings = null,
   structure = null, // for, if, while, ... null means free-floating block
   label = null
-}) {
+} = {}) {
   return {
     category: 'scope',
     kind: 'function',
