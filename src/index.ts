@@ -6,53 +6,30 @@
  * This exception exists to provide a flexible public API for consumers.
  */
 
-import { createConfig } from './config';
-import type { UserConfig } from './config/types';
-import fillConfig from './pipeline/fill-config';
-import filterSteps from './pipeline/filter-steps';
-import instrument from './pipeline/instrument';
-import record from './pipeline/record';
-import trace from './pipeline/trace';
-import type { Step } from './types/api';
+import fillConfig from './api/tracing/fill-config.js';
+import filterSteps from './api/tracing/filter-steps.js';
+import instrument from './api/tracing/instrument.js';
+import record from './api/tracing/record.js';
+import instrumentRecord from './api/tracing/instrument-record.js';
+import serialize from './api/tracing/serialize.js';
+import deserialize from './api/tracing/deserialize.js';
+
+import trace from './trace.js';
 
 // ============================================================================
-// Simple Default Export
+// Main Public API - Default Export
 // ============================================================================
 
-/**
- * Simple tracing function for quick usage without metadata.
- *
- * This is a convenience wrapper that returns just the trace steps array
- * without the configuration or original code. Useful for simple scripts
- * or when you don't need the full trace metadata.
- *
- * @example
- * ```typescript
- * import embodyTrace from '@study-lenses/embody';
- *
- * const steps = embodyTrace('let x = 5; console.log(x);');
- * console.log(steps); // Array of trace events
- * ```
- *
- * @param code - JavaScript code to trace
- * @param config - Optional configuration (uses defaults if not provided)
- * @returns Array of trace steps
- *
- * @since 1.0.0
- */
-export default function embodyTrace(code: string = '', config: UserConfig = {}): readonly Step[] {
-  const expandedConfig = createConfig(config);
-  const { steps } = trace({ code, config: expandedConfig });
-  return steps;
-}
+export default trace;
 
 // ============================================================================
 // Main Public API - Named Exports
 // ============================================================================
 
-export { default as embody } from './embody';
-export { default as squint } from './squint';
-export { default as chainable } from './chainable';
+export { default as embodify } from './api/embodify/embodify.js';
+export { default as embody } from './api/embody.js';
+export { default as squint } from './api/squint.js';
+export { default as pickles } from './api/pickles.js';
 
 // ============================================================================
 // Internal Pipeline Functions (Advanced Usage)
@@ -69,12 +46,14 @@ export { default as chainable } from './chainable';
  * These are exposed for educational tools that need fine-grained control
  * over the tracing process.
  */
-export const pipeline = {
+export const tracing = {
   fillConfig,
   filterSteps,
   instrument,
   record,
-  trace
+  instrumentRecord,
+  serialize,
+  deserialize,
 };
 
 // ============================================================================
@@ -102,5 +81,11 @@ export type {
   TraceInput,
   TraceOutput,
   FilterStepsInput,
-  FilterStepsOutput
-} from './types/api';
+  FilterStepsOutput,
+  SerializeInput,
+  SerializeOutput,
+  DeserializeInput,
+  DeserializeOutput,
+  PicklesInput,
+  PicklesOutput,
+} from './types/api.js';

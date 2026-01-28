@@ -6,8 +6,8 @@
  * and the hybrid typing approach for object-threading patterns.
  */
 
-import type { SpecificTraceEvent } from '../../types';
-import type { UserConfig, ExpandedConfig } from '../config/types';
+import type { SpecificTraceEvent } from '../../types.js';
+import type { UserConfig, ExpandedConfig, PresetName } from '../configuring/types.js';
 
 // ============================================================================
 // Core Types
@@ -26,7 +26,7 @@ export type TraceResult = {
   readonly code: string;
   readonly config: ExpandedConfig;
   readonly steps: readonly Step[];
-}
+};
 
 // ============================================================================
 // Hybrid Pipeline Types (Common Patterns)
@@ -56,28 +56,28 @@ export type PipelineOutput<TIn, TAdded> = TIn & TAdded;
 export type EmbodyInput = {
   readonly config?: UserConfig;
   readonly code?: string;
-}
+};
 
 /**
  * Embody with both config and code - returns trace immediately
  */
 export type EmbodyBothParams = {
   (input: { readonly config: UserConfig; readonly code: string }): TraceResult;
-}
+};
 
 /**
  * Embody with only config - returns function expecting code
  */
 export type EmbodyWithConfig = {
   (input: { readonly config: UserConfig }): (input: { readonly code: string }) => TraceResult;
-}
+};
 
 /**
  * Embody with only code - returns function expecting config
  */
 export type EmbodyWithCode = {
   (input: { readonly code: string }): (input: { readonly config?: UserConfig }) => TraceResult;
-}
+};
 
 // --- squint function overloads ---
 
@@ -87,41 +87,40 @@ export type EmbodyWithCode = {
 export type SquintInput = {
   readonly steps?: readonly Step[];
   readonly config?: UserConfig;
-}
+};
 
 /**
- * Result of filtering steps with potential metadata about the filtering
+ * Result of filtering steps
  */
 export type FilterResult = {
   readonly steps: readonly Step[];
   readonly config: ExpandedConfig;
-  readonly metadata?: {
-    readonly requestedButNotPresent?: readonly string[];
-    readonly totalFiltered?: number;
-    readonly filteringSummary?: Record<string, number>;
-  };
-}
+};
 
 /**
  * Squint with both steps and config - returns filtered result immediately
  */
 export type SquintBothParams = {
   (input: { readonly steps: readonly Step[]; readonly config: UserConfig }): FilterResult;
-}
+};
 
 /**
  * Squint with only config - returns function expecting steps
  */
 export type SquintWithConfig = {
-  (input: { readonly config: UserConfig }): (input: { readonly steps: readonly Step[] }) => FilterResult;
-}
+  (input: {
+    readonly config: UserConfig;
+  }): (input: { readonly steps: readonly Step[] }) => FilterResult;
+};
 
 /**
  * Squint with only steps - returns function expecting config
  */
 export type SquintWithSteps = {
-  (input: { readonly steps: readonly Step[] }): (input: { readonly config?: UserConfig }) => FilterResult;
-}
+  (input: {
+    readonly steps: readonly Step[];
+  }): (input: { readonly config?: UserConfig }) => FilterResult;
+};
 
 // ============================================================================
 // Internal Pipeline Functions
@@ -131,59 +130,90 @@ export type SquintWithSteps = {
 
 export type FillConfigInput = {
   readonly config?: UserConfig;
-}
+};
 
 export type FillConfigOutput = {
   readonly config: ExpandedConfig;
-}
+};
 
 // --- instrument ---
 
 export type InstrumentInput = {} & ConfiguredInput<{
   readonly code: string;
-}>
+}>;
 
-export type InstrumentOutput = {} & PipelineOutput<InstrumentInput, {
-  readonly instrumented: string;
-}>
+export type InstrumentOutput = {} & PipelineOutput<
+  InstrumentInput,
+  {
+    readonly instrumented: string;
+  }
+>;
 
 // --- record ---
 
 export type RecordInput = {} & ConfiguredInput<{
   readonly instrumented: string;
-}>
+}>;
 
-export type RecordOutput = {} & PipelineOutput<RecordInput, {
-  readonly steps: readonly Step[];
-}>
+export type RecordOutput = {} & PipelineOutput<
+  RecordInput,
+  {
+    readonly steps: readonly Step[];
+  }
+>;
 
 // --- trace ---
 
 export type TraceInput = {} & ConfiguredInput<{
   readonly code: string;
-}>
+}>;
 
 export type TraceOutput = {
   readonly code: string;
   readonly config: ExpandedConfig;
   readonly steps: readonly Step[];
-}
+};
 
 // --- filterSteps ---
 
 export type FilterStepsInput = {} & ConfiguredInput<{
   readonly steps: readonly Step[];
-}>
+}>;
 
 export type FilterStepsOutput = {
   readonly steps: readonly Step[];
   readonly config: ExpandedConfig;
-  readonly metadata?: {
-    readonly requestedButNotPresent?: readonly string[];
-    readonly totalFiltered?: number;
-    readonly filteringSummary?: Record<string, number>;
-  };
-}
+};
+
+// --- serialize ---
+
+export type SerializeInput = {
+  readonly steps: readonly Step[];
+};
+
+export type SerializeOutput = string;
+
+// --- deserialize ---
+
+export type DeserializeInput = {
+  readonly steps?: string | readonly Step[] | undefined;
+  readonly config?: string | UserConfig | undefined;
+};
+
+export type DeserializeOutput = {
+  readonly steps: readonly Step[] | undefined;
+  readonly config: UserConfig | undefined;
+};
+
+// --- pickles ---
+
+export type PicklesInput = {
+  readonly steps: readonly Step[] | string;
+};
+
+export type PicklesOutput =
+  | { readonly steps: string }
+  | { readonly steps: readonly Step[] };
 
 // ============================================================================
 // Function Signatures with Overloads
@@ -198,7 +228,7 @@ export type EmbodyFunction = {
   (input: { readonly config: UserConfig; readonly code: string }): TraceResult;
   (input: { readonly config: UserConfig }): (input: { readonly code: string }) => TraceResult;
   (input: { readonly code: string }): (input: { readonly config?: UserConfig }) => TraceResult;
-}
+};
 
 /**
  * Post-processing filter for existing trace steps.
@@ -207,16 +237,20 @@ export type EmbodyFunction = {
 export type SquintFunction = {
   // All three overloads
   (input: { readonly steps: readonly Step[]; readonly config: UserConfig }): FilterResult;
-  (input: { readonly config: UserConfig }): (input: { readonly steps: readonly Step[] }) => FilterResult;
-  (input: { readonly steps: readonly Step[] }): (input: { readonly config?: UserConfig }) => FilterResult;
-}
+  (input: {
+    readonly config: UserConfig;
+  }): (input: { readonly steps: readonly Step[] }) => FilterResult;
+  (input: {
+    readonly steps: readonly Step[];
+  }): (input: { readonly config?: UserConfig }) => FilterResult;
+};
 
 /**
  * Simple default export for quick tracing without metadata
  */
 export type EmbodyTraceFunction = {
   (code?: string, config?: UserConfig): readonly Step[];
-}
+};
 
 // ============================================================================
 // Execution Limits (for record function)
@@ -230,7 +264,7 @@ export type ExecutionLimits = {
   readonly maxMemory?: number; // in MB
   readonly maxRecursionDepth?: number;
   readonly maxExecutionTime?: number; // in milliseconds
-}
+};
 
 // ============================================================================
 // Default Export - All API Types
@@ -260,6 +294,7 @@ export type {
   // Configuration
   UserConfig,
   ExpandedConfig,
+  PresetName,
 
   // Function signatures
   EmbodyFunction,
@@ -279,11 +314,17 @@ export type {
   TraceOutput,
   FilterStepsInput,
   FilterStepsOutput,
+  SerializeInput,
+  SerializeOutput,
+  DeserializeInput,
+  DeserializeOutput,
+  PicklesInput,
+  PicklesOutput,
 
   // Execution limits
   ExecutionLimits,
 
   // Pipeline types
   ConfiguredInput,
-  PipelineOutput
+  PipelineOutput,
 };

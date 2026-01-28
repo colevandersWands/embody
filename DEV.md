@@ -36,7 +36,7 @@ Each stage:
 - **Parser**: Acorn for JavaScript parsing
 - **Runtime**: Node.js or modern browsers with ES modules
 - **Testing**: Jest with extensive test cases
-- **Types**: JSDoc annotations with TypeScript checking
+- **Types**: Full TypeScript types
 
 ## Codebase Conventions
 
@@ -91,11 +91,11 @@ export function myFunction() { ... }
 
 ```javascript
 // ✅ CORRECT - Direct imports
-import createConfig from './config/create.js';
-import applyPreset from './config/apply-preset.js';
+import createConfig from './configuring/create.js';
+import applyPreset from './configuring/apply-preset.js';
 
 // ❌ WRONG - Barrel imports
-import { createConfig, applyPreset } from './config/index.js';
+import { createConfig, applyPreset } from './configuring/index.js';
 
 // ✅ EXCEPTION - Public API only
 import { embody, pipeline } from '@study-lenses/embody';
@@ -563,26 +563,61 @@ for all files and directories. Match filename to export: `createConfig` → `cre
 
 Each directory contains its own README.md, and sometimes DOCS.md or DEV.md if it's conventions vary from the larger repository's conventions (eg. a submodule may require stateful environment tracking, or use Aran which relies on aspect-oriented programming).
 
+### Test Organization
+
+Unit tests live in a `tests/` subdirectory at the same level as the files they test:
+
+```text
+src/
+  module/
+    tests/
+      feature.test.ts
+    feature.ts
+```
+
+This keeps tests close to source (portable when moving directories) without cluttering
+the source directory listing.
+
+- Directory name: `tests/` (plural, always)
+- File suffix: `.test.ts` (never `.spec.ts`)
+- Root `/tests/` directory: integration test fixtures (not unit tests)
+
 ## Key Design Patterns
 
-### 1. EMPTY Symbol for Currying
+### 1. Undefined Checks for Currying
 
-Internal implementation detail enabling symmetric partial application:
+Functions that support currying use `undefined` checks to detect which
+arguments were provided:
 
-```javascript
-const EMPTY = Symbol('empty');
-
-function embody(input) {
-  const code = input.code ?? EMPTY;
-  const config = input.config ?? EMPTY;
-
-  if (code === EMPTY) return (next) => embody({ ...next, config });
-  if (config === EMPTY) return (next) => embody({ code, ...next });
-  // Both provided - execute
+```typescript
+function embody({ code, config }: { readonly code?: string; readonly config?: UserConfig } = {}) {
+  if (code === undefined && config === undefined) {
+    throw new Error('embody: expected at least code or config to be provided');
+  }
+  if (code === undefined) {
+    // Config-only: cache expanded config, return function expecting code
+    const { config: cachedConfig } = fillConfig({ config });
+    return function embodyWithClosedConfig({ code }: { readonly code?: string } = {}) {
+      // ...
+    };
+  }
+  if (config === undefined) {
+    // Code-only: close over code, return function expecting config
+    return function embodyWithClosedCode({ config }: { readonly config?: UserConfig } = {}) {
+      // ...
+    };
+  }
+  // Both provided - execute immediately
+  return instrumentRecord({ code, ...fillConfig({ config }) });
 }
 ```
 
-**Important**: EMPTY is never exposed in public API - it's purely internal.
+**Pickle support**: Both `embody` and `squint` accept JSON strings for
+`config` (and `steps` in squint's case). Invalid JSON config degrades
+gracefully to default configuration.
+
+All curried API functions validate input types and throw self-documenting
+errors (e.g., `'embody: expected code to be a string, got number'`).
 
 ### 2. Config Expansion Strategy
 
@@ -621,11 +656,21 @@ Consistent event format across all trace types:
 
 ### Current Stubs
 
-These functions currently return mock data:
+These functions currently return mock data (see unit tests for full behavioral contracts):
 
-- `instrument()` - Returns `{ ...input, instrumented: 'TODO' }`
-- `record()` - Returns `{ ...input, steps: [] }`
-- `filterSteps()` - Returns `{ steps: input.steps, config: input.config }`
+- `instrument('abc')` → `{ code: 'abc', config, instrumented: 'a b c' }` (spaces between each character)
+- `record('a b c')` → `{ instrumented: 'a b c', config, steps: [{},{},{}] }` (one `{}` per non-space character)
+- `filterSteps(steps)` → passthrough (returns `{ steps, config }` unchanged)
+- `serialize([{},{}])` → `'[{},{}]'` (JSON.stringify)
+- `deserialize({ steps, config })` → delegates to:
+  - `resolveSteps` (from `src/steps/`) for steps parsing/validation
+  - `parseJSON` (from `src/utils/`) for JSON string parsing
+  - `isExpandableObject` (from `configuring/utils/`) for config validation
+- `instrumentRecord('abc')` → `{ code: 'abc', config, steps: [{},{},{}] }` (instrument then record)
+- `fillConfig({})` → `{ config: createConfig({}) }` (expands user config to full ExpandedConfig)
+
+All tracing functions validate input types and throw self-documenting errors
+(e.g., `'instrument: expected code to be a string, got number'`).
 
 ## Development Workflow
 
@@ -651,18 +696,21 @@ npm run test:watch  # Run tests in watch mode
 
 ### 3. Adding New Pipeline Stage
 
-1. Create file in `/src/exports/`
-2. Use default export pattern
+1. Create file in `/src/api/tracing/`
+2. Use named-then-export pattern
 3. Follow object-threading:
-   ```javascript
-   export default function newStage(input) {
+   ```typescript
+   function newStage(input) {
      const { existingData, config } = input;
      const newData = process(existingData, config);
      return { ...input, newData };
    }
+
+   export default newStage;
    ```
 4. Add types to `/src/types/api.ts`
-5. Wire into pipeline in `trace.ts`
+5. Add tests in `/src/api/tracing/tests/`
+6. Wire into pipeline in `trace.ts`
 
 ### 4. Conventions Checklist
 
@@ -674,6 +722,7 @@ npm run test:watch  # Run tests in watch mode
 - [ ] Default empty object `= {}` on all destructured parameters
 - [ ] Verb-first naming; predicates prefixed with `is`/`has`/`can`/`should`
 - [ ] Types added to api.ts; prefer `type` over `interface`
+- [ ] Tests in `tests/` subdirectory (not alongside source files), `.test.ts` suffix
 - [ ] Tests cover happy path and edge cases
 - [ ] No mutations of input data
 - [ ] Errors handled gracefully
@@ -681,13 +730,18 @@ npm run test:watch  # Run tests in watch mode
 
 ## Testing Strategy
 
+### Test Organization Convention
+
+All unit tests live in a `tests/` subdirectory co-located with the source they test.
+See [Directory Structure § Test Organization](#test-organization) for the full convention.
+
 ### Unit Tests
 
-Each exported function has dedicated test file:
+Each exported function has a dedicated test file in the nearest `tests/` subdirectory:
 
 ```javascript
-// /src/exports/fill-config.test.js
-import fillConfig from './fill-config';
+// /src/api/tracing/tests/fill-config.test.ts
+import fillConfig from '../fill-config.js';
 
 test('expands boolean shorthand', () => {
   const result = fillConfig({ config: { variables: true } });
@@ -697,7 +751,7 @@ test('expands boolean shorthand', () => {
 
 ### Integration Tests
 
-Pipeline tests in `/tests/integration/`:
+Integration test fixtures live in the root `/tests/` directory:
 
 ```javascript
 test('full pipeline execution', () => {
@@ -711,9 +765,9 @@ test('full pipeline execution', () => {
 
 ### Test Cases
 
-Reference implementations in `/tests/cases/`:
+Reference implementations in `/tests/code-to-steps/`:
 
-- Each case includes: `program.js`, `config.js`, `trace.js`
+- Each case includes: `code.js`, `config.js`, `steps.js`
 - Used to verify trace accuracy
 - Covers edge cases and language features
 
@@ -777,7 +831,7 @@ Full rule set enforcing codebase conventions:
   },
   "overrides": [
     {
-      "files": ["**/*.test.ts", "**/*.spec.ts", "**/test/**/*.ts"],
+      "files": ["**/*.test.ts", "**/*.test.js", "**/tests/**/*.ts"],
       "rules": {
         "functional/immutable-data": "off",
         "functional/prefer-readonly-type": "off",

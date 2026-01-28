@@ -52,7 +52,7 @@
     // Completeness
     "skipDefaultLibCheck": true
   },
-  "include": ["**/*.ts", "**/*.js", "**/*.mjs"],
+  "include": ["**/*.ts", "**/*.js", "**/*.mjs", ".plann/environment.ts"],
   "exclude": [
     "node_modules",
     "dist",

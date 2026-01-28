@@ -128,7 +128,7 @@ export default tseslint.config(
 
   // --- Test files ---
   {
-    files: ['**/*.test.ts', '**/*.spec.ts', '**/test/**/*.ts', '**/*.test.js'],
+    files: ['**/*.test.ts', '**/*.test.js', '**/tests/**/*.ts'],
     languageOptions: {
       globals: {
         describe: 'readonly',

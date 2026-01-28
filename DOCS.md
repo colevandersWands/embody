@@ -7,6 +7,7 @@ Complete API reference and usage guide for the `@study-lenses/embody` execution 
 - [Main API Functions](#main-api-functions)
   - [`embody`](#embody-code-config)
   - [`squint`](#squint-steps-config)
+  - [`embodify`](#embodify-code-config-steps-instrumented)
   - [Default Export](#default-export)
 - [Configuration](#configuration)
   - [Presets](#presets)
@@ -14,6 +15,7 @@ Complete API reference and usage guide for the `@study-lenses/embody` execution 
 - [Advanced Usage](#advanced-usage)
   - [Pipeline Namespace](#pipeline-namespace)
   - [Currying Patterns](#currying-patterns)
+  - [Chainable Pipeline (`embodify`)](#chainable-pipeline-embodify)
   - [Object-Threading](#object-threading)
 - [TypeScript Types](#typescript-types)
 
@@ -48,7 +50,7 @@ import { embody } from '@study-lenses/embody';
 // 1. Both parameters - immediate execution
 const trace = embody({
   code: 'let x = 5; console.log(x);',
-  config: { presets: 'detailed' }
+  config: { presets: 'detailed' },
 });
 
 // 2. Config-first currying - reuse config for multiple traces
@@ -62,14 +64,26 @@ const overview = codeTracer({ config: { presets: 'overview' } });
 const detailed = codeTracer({ config: { presets: 'detailed' } });
 ```
 
+#### Pickle Support
+
+Config can be passed as a JSON string — it is auto-parsed:
+
+```typescript
+// JSON string config is auto-parsed
+const trace = embody({ code: 'let x = 5', config: '{"presets":"overview"}' });
+
+// Invalid JSON degrades gracefully to default config
+const trace = embody({ code: 'let x = 5', config: '{bad json' });
+```
+
 ### `squint({ steps?, config? })`
 
 Post-processing filter for existing trace steps. Applies configuration filters to an existing trace without re-executing the code.
 
 #### Parameters
 
-- `steps` (Step[], optional): Array of trace events to filter
-- `config` (UserConfig, optional): Filter configuration
+- `steps` (Step[] | string, optional): Array of trace events to filter, or JSON string
+- `config` (UserConfig | string, optional): Filter configuration, or JSON string
 
 #### Returns
 
@@ -77,11 +91,6 @@ Post-processing filter for existing trace steps. Applies configuration filters t
 {
   steps: Step[];           // Filtered trace events
   config: ExpandedConfig;  // Configuration used
-  metadata?: {             // Optional filtering metadata
-    requestedButNotPresent?: string[];
-    totalFiltered?: number;
-    filteringSummary?: Record<string, number>;
-  }
 }
 ```
 
@@ -95,18 +104,18 @@ const filtered = squint({
   steps: existingTrace,
   config: {
     lang: {
-      bindings: { filter: { include: ['counter'] } }
-    }
-  }
+      bindings: { filter: { include: ['counter'] } },
+    },
+  },
 });
 
 // Reuse filter configuration
 const filter = squint({
   config: {
     lang: {
-      bindings: { filter: { include: ['x', 'y'] } }
-    }
-  }
+      bindings: { filter: { include: ['x', 'y'] } },
+    },
+  },
 });
 const filtered1 = filter({ steps: trace1 });
 const filtered2 = filter({ steps: trace2 });
@@ -115,28 +124,96 @@ const filtered2 = filter({ steps: trace2 });
 const stepsFilter = squint({ steps: existingTrace });
 const varsOnly = stepsFilter({
   config: {
-    lang: { bindings: true, functions: false }
-  }
+    lang: { bindings: true, functions: false },
+  },
 });
 const funcsOnly = stepsFilter({
   config: {
-    lang: { bindings: false, functions: true }
-  }
+    lang: { bindings: false, functions: true },
+  },
 });
+```
+
+#### Pickle Support (Steps and Config)
+
+Both steps and config can be passed as JSON strings:
+
+```typescript
+// JSON string steps are auto-deserialized
+const filtered = squint({ steps: '[{},{}]', config: {} });
+
+// JSON string config is auto-parsed
+const filtered = squint({ steps: existingTrace, config: '{"presets":"overview"}' });
+
+// Invalid JSON throws (consistent with all tracing functions)
+// squint({ steps: existingTrace, config: '{bad}' }); // → throws Error
 ```
 
 ### Default Export
 
-Simple tracing function that returns just the steps array without metadata.
+Simple tracing function that returns just the steps array.
 
 ```typescript
-import embodyTrace from '@study-lenses/embody';
+import trace from '@study-lenses/embody';
 
-const steps = embodyTrace('let x = 5; console.log(x);');
+const steps = trace('let x = 5; console.log(x);');
 // Returns: Step[] (array of trace events)
+
+// With config object
+const steps = trace('let x = 5', { presets: 'overview' });
+
+// Config can be a JSON string (pickle support)
+const steps = trace('let x = 5', '{"presets":"overview"}');
 ```
 
 Useful for quick scripts or when you don't need configuration or source code in the result.
+
+### `embodify({ code?, config?, steps?, instrumented? })`
+
+Chainable, immutable pipeline wrapper for multi-step tracing workflows. Returns a chain link object with lazy-cascading getters and pipeline methods. Every method returns a new chain link — the original is never mutated.
+
+#### Parameters
+
+- `code` (string, optional): Source code to trace (mutually exclusive with `instrumented`)
+- `config` (UserConfig | string, optional): Configuration object or JSON string
+- `steps` (Step[] | string, optional): Pre-existing trace steps array or JSON string
+- `instrumented` (string, optional): Pre-instrumented code (mutually exclusive with `code`)
+
+#### Returns
+
+Chain link with:
+
+- **Getters**: `code`, `config`, `instrumented`, `steps`, `pickledSteps`, `pickledConfig`
+- **Methods**: `set()`, `mergeConfig()`, `instrument()`, `trace()`, `filterSteps()`
+
+All getters cascade lazily (e.g., accessing `.steps` when only code is set runs the full pipeline on demand). All methods return new immutable chain links.
+
+#### Usage Examples
+
+```typescript
+import { embodify } from '@study-lenses/embody';
+
+// Simple trace
+const result = embodify({ code: 'let x = 5;' }).trace();
+console.log(result.steps);
+
+// Lazy cascade — steps computed on access
+const steps = embodify({ code: 'let x = 5;' }).steps;
+
+// Branch and compare — trace once, filter multiple times
+const base = embodify({ code, config: { presets: 'detailed' } }).trace();
+const overview = base.filterSteps({ config: { presets: 'overview' } });
+const exhaustive = base.filterSteps({ config: { presets: 'exhaustive' } });
+// base is unchanged
+
+// Batch processing
+const tracer = embodify({ config: {} });
+const results = codes.map((c) => tracer.trace({ code: c }).steps);
+```
+
+#### Full Documentation
+
+See [embodify API Reference](./src/api/embodify/DOCS.md) for complete documentation of every getter, method, cascade behavior, config resolution, and use case recipe.
 
 ## Configuration
 
@@ -159,7 +236,7 @@ embody({ code: myCode, config: { presets: 'exhaustive' } });
 
 ### Configuration Options
 
-For complete configuration options and structure, see [config/README.md](./config/README.md).
+For complete configuration options and structure, see [config/README.md](./src/configuring/README.md).
 
 Configuration follows these principles:
 
@@ -181,10 +258,10 @@ embody({
   config: {
     lang: {
       bindings: {
-        filter: { include: ['result', 'counter', 'index'] }
-      }
-    }
-  }
+        filter: { include: ['result', 'counter', 'index'] },
+      },
+    },
+  },
 });
 
 // Focus on control flow
@@ -196,10 +273,10 @@ embody({
       controlFlow: true,
       bindings: false,
       functions: {
-        events: { call: { arguments: true }, definition: false }
-      }
-    }
-  }
+        events: { call: { arguments: true }, definition: false },
+      },
+    },
+  },
 });
 
 // Add timing information for async
@@ -210,11 +287,11 @@ embody({
     lang: {
       functions: {
         events: {
-          coroutines: { await: true }
-        }
-      }
-    }
-  }
+          coroutines: { await: true },
+        },
+      },
+    },
+  },
 });
 ```
 
@@ -225,21 +302,25 @@ embody({
 For fine-grained control, internal pipeline functions are exposed:
 
 ```typescript
-import { pipeline } from '@study-lenses/embody';
+import { tracing } from '@study-lenses/embody';
 
 const {
   fillConfig, // Normalize user config to ExpandedConfig
   instrument, // Transform code with Aran instrumentation
   record, // Execute instrumented code and collect trace
-  trace, // Full pipeline orchestrator
-  filterSteps // Apply filters to existing trace
-} = pipeline;
+  instrumentRecord, // instrument + record in one step
+  filterSteps, // Apply filters to existing trace
+  serialize, // Convert Step[] to JSON string
+  deserialize, // Parse { steps?, config? } — delegates to steps/ and utils/ modules
+} = tracing;
 
 // Custom pipeline usage
 const { config } = fillConfig({ config: userConfig });
 const { instrumented } = instrument({ code, config });
 const { steps } = record({ instrumented, config });
 ```
+
+For complete technical documentation of each pipeline function, including signatures, parameters, error handling, and the object-threading pattern, see [tracing module documentation](./src/api/tracing/DOCS.md).
 
 ### Currying Patterns
 
@@ -262,15 +343,47 @@ const deepAnalysis = codeUnderTest({ config: { presets: 'exhaustive' } });
 // Composition: Build specialized tracers
 const variableTracer = embody({
   config: {
-    lang: { bindings: true, functions: false, controlFlow: false }
-  }
+    lang: { bindings: true, functions: false, controlFlow: false },
+  },
 });
 const functionTracer = embody({
   config: {
-    lang: { bindings: false, functions: true, controlFlow: false }
-  }
+    lang: { bindings: false, functions: true, controlFlow: false },
+  },
 });
 ```
+
+### Chainable Pipeline (`embodify`)
+
+For workflows requiring intermediate states, branching, or batch processing, `embodify` provides an immutable chainable alternative to `embody`:
+
+```typescript
+import { embodify } from '@study-lenses/embody';
+
+// Trace once, branch into multiple filtered views
+const base = embodify({ code: studentCode, config: { presets: 'detailed' } }).trace();
+
+// Each filter returns a new chain link — base is unchanged
+const variableView = base.filterSteps({
+  config: { lang: { bindings: true, functions: false } },
+});
+const functionView = base.filterSteps({
+  config: { lang: { bindings: false, functions: true } },
+});
+
+// Serialize for storage or transport
+const serialized = variableView.pickledSteps;
+```
+
+Key differences from `embody()`:
+
+- **Chaining** instead of currying
+- **Immutable branching** from any chain link
+- **Lazy cascade** — getters compute on demand
+- **Granular control** — instrument, trace, and filter as separate steps
+- **Built-in serialization** via `.pickledSteps` and `.pickledConfig`
+
+See [embodify module documentation](./src/api/embodify/README.md) for design principles and full API surface.
 
 ### Object-Threading
 
@@ -287,7 +400,7 @@ record: { instrumented, config } → { instrumented, config, steps }
   ↓
 trace: combines → { code, config, steps }
   ↓
-filterSteps: { steps, config } → { steps, config, metadata? }
+filterSteps: { steps, config } → { steps, config }
 ```
 
 Each stage:
@@ -311,15 +424,10 @@ interface TraceResult {
   steps: Step[];
 }
 
-// Filter result with metadata
+// Filter result
 interface FilterResult {
   steps: Step[];
   config: ExpandedConfig;
-  metadata?: {
-    requestedButNotPresent?: string[];
-    totalFiltered?: number;
-    filteringSummary?: Record<string, number>;
-  };
 }
 ```
 
@@ -350,20 +458,36 @@ const myConfig: Partial<Config> = {
   presets: 'detailed',
   lang: {
     bindings: {
-      filter: { include: ['x', 'y'] }
-    }
-  }
+      filter: { include: ['x', 'y'] },
+    },
+  },
 };
+```
+
+### Pipeline Types
+
+```typescript
+// Serialize/Deserialize
+type SerializeInput = { readonly steps: readonly Step[] };
+type SerializeOutput = string;
+type DeserializeInput = { readonly serializedSteps: string };
+type DeserializeOutput = readonly Step[];
+
+// Pickles (bidirectional toggle)
+type PicklesInput = { readonly steps: readonly Step[] | string };
+type PicklesOutput =
+  | { readonly steps: string }
+  | { readonly steps: readonly Step[] };
 ```
 
 ## Notes
 
-- **New Configuration Structure**: Config now uses `{ presets, meta, lang }` structure. See [config/README.md](./src/config/README.md) for details
+- **New Configuration Structure**: Config now uses `{ presets, meta, lang }` structure. See [config/README.md](./src/configuring/README.md) for details
 - Configuration is split into `meta` (output format) and `lang` (JavaScript features to trace)
 - The `presets` field replaces the old `preset` field (note the plural)
 - Async/await execution is not supported in v1.0 (planned for v2.0)
 - The library uses Aran framework for code instrumentation
-- Configuration uses graceful degradation - invalid values are ignored with sensible defaults
+- Invalid JSON input throws (consistent with the tracing pipeline). Configuration with unknown keys is silently ignored with sensible defaults
 - All trace events include source location and timing information
 
 ### Configuration Migration
@@ -374,4 +498,4 @@ For users migrating from old structure, key changes:
 - `variables.*` → `lang.bindings.*`
 - `functions.*` → `lang.functions.*`
 - `async.timestamps` → `meta.timestamps`
-- See full migration table in [config/README.md](./src/config/README.md#field-migration-reference)
+- See full migration table in [config/README.md](./src/configuring/README.md#field-migration-reference)

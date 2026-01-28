@@ -9,13 +9,14 @@ Thank you for your interest in contributing to the `@study-lenses/embody` projec
 3. Create a feature branch: `git checkout -b feature/your-feature`
 4. Make your changes following our conventions (see DEV.md)
 5. Run tests: `npm test`
-6. Submit a pull request
+6. Run full validation: `npm run validate`
+7. Submit a pull request
 
 ## Development Guidelines
 
 - Follow all conventions in [DEV.md § Codebase Conventions](./DEV.md#codebase-conventions)
 - Maintain pure functional approach
-- Add tests for new functionality
+- Add tests in a `tests/` subdirectory alongside source (see [DEV.md § Test Organization](./DEV.md#test-organization))
 - Update documentation as needed
 
 ## Code Conventions at a Glance
@@ -45,7 +46,7 @@ When reporting issues, please include:
 
 ## Pull Request Process
 
-1. Ensure all tests pass
+1. Run `npm run validate` (lint, typecheck, and tests must all pass)
 2. Update relevant documentation
 3. Follow existing code patterns
 4. Keep commits focused and descriptive

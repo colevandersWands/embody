@@ -15,8 +15,8 @@
       "types": "./dist/types.d.ts"
     },
     "./config": {
-      "import": "./dist/config/index.js",
-      "types": "./dist/config/index.d.ts"
+      "import": "./dist/configuring/create.js",
+      "types": "./dist/configuring/create.d.ts"
     },
     "./core/events": {
       "import": "./dist/core/events.js",
@@ -47,7 +47,9 @@
     "format": "prettier --write \"**/*.{ts,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,js,json,md}\"",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run clean && npm run build"
+    "prepublishOnly": "npm run clean && npm run build",
+    "prepare": "husky",
+    "validate": "npm run lint && npm run typecheck && npm test -- --watchAll=false"
   },
   "keywords": [
     "embody",
@@ -81,7 +83,7 @@
     "package.json"
   ],
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=22.0.0"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.28.5",
@@ -93,7 +95,9 @@
     "eslint-plugin-functional": "^9.0.2",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-unicorn": "^62.0.0",
+    "husky": "^9.1.7",
     "jest": "^30.2.0",
+    "lint-staged": "^16.0.0",
     "prettier": "^3.0.0",
     "ts-jest": "^29.4.5",
     "typescript": "^5.0.0",
@@ -111,10 +115,19 @@
     "source-map-support": "^0.5.21"
   },
   "browserslist": [
-    "node >= 16"
+    "node >= 22"
   ],
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
+  },
+  "lint-staged": {
+    "*.{ts,js}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   }
 }

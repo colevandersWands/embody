@@ -66,9 +66,9 @@ Like how:
 
 The configuration options and structure reflect the structure of their corresponding trace data. Example:
 
-| Config                                     | Trace Log                                                        |
-| ------------------------------------------ | ---------------------------------------------------------------- |
-| `{ variable: { write: true, kind: true} }` | `[ ... { category: variable. kind: const, event: write }, ... ]` |
+| Config | Trace Log |
+| --- | --- |
+| `{ lang: { bindings: { events: { assign: true }, kind: { declarative: true } } } }` | `[ ... { category: "binding", kind: "declarative", event: "assign" }, ... ]` |
 
 ### Only Log Learner-Visible Behavior
 
@@ -110,6 +110,16 @@ const steps = trace('let x = 5; console.log(x);', config);
 console.log(steps); // Array of execution events
 ```
 
+```javascript
+// Chainable API for multi-step workflows
+import { embodify } from '@study-lenses/embody';
+
+const chain = embodify({ code: 'let x = 5; console.log(x);' });
+const traced = chain.trace();
+console.log(traced.steps);         // Array of execution events
+console.log(traced.pickledSteps);  // JSON string of steps
+```
+
 ## Key Features
 
 - **Configurable granularity**: From high-level function calls to detailed operator tracking
@@ -117,12 +127,13 @@ console.log(steps); // Array of execution events
 - **Currying support**: Reuse configurations across multiple traces
 - **Post-processing filters**: Focus on specific variables or functions
 - **Pure functional design**: Predictable, testable, composable
+- **Chainable pipeline**: `embodify()` for immutable, lazy-cascading trace workflows
 
 ## Basic Usage
 
 ```javascript
 // Reuse configuration
-const tracer = embody({ config: { preset: 'overview' } });
+const tracer = embody({ config: { presets: 'overview' } });
 const trace1 = tracer({ code: 'let x = 5' });
 const trace2 = tracer({ code: 'const y = 10' });
 
@@ -130,16 +141,26 @@ const trace2 = tracer({ code: 'const y = 10' });
 import { squint } from '@study-lenses/embody';
 const filtered = squint({
   steps: trace.steps,
-  config: { variables: { filter: ['x'] } }
+  config: { lang: { bindings: { filter: { include: ['x'] } } } },
 });
+
+// Chainable workflow with branching
+import { embodify } from '@study-lenses/embody';
+
+const base = embodify({ code: myCode, config: { presets: 'detailed' } }).trace();
+const overview = base.filterSteps({ config: { presets: 'overview' } });
+const exhaustive = base.filterSteps({ config: { presets: 'exhaustive' } });
+// base is unchanged — overview and exhaustive are independent branches
 ```
 
 ## Documentation
 
 - [**API Reference**](./DOCS.md) - Complete API documentation
+- [**embodify API**](./src/api/embodify/README.md) - Chainable pipeline wrapper
 - [**Developer Guide**](./DEV.md) - Architecture and conventions
 - [**Code Conventions**](./DEV.md#codebase-conventions) - Coding standards and style guide
-- [**Configuration**](./config/README.md) - Detailed configuration options
+- [**Tracing Pipeline**](./src/api/tracing/README.md) - Individual pipeline functions
+- [**Configuration**](./src/configuring/README.md) - Detailed configuration options
 - [**Contributing**](./CONTRIBUTING.md) - How to contribute
 
 ## Educational Presets
