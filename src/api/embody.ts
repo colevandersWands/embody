@@ -1,9 +1,9 @@
-import fillConfig from './tracing/fill-config.js';
-import instrumentRecord from './tracing/instrument-record.js';
-import deserialize from './tracing/deserialize.js';
-
 import type { UserConfig } from '../configuring/types.js';
 import type { TraceResult } from '../types/api.js';
+
+import deserialize from './tracing/deserialize.js';
+import fillConfig from './tracing/fill-config.js';
+import instrumentRecord from './tracing/instrument-record.js';
 
 /**
  * Main entry point for tracing JavaScript code execution.
@@ -47,9 +47,12 @@ import type { TraceResult } from '../types/api.js';
  */
 
 // Function overloads for proper type inference
-function embody(input: { readonly config: UserConfig | string; readonly code: string }): TraceResult;
 function embody(input: {
   readonly config: UserConfig | string;
+  readonly code: string;
+}): TraceResult;
+function embody(input: {
+  readonly config?: UserConfig | string;
 }): (input: { readonly code: string }) => TraceResult;
 function embody(input: {
   readonly code: string;
@@ -65,18 +68,10 @@ function embody({
 } = {}) {
   // Type validation
   if (code !== undefined && typeof code !== 'string') {
-    throw new Error(
-      'embody: expected code to be a string, got ' + typeof code,
-    );
+    throw new Error(`embody: expected code to be a string, got ${typeof code}`);
   }
-  if (
-    config !== undefined &&
-    typeof config !== 'object' &&
-    typeof config !== 'string'
-  ) {
-    throw new Error(
-      'embody: expected config to be an object or string, got ' + typeof config,
-    );
+  if (config !== undefined && typeof config !== 'object' && typeof config !== 'string') {
+    throw new Error(`embody: expected config to be an object or string, got ${typeof config}`);
   }
   if (
     config !== undefined &&
@@ -84,8 +79,9 @@ function embody({
     (config === null || Array.isArray(config))
   ) {
     throw new Error(
-      'embody: expected config to be a plain object, got ' +
-        (Array.isArray(config) ? 'array' : 'null'),
+      `embody: expected config to be a plain object, got ${
+        Array.isArray(config) ? 'array' : 'null'
+      }`,
     );
   }
 
@@ -103,16 +99,12 @@ function embody({
     }
     // Config-only: curry, cache expanded config
     const { config: cachedConfig } = fillConfig({ config: resolvedConfig });
-    return function embodyWithClosedConfig(
-      { code }: { readonly code?: string } = {},
-    ) {
+    return function embodyWithClosedConfig({ code }: { readonly code?: string } = {}) {
       if (code === undefined) {
         throw new Error('embody: curried with config, but no code was provided');
       }
       if (typeof code !== 'string') {
-        throw new Error(
-          'embody: expected code to be a string, got ' + typeof code,
-        );
+        throw new TypeError(`embody: expected code to be a string, got ${typeof code}`);
       }
       return instrumentRecord({ code, config: cachedConfig });
     };

@@ -33,17 +33,13 @@ describe('resolveSteps', () => {
   // --- Errors (invalid JSON) ---
 
   it('throws on invalid JSON string', () => {
-    expect(() => resolveSteps('{bad json')).toThrow(
-      'resolveSteps: invalid JSON for steps',
-    );
+    expect(() => resolveSteps('{bad json')).toThrow('resolveSteps: invalid JSON for steps');
   });
 
   // --- Errors (parsed but wrong shape) ---
 
   it('throws if parsed JSON is not an array', () => {
-    expect(() => resolveSteps('"hello"')).toThrow(
-      'validateSteps: expected steps to be an array',
-    );
+    expect(() => resolveSteps('"hello"')).toThrow('validateSteps: expected steps to be an array');
   });
 
   it('throws if step elements are not objects', () => {

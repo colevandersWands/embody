@@ -31,7 +31,7 @@ import type { TrackedObject, UnwrapFunction } from './types.js';
  * // unwrappedPrimitive = 42
  * ```
  */
-function unwrap(secret = Symbol('tracked')) {
+function unwrap<UnwrapFunction>(secret = Symbol('tracked')) {
   /**
    * Recursively unwraps TrackedObjects back to original values
    *
@@ -42,7 +42,7 @@ function unwrap(secret = Symbol('tracked')) {
    */
   return function unwrapRecursive<T>(
     value: T,
-    unwrapped = new WeakMap()
+    unwrapped = new WeakMap(),
   ): T extends TrackedObject<infer U> ? U : T {
     // Return primitives unchanged
     if (value === null || typeof value !== 'object') {
@@ -87,8 +87,8 @@ function unwrap(secret = Symbol('tracked')) {
       unwrapped.set(value, unwrappedArray);
 
       // Process elements after setting cache to prevent infinite recursion
-      for (let i = 0; i < value.length; i++) {
-        unwrappedArray[i] = unwrapRecursive(value[i], unwrapped);
+      for (const [index, element] of value.entries()) {
+        unwrappedArray[index] = unwrapRecursive(element, unwrapped);
       }
 
       return unwrappedArray as T extends TrackedObject<infer U> ? U : T;
@@ -103,8 +103,8 @@ function unwrap(secret = Symbol('tracked')) {
 
       // Check if any value needs unwrapping
       let needsUnwrapping = false;
-      for (const val of value.values()) {
-        if (val && typeof val === 'object' && isWrapper(val) && val.secret === secret) {
+      for (const value_ of value.values()) {
+        if (value_ && typeof value_ === 'object' && isWrapper(value_) && value_.secret === secret) {
           needsUnwrapping = true;
           break;
         }
@@ -119,9 +119,9 @@ function unwrap(secret = Symbol('tracked')) {
       unwrapped.set(value, unwrappedMap);
 
       // Process entries after setting cache to prevent infinite recursion
-      for (const [key, val] of value as ReadonlyMap<unknown, unknown>) {
+      for (const [key, value_] of value as ReadonlyMap<unknown, unknown>) {
         // TODO: Unwrap keys when key tracking is implemented
-        unwrappedMap.set(key, unwrapRecursive(val, unwrapped));
+        unwrappedMap.set(key, unwrapRecursive(value_, unwrapped));
       }
       return unwrappedMap as T extends TrackedObject<infer U> ? U : T;
     }
@@ -166,8 +166,8 @@ function unwrap(secret = Symbol('tracked')) {
 
       // Check if any property needs unwrapping
       let needsUnwrapping = false;
-      for (const val of Object.values(value as Record<string, any>)) {
-        if (val && typeof val === 'object' && isWrapper(val) && val.secret === secret) {
+      for (const value_ of Object.values(value as Record<string, any>)) {
+        if (value_ && typeof value_ === 'object' && isWrapper(value_) && value_.secret === secret) {
           needsUnwrapping = true;
           break;
         }
@@ -181,8 +181,8 @@ function unwrap(secret = Symbol('tracked')) {
       const unwrappedObject: Record<string, any> = {};
       unwrapped.set(value, unwrappedObject);
 
-      for (const [key, val] of Object.entries(value as Record<string, any>)) {
-        unwrappedObject[key] = unwrapRecursive(val, unwrapped);
+      for (const [key, value_] of Object.entries(value as Record<string, any>)) {
+        unwrappedObject[key] = unwrapRecursive(value_, unwrapped);
       }
       return unwrappedObject as T extends TrackedObject<infer U> ? U : T;
     }

@@ -39,8 +39,9 @@ function fillConfig({ config }: FillConfigInput = {}): FillConfigOutput {
 
   if (typeof config !== 'object' || config === null || Array.isArray(config)) {
     throw new Error(
-      'fillConfig: expected config to be a plain object, got ' +
-        (Array.isArray(config) ? 'array' : typeof config),
+      `fillConfig: expected config to be a plain object, got ${
+        Array.isArray(config) ? 'array' : typeof config
+      }`,
     );
   }
 

@@ -4,7 +4,7 @@ export default [
     kind: 'declarative',
     keyword: 'let',
     name: 'x',
-    event: 'declare'
+    event: 'declare',
   },
   {
     category: 'binding',
@@ -12,13 +12,13 @@ export default [
     keyword: 'let',
     name: 'x',
     event: 'initialize',
-    value: 1
+    value: 1,
   },
   {
     category: 'binding',
     kind: 'declarative',
     keyword: 'let',
     name: 'x',
-    event: 'available'
-  }
+    event: 'available',
+  },
 ];

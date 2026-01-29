@@ -17,28 +17,30 @@ Thank you for your interest in contributing to the `@study-lenses/embody` projec
 - Follow all conventions in [DEV.md § Codebase Conventions](./DEV.md#codebase-conventions)
 - Maintain pure functional approach
 - Add tests in a `tests/` subdirectory alongside source (see [DEV.md § Test Organization](./DEV.md#test-organization))
+- Maintain `README.md` (and `DOCS.md` for submodules) in every source directory (see [DEV.md § Per-Directory Documentation](./DEV.md#per-directory-documentation))
 - Update documentation as needed
 
 ## Code Conventions at a Glance
 
-| Situation                     | Convention                                                |
-| ----------------------------- | --------------------------------------------------------- |
-| Non-trivial function          | Named `function` declaration                              |
-| Inline callback (trivial)     | Arrow OK: `user => user.id`, `n => n > 0`                |
-| Arrow assigned to variable    | **Not allowed** — use `function` declaration              |
-| Callback (non-trivial)        | Extract as named `function`, pass by name                 |
-| `this` keyword                | **Banned** (functional codebase)                          |
-| Mutable closures              | **Banned** (pass state explicitly)                        |
-| Export                        | Define first, `export default` at bottom                  |
-| Import paths                  | Always include `.js` extension                            |
-| Destructured object params    | Default empty object: `{ ... } = {}`                     |
-| Boolean functions             | Prefix with `is`/`has`/`can`/`should`                     |
+| Situation                  | Convention                                   |
+| -------------------------- | -------------------------------------------- |
+| Non-trivial function       | Named `function` declaration                 |
+| Inline callback (trivial)  | Arrow OK: `user => user.id`, `n => n > 0`    |
+| Arrow assigned to variable | **Not allowed** — use `function` declaration |
+| Callback (non-trivial)     | Extract as named `function`, pass by name    |
+| `this` keyword             | **Banned** (functional codebase)             |
+| Mutable closures           | **Banned** (pass state explicitly)           |
+| Export                     | Define first, `export default` at bottom     |
+| Import paths               | Always include `.js` extension               |
+| Destructured object params | Default empty object: `{ ... } = {}`         |
+| Boolean functions          | Prefix with `is`/`has`/`can`/`should`        |
 
 Full conventions with rationale and examples: see [DEV.md § Codebase Conventions](./DEV.md#codebase-conventions).
 
 ## Reporting Issues
 
 When reporting issues, please include:
+
 - Clear description of the problem
 - Minimal code example reproducing the issue
 - Expected vs actual behavior
@@ -48,9 +50,10 @@ When reporting issues, please include:
 
 1. Run `npm run validate` (lint, typecheck, and tests must all pass)
 2. Update relevant documentation
-3. Follow existing code patterns
-4. Keep commits focused and descriptive
-5. Reference any related issues
+3. Ensure `README.md`/`DOCS.md` are current in modified directories
+4. Follow existing code patterns
+5. Keep commits focused and descriptive
+6. Reference any related issues
 
 ## Code of Conduct
 

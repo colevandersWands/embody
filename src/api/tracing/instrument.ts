@@ -35,21 +35,21 @@ import type { InstrumentInput, InstrumentOutput } from '../../types/api.js';
  *
  * @since 1.0.0
  */
-function instrument(
-  { code, config }: { readonly code?: string; readonly config?: ExpandedConfig } = {},
-): InstrumentOutput {
+function instrument({
+  code,
+  config,
+}: { readonly code?: string; readonly config?: ExpandedConfig } = {}): InstrumentOutput {
   if (code !== undefined && typeof code !== 'string') {
-    throw new Error(
-      'instrument: expected code to be a string, got ' + typeof code,
-    );
+    throw new Error(`instrument: expected code to be a string, got ${typeof code}`);
   }
   if (
     config !== undefined &&
     (typeof config !== 'object' || config === null || Array.isArray(config))
   ) {
     throw new Error(
-      'instrument: expected config to be an object, got ' +
-        (Array.isArray(config) ? 'array' : typeof config),
+      `instrument: expected config to be an object, got ${
+        Array.isArray(config) ? 'array' : typeof config
+      }`,
     );
   }
 

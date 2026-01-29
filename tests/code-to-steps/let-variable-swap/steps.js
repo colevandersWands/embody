@@ -5,7 +5,7 @@ export default [
     kind: 'declarative',
     keyword: 'let',
     name: 'a',
-    event: 'declare'
+    event: 'declare',
   },
   {
     category: 'binding',
@@ -13,14 +13,14 @@ export default [
     keyword: 'let',
     name: 'a',
     event: 'initialize',
-    value: 2
+    value: 2,
   },
   {
     category: 'binding',
     kind: 'declarative',
     keyword: 'let',
     name: 'a',
-    event: 'available'
+    event: 'available',
   },
 
   // let b = 1;
@@ -29,7 +29,7 @@ export default [
     kind: 'declarative',
     keyword: 'let',
     name: 'b',
-    event: 'declare'
+    event: 'declare',
   },
   {
     category: 'binding',
@@ -37,14 +37,14 @@ export default [
     keyword: 'let',
     name: 'b',
     event: 'initialize',
-    value: 1
+    value: 1,
   },
   {
     category: 'binding',
     kind: 'declarative',
     keyword: 'let',
     name: 'b',
-    event: 'available'
+    event: 'available',
   },
 
   // let temp;
@@ -53,7 +53,7 @@ export default [
     kind: 'declarative',
     keyword: 'let',
     name: 'temp',
-    event: 'declare'
+    event: 'declare',
   },
   {
     category: 'binding',
@@ -62,14 +62,14 @@ export default [
     name: 'temp',
     event: 'initialize',
     value: undefined,
-    implicit: true
+    implicit: true,
   },
   {
     category: 'binding',
     kind: 'declarative',
     keyword: 'let',
     name: 'temp',
-    event: 'available'
+    event: 'available',
   },
 
   // temp = a;
@@ -79,7 +79,7 @@ export default [
     keyword: 'let',
     name: 'a',
     event: 'read',
-    value: 2
+    value: 2,
   },
   {
     category: 'binding',
@@ -87,7 +87,7 @@ export default [
     keyword: 'let',
     name: 'temp',
     event: 'assign',
-    value: 2
+    value: 2,
   },
 
   // a = b;
@@ -97,7 +97,7 @@ export default [
     keyword: 'let',
     name: 'b',
     event: 'read',
-    value: 1
+    value: 1,
   },
   {
     category: 'binding',
@@ -105,7 +105,7 @@ export default [
     keyword: 'let',
     name: 'a',
     event: 'assign',
-    value: 1
+    value: 1,
   },
 
   // b = temp;
@@ -115,7 +115,7 @@ export default [
     keyword: 'let',
     name: 'temp',
     event: 'read',
-    value: 2
+    value: 2,
   },
   {
     category: 'binding',
@@ -123,6 +123,6 @@ export default [
     keyword: 'let',
     name: 'b',
     event: 'assign',
-    value: 2
-  }
+    value: 2,
+  },
 ];

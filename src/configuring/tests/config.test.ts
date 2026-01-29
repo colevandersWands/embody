@@ -1,11 +1,5 @@
-/**
- * @file TypeScript tests for configuration system
- * Updated to use new Config structure with meta and lang sections
- */
-
 import createConfig from '../create.js';
 import defaultConfig from '../default-config.js';
-import applyPreset from '../apply-preset.js';
 import expandShorthand from '../expand-shorthand.js';
 import overview from '../presets/overview.js';
 import detailed from '../presets/detailed.js';
@@ -13,30 +7,53 @@ import exhaustive from '../presets/exhaustive.js';
 
 import type { Config, ExpandedConfig } from '../types.js';
 
-const presets = { overview, detailed, exhaustive };
+describe('Configuration System', () => {
+  describe('structure', () => {
+    describe('top-level sections', () => {
+      it('meta is defined', () => {
+        const config = createConfig({});
+        expect(config.meta).toBeDefined();
+      });
 
-describe('Configuration System (TypeScript)', () => {
-  describe('New Structure Tests', () => {
-    test('should have meta and lang sections at top level', () => {
-      const config = createConfig({});
+      it('lang is defined', () => {
+        const config = createConfig({});
+        expect(config.lang).toBeDefined();
+      });
 
-      expect(config.meta).toBeDefined();
-      expect(config.lang).toBeDefined();
-      expect(config.presets).toBeUndefined(); // No default preset applied
+      it('presets is undefined by default', () => {
+        const config = createConfig({});
+        expect(config.presets).toBeUndefined();
+      });
     });
 
-    test('should not have old top-level fields', () => {
-      const config = createConfig({});
+    describe('old top-level fields removed', () => {
+      it('variables is undefined', () => {
+        const config = createConfig({});
+        expect((config as any).variables).toBeUndefined();
+      });
 
-      // These old fields should not exist at top level
-      expect((config as any).variables).toBeUndefined();
-      expect((config as any).functions).toBeUndefined();
-      expect((config as any).operators).toBeUndefined();
-      expect((config as any).async).toBeUndefined();
-      expect((config as any).errors).toBeUndefined();
+      it('functions is undefined', () => {
+        const config = createConfig({});
+        expect((config as any).functions).toBeUndefined();
+      });
+
+      it('operators is undefined', () => {
+        const config = createConfig({});
+        expect((config as any).operators).toBeUndefined();
+      });
+
+      it('async is undefined', () => {
+        const config = createConfig({});
+        expect((config as any).async).toBeUndefined();
+      });
+
+      it('errors is undefined', () => {
+        const config = createConfig({});
+        expect((config as any).errors).toBeUndefined();
+      });
     });
 
-    test('should have variables configuration under lang.bindings', () => {
+    describe('lang.bindings configuration', () => {
       const config = createConfig({
         lang: {
           bindings: {
@@ -44,67 +61,103 @@ describe('Configuration System (TypeScript)', () => {
               declarative: {
                 var: true,
                 let: true,
-                const: false
-              }
+                const: false,
+              },
             },
             events: {
               declare: true,
               assign: true,
-              read: false
-            }
-          }
-        }
+              read: false,
+            },
+          },
+        },
       });
 
-      expect(config.lang?.bindings?.kind?.declarative?.var).toBe(true);
-      expect(config.lang?.bindings?.kind?.declarative?.let).toBe(true);
-      expect(config.lang?.bindings?.kind?.declarative?.const).toBe(false);
-      expect(config.lang?.bindings?.events?.declare).toBe(true);
-      expect(config.lang?.bindings?.events?.assign).toBe(true);
-      expect(config.lang?.bindings?.events?.read).toBe(false);
+      it('kind.declarative.var = true', () => {
+        expect(config.lang?.bindings?.kind?.declarative?.var).toBe(true);
+      });
+
+      it('kind.declarative.let = true', () => {
+        expect(config.lang?.bindings?.kind?.declarative?.let).toBe(true);
+      });
+
+      it('kind.declarative.const = false', () => {
+        expect(config.lang?.bindings?.kind?.declarative?.const).toBe(false);
+      });
+
+      it('events.declare = true', () => {
+        expect(config.lang?.bindings?.events?.declare).toBe(true);
+      });
+
+      it('events.assign = true', () => {
+        expect(config.lang?.bindings?.events?.assign).toBe(true);
+      });
+
+      it('events.read = false', () => {
+        expect(config.lang?.bindings?.events?.read).toBe(false);
+      });
     });
 
-    test('should have functions configuration under lang.functions', () => {
+    describe('lang.functions configuration', () => {
       const config = createConfig({
         lang: {
           functions: {
             kind: {
               arrow: true,
               function: false,
-              method: true
+              method: true,
             },
             events: {
               definition: true,
               call: { arguments: false },
-              return: true
-            }
-          }
-        }
+              return: true,
+            },
+          },
+        },
       });
 
-      expect(config.lang?.functions?.kind?.arrow).toBe(true);
-      expect(config.lang?.functions?.kind?.function).toBe(false);
-      expect(config.lang?.functions?.events?.definition).toBe(true);
-      expect(config.lang?.functions?.events?.call?.arguments).toBe(false);
+      it('kind.arrow = true', () => {
+        expect(config.lang?.functions?.kind?.arrow).toBe(true);
+      });
+
+      it('kind.function = false', () => {
+        expect(config.lang?.functions?.kind?.function).toBe(false);
+      });
+
+      it('events.definition = true', () => {
+        expect(config.lang?.functions?.events?.definition).toBe(true);
+      });
+
+      it('events.call.arguments = false', () => {
+        expect(config.lang?.functions?.events?.call?.arguments).toBe(false);
+      });
     });
 
-    test('should have operators under lang.operators', () => {
+    describe('lang.operators configuration', () => {
       const config = createConfig({
         lang: {
           operators: {
             pure: true,
             mutating: false,
-            shortCircuiting: true
-          }
-        }
+            shortCircuiting: true,
+          },
+        },
       });
 
-      expect(config.lang?.operators?.pure).toBe(true);
-      expect(config.lang?.operators?.mutating).toBe(false);
-      expect(config.lang?.operators?.shortCircuiting).toBe(true);
+      it('pure = true', () => {
+        expect(config.lang?.operators?.pure).toBe(true);
+      });
+
+      it('mutating = false', () => {
+        expect(config.lang?.operators?.mutating).toBe(false);
+      });
+
+      it('shortCircuiting = true', () => {
+        expect(config.lang?.operators?.shortCircuiting).toBe(true);
+      });
     });
 
-    test('should have async features under lang.functions.events.coroutines', () => {
+    describe('lang.functions.events.coroutines configuration', () => {
       const config = createConfig({
         lang: {
           functions: {
@@ -112,28 +165,33 @@ describe('Configuration System (TypeScript)', () => {
               coroutines: {
                 await: true,
                 yield: false,
-                yieldDelegate: false
-              }
-            }
-          }
+                yieldDelegate: false,
+              },
+            },
+          },
         },
         meta: {
-          timestamps: true
-        }
+          timestamps: true,
+        },
       });
 
-      expect(config.lang?.functions?.events?.coroutines?.await).toBe(true);
-      expect(config.meta?.timestamps).toBe(true);
+      it('await = true', () => {
+        expect(config.lang?.functions?.events?.coroutines?.await).toBe(true);
+      });
+
+      it('meta.timestamps = true', () => {
+        expect(config.meta?.timestamps).toBe(true);
+      });
     });
   });
 
-  describe('Type Definitions', () => {
-    test('Config type should have correct structure', () => {
+  describe('type definitions', () => {
+    describe('Config type structure', () => {
       const config: Config = {
         presets: 'overview',
         meta: {
           index: true,
-          location: 'line'
+          location: 'line',
         },
         lang: {
           semantics: true,
@@ -145,246 +203,453 @@ describe('Configuration System (TypeScript)', () => {
                 const: true,
                 function: true,
                 class: false,
-                import: false
-              }
-            }
-          }
-        }
+                import: false,
+              },
+            },
+          },
+        },
       };
 
-      expect(config.presets).toBe('overview');
-      expect(config.meta?.index).toBe(true);
-      expect(config.lang?.bindings?.kind?.declarative?.var).toBe(true);
+      it('presets = "overview"', () => {
+        expect(config.presets).toBe('overview');
+      });
+
+      it('meta.index = true', () => {
+        expect(config.meta?.index).toBe(true);
+      });
+
+      it('lang.bindings.kind.declarative.var = true', () => {
+        expect(config.lang?.bindings?.kind?.declarative?.var).toBe(true);
+      });
     });
 
-    test('Partial<Config> should work for user input', () => {
-      const userConfig: Partial<Config> = {
-        presets: 'detailed',
-        meta: {
-          ast: true
-        }
-      };
+    describe('Partial<Config> for user input', () => {
+      it('accepts partial config', () => {
+        const userConfig: Partial<Config> = {
+          presets: 'detailed',
+          meta: {
+            ast: true,
+          },
+        };
+        const config = createConfig(userConfig);
+        expect(config.presets).toBe('detailed');
+      });
 
-      const config = createConfig(userConfig);
-      expect(config.presets).toBe('detailed');
-      expect(config.meta?.ast).toBe(true);
+      it('preserves partial meta values', () => {
+        const userConfig: Partial<Config> = {
+          presets: 'detailed',
+          meta: {
+            ast: true,
+          },
+        };
+        const config = createConfig(userConfig);
+        expect(config.meta?.ast).toBe(true);
+      });
     });
   });
 
-  describe('Default Configuration', () => {
-    test('should provide sensible defaults', () => {
-      const config = createConfig();
+  describe('default configuration', () => {
+    describe('sensible defaults', () => {
+      it('meta.index = true', () => {
+        const config = createConfig();
+        expect(config.meta?.index).toBe(true);
+      });
 
-      // Meta defaults
-      expect(config.meta?.index).toBe(true);
-      expect(config.meta?.location).toBe('line');
-      expect(config.meta?.ast).toBe(true);
+      it('meta.location = "line"', () => {
+        const config = createConfig();
+        expect(config.meta?.location).toBe('line');
+      });
 
-      // Lang defaults
-      expect(config.lang?.semantics).toBe(true);
-      expect(config.lang?.bindings).toBeDefined();
-      expect(config.lang?.functions).toBeDefined();
+      it('meta.ast = true', () => {
+        const config = createConfig();
+        expect(config.meta?.ast).toBe(true);
+      });
+
+      it('lang.semantics = true', () => {
+        const config = createConfig();
+        expect(config.lang?.semantics).toBe(true);
+      });
+
+      it('lang.bindings is defined', () => {
+        const config = createConfig();
+        expect(config.lang?.bindings).toBeDefined();
+      });
+
+      it('lang.functions is defined', () => {
+        const config = createConfig();
+        expect(config.lang?.functions).toBeDefined();
+      });
     });
 
-    test('defaultConfig should have complete structure', () => {
-      expect(defaultConfig.meta).toBeDefined();
-      expect(defaultConfig.lang).toBeDefined();
-      expect(defaultConfig.presets).toBeUndefined(); // No default preset
+    describe('defaultConfig structure', () => {
+      it('meta is defined', () => {
+        expect(defaultConfig.meta).toBeDefined();
+      });
+
+      it('lang is defined', () => {
+        expect(defaultConfig.lang).toBeDefined();
+      });
+
+      it('presets is undefined', () => {
+        expect(defaultConfig.presets).toBeUndefined();
+      });
     });
   });
 
-  describe('Preset System', () => {
-    test('should have three presets available', () => {
-      expect(presets.overview).toBeDefined();
-      expect(presets.detailed).toBeDefined();
-      expect(presets.exhaustive).toBeDefined();
-    });
-
-    test('overview preset should minimize detail', () => {
-      const config = createConfig({ presets: 'overview' });
-
-      // Overview characteristics
-      expect(config.lang?.bindings?.events?.read).toBe(false);
-      expect(config.lang?.operators?.pure).toBe(false);
-      expect(config.meta?.location).toBe('line');
-    });
-
-    test('detailed preset should balance detail', () => {
-      const config = createConfig({ presets: 'detailed' });
-
-      // Detailed characteristics
-      expect(config.lang?.bindings?.events?.read).toBe(true);
-      expect(config.lang?.operators?.pure).toBe(true);
-      expect(config.lang?.scopes?.kind?.block).toBe(true);
-      expect(config.lang?.bindings?.kind?.implicit?.this).toBe(false);
-    });
-
-    test('exhaustive preset should enable everything', () => {
-      const config = createConfig({ presets: 'exhaustive' });
-
-      // Exhaustive characteristics
-      expect(config.lang?.bindings?.kind?.implicit?.global).toBe(true);
-      expect(config.lang?.bindings?.kind?.implicit?.this).toBe(true);
-      expect(config.lang?.operators?.coercion).toBe(true);
-      expect(config.lang?.dynamic?.eval).toBe(true);
-      expect(config.meta?.debug?.configPath).toBe(true);
-    });
-
-    test('user overrides should take precedence over preset', () => {
-      const config = createConfig({
-        presets: 'overview',
-        lang: {
-          bindings: {
-            events: {
-              read: true  // Override overview's false
-            }
-          }
-        }
+  describe('preset system', () => {
+    describe('preset availability', () => {
+      it('overview is defined', () => {
+        expect(overview).toBeDefined();
       });
 
-      expect(config.lang?.bindings?.events?.read).toBe(true);
+      it('detailed is defined', () => {
+        expect(detailed).toBeDefined();
+      });
+
+      it('exhaustive is defined', () => {
+        expect(exhaustive).toBeDefined();
+      });
+    });
+
+    describe('overview preset → minimal detail', () => {
+      it('lang.bindings.events.read = false', () => {
+        const config = createConfig({ presets: 'overview' });
+        expect(config.lang?.bindings?.events?.read).toBe(false);
+      });
+
+      it('lang.operators.pure = false', () => {
+        const config = createConfig({ presets: 'overview' });
+        expect(config.lang?.operators?.pure).toBe(false);
+      });
+
+      it('meta.location = "line"', () => {
+        const config = createConfig({ presets: 'overview' });
+        expect(config.meta?.location).toBe('line');
+      });
+    });
+
+    describe('detailed preset → balanced detail', () => {
+      it('lang.bindings.events.read = true', () => {
+        const config = createConfig({ presets: 'detailed' });
+        expect(config.lang?.bindings?.events?.read).toBe(true);
+      });
+
+      it('lang.operators.pure = true', () => {
+        const config = createConfig({ presets: 'detailed' });
+        expect(config.lang?.operators?.pure).toBe(true);
+      });
+
+      it('lang.scopes.kind.block = true', () => {
+        const config = createConfig({ presets: 'detailed' });
+        expect(config.lang?.scopes?.kind?.block).toBe(true);
+      });
+
+      it('lang.bindings.kind.implicit.this = false', () => {
+        const config = createConfig({ presets: 'detailed' });
+        expect(config.lang?.bindings?.kind?.implicit?.this).toBe(false);
+      });
+    });
+
+    describe('exhaustive preset → maximum detail', () => {
+      it('lang.bindings.kind.implicit.global = true', () => {
+        const config = createConfig({ presets: 'exhaustive' });
+        expect(config.lang?.bindings?.kind?.implicit?.global).toBe(true);
+      });
+
+      it('lang.bindings.kind.implicit.this = true', () => {
+        const config = createConfig({ presets: 'exhaustive' });
+        expect(config.lang?.bindings?.kind?.implicit?.this).toBe(true);
+      });
+
+      it('lang.operators.coercion = true', () => {
+        const config = createConfig({ presets: 'exhaustive' });
+        expect(config.lang?.operators?.coercion).toBe(true);
+      });
+
+      it('lang.dynamic.eval = true', () => {
+        const config = createConfig({ presets: 'exhaustive' });
+        expect(config.lang?.dynamic?.eval).toBe(true);
+      });
+
+      it('meta.debug.configPath = true', () => {
+        const config = createConfig({ presets: 'exhaustive' });
+        expect(config.meta?.debug?.configPath).toBe(true);
+      });
+    });
+
+    describe('user overrides take precedence', () => {
+      it('override overview read=false → read=true', () => {
+        const config = createConfig({
+          presets: 'overview',
+          lang: {
+            bindings: {
+              events: {
+                read: true,
+              },
+            },
+          },
+        });
+        expect(config.lang?.bindings?.events?.read).toBe(true);
+      });
     });
   });
 
-  describe('Boolean Shorthand Expansion', () => {
-    test('should expand lang: true', () => {
-      const expanded = expandShorthand({ lang: true as any });
-
-      expect(expanded.lang).toBeDefined();
-      expect(typeof expanded.lang).toBe('object');
-      expect(expanded.lang?.bindings).toBeDefined();
-      expect(expanded.lang?.functions).toBeDefined();
-    });
-
-    test('should expand lang: false', () => {
-      const expanded = expandShorthand({ lang: false as any });
-
-      expect(expanded.lang).toBeDefined();
-      expect(expanded.lang?.semantics).toBe(false);
-      expect(expanded.lang?.bindings?.kind?.declarative?.var).toBe(false);
-    });
-
-    test('should expand nested boolean shorthand', () => {
-      const expanded = expandShorthand({
-        lang: {
-          bindings: true as any,
-          operators: false as any
-        }
+  describe('boolean shorthand expansion', () => {
+    describe('lang: true', () => {
+      it('lang is defined', () => {
+        const expanded = expandShorthand({ lang: true as any });
+        expect(expanded.lang).toBeDefined();
       });
 
-      expect(expanded.lang?.bindings?.kind).toBeDefined();
-      expect(expanded.lang?.operators?.pure).toBe(false);
-    });
-
-    test('should expand meta: true', () => {
-      const expanded = expandShorthand({ meta: true as any });
-
-      expect(expanded.meta).toBeDefined();
-      expect(typeof expanded.meta).toBe('object');
-      expect(expanded.meta?.index).toBeDefined();
-    });
-
-    test('should expand deeply nested shorthand', () => {
-      const expanded = expandShorthand({
-        lang: {
-          bindings: {
-            kind: {
-              declarative: true as any
-            }
-          }
-        }
+      it('lang is object', () => {
+        const expanded = expandShorthand({ lang: true as any });
+        expect(typeof expanded.lang).toBe('object');
       });
 
-      expect(expanded.lang?.bindings?.kind?.declarative?.var).toBeDefined();
-      expect(expanded.lang?.bindings?.kind?.declarative?.let).toBeDefined();
+      it('lang.bindings is defined', () => {
+        const expanded = expandShorthand({ lang: true as any });
+        expect(expanded.lang?.bindings).toBeDefined();
+      });
+
+      it('lang.functions is defined', () => {
+        const expanded = expandShorthand({ lang: true as any });
+        expect(expanded.lang?.functions).toBeDefined();
+      });
+    });
+
+    describe('lang: false', () => {
+      it('lang is defined', () => {
+        const expanded = expandShorthand({ lang: false as any });
+        expect(expanded.lang).toBeDefined();
+      });
+
+      it('lang.semantics = false', () => {
+        const expanded = expandShorthand({ lang: false as any });
+        expect(expanded.lang?.semantics).toBe(false);
+      });
+
+      it('lang.bindings.kind.declarative.var = false', () => {
+        const expanded = expandShorthand({ lang: false as any });
+        expect(expanded.lang?.bindings?.kind?.declarative?.var).toBe(false);
+      });
+    });
+
+    describe('nested boolean shorthand', () => {
+      it('bindings: true → kind is defined', () => {
+        const expanded = expandShorthand({
+          lang: {
+            bindings: true as any,
+            operators: false as any,
+          },
+        });
+        expect(expanded.lang?.bindings?.kind).toBeDefined();
+      });
+
+      it('operators: false → pure = false', () => {
+        const expanded = expandShorthand({
+          lang: {
+            bindings: true as any,
+            operators: false as any,
+          },
+        });
+        expect(expanded.lang?.operators?.pure).toBe(false);
+      });
+    });
+
+    describe('meta: true', () => {
+      it('meta is defined', () => {
+        const expanded = expandShorthand({ meta: true as any });
+        expect(expanded.meta).toBeDefined();
+      });
+
+      it('meta is object', () => {
+        const expanded = expandShorthand({ meta: true as any });
+        expect(typeof expanded.meta).toBe('object');
+      });
+
+      it('meta.index is defined', () => {
+        const expanded = expandShorthand({ meta: true as any });
+        expect(expanded.meta?.index).toBeDefined();
+      });
+    });
+
+    describe('deeply nested shorthand', () => {
+      it('declarative: true → var is defined', () => {
+        const expanded = expandShorthand({
+          lang: {
+            bindings: {
+              kind: {
+                declarative: true as any,
+              },
+            },
+          },
+        });
+        expect(expanded.lang?.bindings?.kind?.declarative?.var).toBeDefined();
+      });
+
+      it('declarative: true → let is defined', () => {
+        const expanded = expandShorthand({
+          lang: {
+            bindings: {
+              kind: {
+                declarative: true as any,
+              },
+            },
+          },
+        });
+        expect(expanded.lang?.bindings?.kind?.declarative?.let).toBeDefined();
+      });
     });
   });
 
-  describe('Error Handling and Validation', () => {
-    test('should handle invalid preset gracefully', () => {
-      const config = createConfig({
-        presets: 'invalid-preset' as any
+  describe('error handling and validation', () => {
+    describe('invalid preset', () => {
+      it('config is defined', () => {
+        const config = createConfig({
+          presets: 'invalid-preset' as any,
+        });
+        expect(config).toBeDefined();
       });
 
-      // Should not throw, should use defaults
-      expect(config).toBeDefined();
-      expect(config.meta).toBeDefined();
-      expect(config.lang).toBeDefined();
+      it('meta is defined', () => {
+        const config = createConfig({
+          presets: 'invalid-preset' as any,
+        });
+        expect(config.meta).toBeDefined();
+      });
+
+      it('lang is defined', () => {
+        const config = createConfig({
+          presets: 'invalid-preset' as any,
+        });
+        expect(config.lang).toBeDefined();
+      });
     });
 
-    test('should handle wrong type for presets', () => {
-      const config = createConfig({
-        presets: 123 as any
+    describe('wrong type for presets', () => {
+      it('config is defined', () => {
+        const config = createConfig({
+          presets: 123 as any,
+        });
+        expect(config).toBeDefined();
       });
 
-      // Should use default preset (which is undefined — no preset by default)
-      expect(config).toBeDefined();
-      expect(config.presets).toBeUndefined();
+      it('presets is undefined', () => {
+        const config = createConfig({
+          presets: 123 as any,
+        });
+        expect(config.presets).toBeUndefined();
+      });
     });
 
-    test('should remove unknown fields', () => {
-      const config = createConfig({
-        unknownField: 'should be removed',
-        lang: {
-          unknownSection: 'also removed',
-          bindings: {
-            kind: {
-              declarative: {
-                var: true
-              }
-            }
-          }
-        }
-      } as any);
+    describe('unknown fields removed', () => {
+      it('unknownField is undefined', () => {
+        const config = createConfig({
+          unknownField: 'should be removed',
+          lang: {
+            bindings: {
+              kind: {
+                declarative: {
+                  var: true,
+                },
+              },
+            },
+          },
+        } as any);
+        expect((config as any).unknownField).toBeUndefined();
+      });
 
-      expect((config as any).unknownField).toBeUndefined();
-      expect((config.lang as any)?.unknownSection).toBeUndefined();
-      expect(config.lang?.bindings?.kind?.declarative?.var).toBe(true);
+      it('lang.unknownSection is undefined', () => {
+        const config = createConfig({
+          lang: {
+            unknownSection: 'also removed',
+            bindings: {
+              kind: {
+                declarative: {
+                  var: true,
+                },
+              },
+            },
+          },
+        } as any);
+        expect((config.lang as any)?.unknownSection).toBeUndefined();
+      });
+
+      it('valid nested value preserved', () => {
+        const config = createConfig({
+          lang: {
+            unknownSection: 'also removed',
+            bindings: {
+              kind: {
+                declarative: {
+                  var: true,
+                },
+              },
+            },
+          },
+        } as any);
+        expect(config.lang?.bindings?.kind?.declarative?.var).toBe(true);
+      });
     });
 
-    test('should handle null and undefined gracefully', () => {
-      const config = createConfig({
-        meta: {
-          index: null as any,
-          location: undefined as any
-        }
+    describe('null and undefined handling', () => {
+      it('null index → default true', () => {
+        const config = createConfig({
+          meta: {
+            index: null as any,
+            location: undefined as any,
+          },
+        });
+        expect(config.meta?.index).toBe(true);
       });
 
-      // Should use defaults
-      expect(config.meta?.index).toBe(true);
-      expect(config.meta?.location).toBe('line');
+      it('undefined location → default "line"', () => {
+        const config = createConfig({
+          meta: {
+            index: null as any,
+            location: undefined as any,
+          },
+        });
+        expect(config.meta?.location).toBe('line');
+      });
     });
 
-    test('should validate location enum', () => {
-      const validConfig = createConfig({
-        meta: { location: 'full' }
+    describe('location enum validation', () => {
+      it('valid "full" preserved', () => {
+        const config = createConfig({
+          meta: { location: 'full' },
+        });
+        expect(config.meta?.location).toBe('full');
       });
-      expect(validConfig.meta?.location).toBe('full');
 
-      const falseConfig = createConfig({
-        meta: { location: false as any }
+      it('valid false preserved', () => {
+        const config = createConfig({
+          meta: { location: false as any },
+        });
+        expect(config.meta?.location).toBe(false);
       });
-      expect(falseConfig.meta?.location).toBe(false);
 
-      const invalidConfig = createConfig({
-        meta: { location: 'invalid' as any }
+      it('invalid "invalid" → default "line"', () => {
+        const config = createConfig({
+          meta: { location: 'invalid' as any },
+        });
+        expect(config.meta?.location).toBe('line');
       });
-      expect(invalidConfig.meta?.location).toBe('line'); // Default
     });
   });
 
-  describe('Real-World Usage Patterns', () => {
-    test('debugging configuration', () => {
+  describe('real-world usage patterns', () => {
+    describe('debugging configuration', () => {
       const debugConfig: Partial<Config> = {
         presets: 'exhaustive',
         meta: {
           debug: {
             configPath: true,
             AranNodeId: true,
-            adviceName: true
+            adviceName: true,
           },
           location: 'full',
-          ast: true
+          ast: true,
         },
         lang: {
           bindings: {
@@ -392,26 +657,36 @@ describe('Configuration System (TypeScript)', () => {
               declare: true,
               initialize: true,
               assign: true,
-              read: true
-            }
+              read: true,
+            },
           },
           errorHandling: {
             throw: true,
             catch: true,
-            callstack: true
-          }
-        }
+            callstack: true,
+          },
+        },
       };
-
       const config = createConfig(debugConfig);
 
-      expect(config.meta?.debug?.configPath).toBe(true);
-      expect(config.meta?.location).toBe('full');
-      expect(config.lang?.bindings?.events?.read).toBe(true);
-      expect(config.lang?.errorHandling?.callstack).toBe(true);
+      it('meta.debug.configPath = true', () => {
+        expect(config.meta?.debug?.configPath).toBe(true);
+      });
+
+      it('meta.location = "full"', () => {
+        expect(config.meta?.location).toBe('full');
+      });
+
+      it('lang.bindings.events.read = true', () => {
+        expect(config.lang?.bindings?.events?.read).toBe(true);
+      });
+
+      it('lang.errorHandling.callstack = true', () => {
+        expect(config.lang?.errorHandling?.callstack).toBe(true);
+      });
     });
 
-    test('production configuration', () => {
+    describe('production configuration', () => {
       const prodConfig: Partial<Config> = {
         presets: 'overview',
         meta: {
@@ -420,32 +695,39 @@ describe('Configuration System (TypeScript)', () => {
           debug: {
             configPath: false,
             AranNodeId: false,
-            adviceName: false
-          }
+            adviceName: false,
+          },
         },
         lang: {
           bindings: {
             events: {
-              read: false
-            }
+              read: false,
+            },
           },
           errorHandling: {
-            callstack: false
-          }
-        }
+            callstack: false,
+          },
+        },
       };
-
       const config = createConfig(prodConfig);
 
-      expect(config.meta?.index).toBe(false);
-      expect(config.meta?.ast).toBe(false);
-      expect(config.lang?.bindings?.events?.read).toBe(false);
+      it('meta.index = false', () => {
+        expect(config.meta?.index).toBe(false);
+      });
+
+      it('meta.ast = false', () => {
+        expect(config.meta?.ast).toBe(false);
+      });
+
+      it('lang.bindings.events.read = false', () => {
+        expect(config.lang?.bindings?.events?.read).toBe(false);
+      });
     });
 
-    test('async execution study scenario', () => {
+    describe('async execution study scenario', () => {
       const asyncConfig: Partial<Config> = {
         meta: {
-          timestamps: true
+          timestamps: true,
         },
         lang: {
           functions: {
@@ -453,60 +735,76 @@ describe('Configuration System (TypeScript)', () => {
               call: { arguments: true },
               coroutines: {
                 await: true,
-                yield: true
-              }
-            }
+                yield: true,
+              },
+            },
           },
           bindings: {
             filter: {
-              include: ['promise', 'result', 'error']
-            }
-          }
-        }
+              include: ['promise', 'result', 'error'],
+            },
+          },
+        },
       };
-
       const config = createConfig(asyncConfig);
 
-      expect(config.meta?.timestamps).toBe(true);
-      expect(config.lang?.functions?.events?.coroutines?.await).toBe(true);
-      expect(config.lang?.functions?.events?.call?.arguments).toBe(true);
-      expect(config.lang?.bindings?.filter?.include).toEqual(['promise', 'result', 'error']);
+      it('meta.timestamps = true', () => {
+        expect(config.meta?.timestamps).toBe(true);
+      });
+
+      it('lang.functions.events.coroutines.await = true', () => {
+        expect(config.lang?.functions?.events?.coroutines?.await).toBe(true);
+      });
+
+      it('lang.functions.events.call.arguments = true', () => {
+        expect(config.lang?.functions?.events?.call?.arguments).toBe(true);
+      });
+
+      it('lang.bindings.filter.include = ["promise", "result", "error"]', () => {
+        expect(config.lang?.bindings?.filter?.include).toEqual(['promise', 'result', 'error']);
+      });
     });
   });
 
-  describe('Config Pipeline Integration', () => {
-    test('preset + override + expansion + sanitization', () => {
+  describe('config pipeline integration', () => {
+    describe('preset + override + expansion + sanitization', () => {
       const userConfig: Partial<Config> = {
         presets: 'detailed',
         lang: {
-          bindings: true as any, // Shorthand
+          bindings: true as any,
           operators: {
-            pure: false,  // Override detailed's true
-            mutating: true
-          }
+            pure: false,
+            mutating: true,
+          },
         },
         meta: {
-          location: 'full'  // Override detailed's 'line'
-        }
+          location: 'full',
+        },
       };
-
       const config = createConfig(userConfig);
 
-      // Preset applied
-      expect(config.presets).toBe('detailed');
+      it('presets = "detailed"', () => {
+        expect(config.presets).toBe('detailed');
+      });
 
-      // Shorthand expanded
-      expect(config.lang?.bindings?.kind).toBeDefined();
+      it('shorthand expanded → lang.bindings.kind is defined', () => {
+        expect(config.lang?.bindings?.kind).toBeDefined();
+      });
 
-      // Overrides applied
-      expect(config.lang?.operators?.pure).toBe(false);
-      expect(config.meta?.location).toBe('full');
+      it('override applied → lang.operators.pure = false', () => {
+        expect(config.lang?.operators?.pure).toBe(false);
+      });
 
-      // Detailed preset values preserved where not overridden
-      expect(config.lang?.scopes?.kind?.block).toBe(true);
+      it('override applied → meta.location = "full"', () => {
+        expect(config.meta?.location).toBe('full');
+      });
+
+      it('detailed preset preserved → lang.scopes.kind.block = true', () => {
+        expect(config.lang?.scopes?.kind?.block).toBe(true);
+      });
     });
 
-    test('complete custom configuration', () => {
+    describe('complete custom configuration', () => {
       const customConfig: Partial<Config> = {
         meta: {
           index: false,
@@ -516,8 +814,8 @@ describe('Configuration System (TypeScript)', () => {
             type: true,
             instance: false,
             value: true,
-            lookup: false
-          }
+            lookup: false,
+          },
         },
         lang: {
           semantics: false,
@@ -529,11 +827,11 @@ describe('Configuration System (TypeScript)', () => {
                 const: true,
                 function: false,
                 class: false,
-                import: false
+                import: false,
               },
               explicit: {
                 parameters: true,
-                catch: false
+                catch: false,
               },
               implicit: {
                 global: false,
@@ -542,8 +840,8 @@ describe('Configuration System (TypeScript)', () => {
                 callee: false,
                 newTarget: false,
                 super: false,
-                importMeta: false
-              }
+                importMeta: false,
+              },
             },
             events: {
               declare: false,
@@ -551,74 +849,102 @@ describe('Configuration System (TypeScript)', () => {
               initialize: true,
               implicit: false,
               assign: true,
-              read: false
-            }
-          }
-        }
+              read: false,
+            },
+          },
+        },
       };
-
       const config = createConfig(customConfig);
 
-      // All custom values should be preserved
-      expect(config.meta?.index).toBe(false);
-      expect(config.meta?.location).toBe(false);
-      expect(config.meta?.data?.instance).toBe(false);
-      expect(config.lang?.semantics).toBe(false);
-      expect(config.lang?.bindings?.kind?.declarative?.var).toBe(false);
-      expect(config.lang?.bindings?.kind?.declarative?.let).toBe(true);
-      expect(config.lang?.bindings?.kind?.explicit?.parameters).toBe(true);
-      expect(config.lang?.bindings?.events?.read).toBe(false);
+      it('meta.index = false', () => {
+        expect(config.meta?.index).toBe(false);
+      });
+
+      it('meta.location = false', () => {
+        expect(config.meta?.location).toBe(false);
+      });
+
+      it('meta.data.instance = false', () => {
+        expect(config.meta?.data?.instance).toBe(false);
+      });
+
+      it('lang.semantics = false', () => {
+        expect(config.lang?.semantics).toBe(false);
+      });
+
+      it('lang.bindings.kind.declarative.var = false', () => {
+        expect(config.lang?.bindings?.kind?.declarative?.var).toBe(false);
+      });
+
+      it('lang.bindings.kind.declarative.let = true', () => {
+        expect(config.lang?.bindings?.kind?.declarative?.let).toBe(true);
+      });
+
+      it('lang.bindings.kind.explicit.parameters = true', () => {
+        expect(config.lang?.bindings?.kind?.explicit?.parameters).toBe(true);
+      });
+
+      it('lang.bindings.events.read = false', () => {
+        expect(config.lang?.bindings?.events?.read).toBe(false);
+      });
     });
   });
 
-  describe('TypeScript Type Safety', () => {
-    test('should enforce correct types at compile time', () => {
-      // This is a compile-time test - TypeScript will catch these errors
-      const config: Config = {
-        presets: 'overview',
-        meta: {
-          index: true,
-          location: 'line',  // Must be 'line' | 'full' | false
-          ast: false
-        },
-        lang: {
-          bindings: {
-            kind: {
-              declarative: {
-                var: true,
-                let: true,
-                const: false,
-                function: true,
-                class: false,
-                import: false
-              }
-            }
-          }
-        }
-      };
-
-      expect(config).toBeDefined();
+  describe('TypeScript type safety', () => {
+    describe('compile-time type enforcement', () => {
+      it('Config type is valid', () => {
+        const config: Config = {
+          presets: 'overview',
+          meta: {
+            index: true,
+            location: 'line',
+            ast: false,
+          },
+          lang: {
+            bindings: {
+              kind: {
+                declarative: {
+                  var: true,
+                  let: true,
+                  const: false,
+                  function: true,
+                  class: false,
+                  import: false,
+                },
+              },
+            },
+          },
+        };
+        expect(config).toBeDefined();
+      });
     });
 
-    test('should allow partial configs', () => {
-      const partial: Partial<Config> = {
-        meta: {
-          index: false
-        }
-      };
-
-      const config = createConfig(partial);
-      expect(config.meta?.index).toBe(false);
+    describe('partial configs', () => {
+      it('accepts partial config', () => {
+        const partial: Partial<Config> = {
+          meta: {
+            index: false,
+          },
+        };
+        const config = createConfig(partial);
+        expect(config.meta?.index).toBe(false);
+      });
     });
 
-    test('ExpandedConfig should extend Config', () => {
-      const expanded: ExpandedConfig = createConfig({
-        lang: true as any
+    describe('ExpandedConfig extends Config', () => {
+      it('meta is defined', () => {
+        const expanded: ExpandedConfig = createConfig({
+          lang: true as any,
+        });
+        expect(expanded.meta).toBeDefined();
       });
 
-      // ExpandedConfig should have all Config properties
-      expect(expanded.meta).toBeDefined();
-      expect(expanded.lang).toBeDefined();
+      it('lang is defined', () => {
+        const expanded: ExpandedConfig = createConfig({
+          lang: true as any,
+        });
+        expect(expanded.lang).toBeDefined();
+      });
     });
   });
 });

@@ -1,8 +1,13 @@
-export default function block({
-  event = null,
-  bindings = null,
-  structure = null, // for, if, while, ... null means free-floating block
-  label = null
+function block({
+  event,
+  bindings,
+  structure, // for, if, while, ... null means free-floating block
+  label,
+}: {
+  readonly event?: string;
+  readonly bindings?: any;
+  readonly structure?: string;
+  readonly label?: string;
 } = {}) {
   return {
     category: 'scope',
@@ -10,6 +15,8 @@ export default function block({
     event,
     bindings,
     structure,
-    label
+    label,
   };
 }
+
+export default block;

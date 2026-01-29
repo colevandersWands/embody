@@ -41,15 +41,8 @@ Each function is usable standalone or composed with others. `fillConfig` doesn't
 ```typescript
 import { tracing } from '@study-lenses/embody';
 
-const {
-  fillConfig,
-  instrument,
-  record,
-  instrumentRecord,
-  filterSteps,
-  serialize,
-  deserialize,
-} = tracing;
+const { fillConfig, instrument, record, instrumentRecord, filterSteps, serialize, deserialize } =
+  tracing;
 
 // Custom pipeline: normalize config, instrument, record
 const { config } = fillConfig({ config: { presets: 'overview' } });
@@ -65,7 +58,7 @@ const { steps: filtered } = filterSteps({ steps, config });
 
 // Serialization round-trip
 const json = serialize({ steps });
-const restored = deserialize({ serializedSteps: json });
+const { steps: restored } = deserialize({ steps: json });
 ```
 
 ## Pipeline Overview
@@ -80,27 +73,27 @@ fillConfig ─→ instrument ─→ record ─→ [filterSteps]
 
 ## API Surface Summary
 
-| Function | Stage | Input | Output | Purpose |
-| --- | --- | --- | --- | --- |
-| `fillConfig` | 1 | `{ config? }` | `{ config }` | UserConfig to ExpandedConfig |
-| `instrument` | 2 | `{ code?, config? }` | `{ code, config, instrumented }` | Code to instrumented code |
-| `record` | 3 | `{ instrumented?, config? }` | `{ instrumented, config, steps }` | Execute and collect trace |
-| `instrumentRecord` | 2+3 | `{ code?, config? }` | `{ code, config, steps }` | instrument + record combined |
-| `filterSteps` | post | `{ steps?, config? }` | `{ steps, config }` | Filter existing trace |
-| `serialize` | util | `{ steps }` | `string` | Step[] to JSON string |
-| `deserialize` | util | `{ serializedSteps }` | `Step[]` | JSON string to Step[] |
+| Function           | Stage | Input                        | Output                            | Purpose                             |
+| ------------------ | ----- | ---------------------------- | --------------------------------- | ----------------------------------- |
+| `fillConfig`       | 1     | `{ config? }`                | `{ config }`                      | UserConfig to ExpandedConfig        |
+| `instrument`       | 2     | `{ code?, config? }`         | `{ code, config, instrumented }`  | Code to instrumented code           |
+| `record`           | 3     | `{ instrumented?, config? }` | `{ instrumented, config, steps }` | Execute and collect trace           |
+| `instrumentRecord` | 2+3   | `{ code?, config? }`         | `{ code, config, steps }`         | instrument + record combined        |
+| `filterSteps`      | post  | `{ steps?, config? }`        | `{ steps, config }`               | Filter existing trace               |
+| `serialize`        | util  | `{ steps }` or `{ config }`  | `string`                          | Step[] or UserConfig to JSON string |
+| `deserialize`      | util  | `{ steps?, config? }`        | `{ steps?, config? }`             | JSON string(s) to parsed values     |
 
 ## Implementation Status
 
-| Function | Status | Notes |
-| --- | --- | --- |
-| `fillConfig` | Real | Full config pipeline (presets, expansion, sanitization) |
-| `instrument` | Stub | Placeholder transforms code; Aran integration pending |
-| `record` | Stub | Placeholder produces empty objects; execution engine pending |
-| `instrumentRecord` | Real | Orchestrates instrument + record |
-| `filterSteps` | Stub | Pass-through; filtering logic pending |
-| `serialize` | Real | JSON.stringify wrapper with validation |
-| `deserialize` | Real | JSON.parse with error handling |
+| Function           | Status | Notes                                                        |
+| ------------------ | ------ | ------------------------------------------------------------ |
+| `fillConfig`       | Real   | Full config pipeline (presets, expansion, sanitization)      |
+| `instrument`       | Stub   | Placeholder transforms code; Aran integration pending        |
+| `record`           | Stub   | Placeholder produces empty objects; execution engine pending |
+| `instrumentRecord` | Real   | Orchestrates instrument + record                             |
+| `filterSteps`      | Stub   | Pass-through; filtering logic pending                        |
+| `serialize`        | Real   | JSON.stringify wrapper with validation                       |
+| `deserialize`      | Real   | JSON.parse with error handling                               |
 
 ## File Structure
 
@@ -126,6 +119,7 @@ src/api/tracing/
 ## Links
 
 - [Full Technical Reference](./DOCS.md) -- every function signature, parameter, error, and example
+- [API Module Overview](../README.md) -- parent module with decision matrix
 - [Root API Documentation](../../DOCS.md) -- complete `@study-lenses/embody` API reference
 - [Configuration System](../../configuring/README.md) -- detailed configuration options
 - [embodify (chainable wrapper)](../embodify/README.md) -- fluent API built on these functions

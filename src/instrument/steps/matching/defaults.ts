@@ -1,7 +1,9 @@
-export default function defaults() {
+function defaults() {
   return {
     category: 'matching',
     kind: 'assign',
-    syntax: 'defaults'
+    syntax: 'defaults',
   };
 }
+
+export default defaults;

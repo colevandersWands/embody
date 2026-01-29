@@ -24,18 +24,15 @@ import type { Step } from './types.js';
  */
 function validateSteps(parsed: unknown): readonly Step[] {
   if (!Array.isArray(parsed)) {
-    throw new Error(
-      'validateSteps: expected steps to be an array, got ' + typeof parsed,
-    );
+    throw new TypeError(`validateSteps: expected steps to be an array, got ${typeof parsed}`);
   }
 
-  for (let i = 0; i < parsed.length; i++) {
-    if (typeof parsed[i] !== 'object' || parsed[i] === null) {
+  for (const [index, element] of parsed.entries()) {
+    if (typeof element !== 'object' || element === null) {
       throw new Error(
-        'validateSteps: expected every step to be an object, got ' +
-          (parsed[i] === null ? 'null' : typeof parsed[i]) +
-          ' at index ' +
-          i,
+        `validateSteps: expected every step to be an object, got ${
+          element === null ? 'null' : typeof element
+        } at index ${index}`,
       );
     }
   }

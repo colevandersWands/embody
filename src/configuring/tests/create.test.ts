@@ -1,351 +1,607 @@
-/**
- * @file TDD tests for create.ts with new Config structure
- */
-
 import createConfig from '../create.js';
 import type { Config, ExpandedConfig } from '../types.js';
 
-describe('createConfig with new Config structure', () => {
+describe('createConfig', () => {
   describe('default configuration', () => {
-    test('should return default config when no user config provided', () => {
-      const config = createConfig();
+    describe('no argument provided', () => {
+      it('config is defined', () => {
+        const config = createConfig();
+        expect(config).toBeDefined();
+      });
 
-      // Should have default structure
-      expect(config).toBeDefined();
-      expect(config.presets).toBeUndefined(); // No default preset applied
-      expect(config.meta).toBeDefined();
-      expect(config.lang).toBeDefined();
+      it('presets is undefined', () => {
+        const config = createConfig();
+        expect(config.presets).toBeUndefined();
+      });
 
-      // Check some default values
-      expect(config.meta?.index).toBe(true);
-      expect(config.meta?.location).toBe('line');
-      expect(config.lang?.semantics).toBe(true);
+      it('meta is defined', () => {
+        const config = createConfig();
+        expect(config.meta).toBeDefined();
+      });
+
+      it('lang is defined', () => {
+        const config = createConfig();
+        expect(config.lang).toBeDefined();
+      });
+
+      it('meta.index = true', () => {
+        const config = createConfig();
+        expect(config.meta?.index).toBe(true);
+      });
+
+      it('meta.location = "line"', () => {
+        const config = createConfig();
+        expect(config.meta?.location).toBe('line');
+      });
+
+      it('lang.semantics = true', () => {
+        const config = createConfig();
+        expect(config.lang?.semantics).toBe(true);
+      });
     });
 
-    test('should return default config for empty object', () => {
-      const config = createConfig({});
+    describe('empty object provided', () => {
+      it('presets is undefined', () => {
+        const config = createConfig({});
+        expect(config.presets).toBeUndefined();
+      });
 
-      expect(config.presets).toBeUndefined(); // No default preset applied
-      expect(config.meta).toBeDefined();
-      expect(config.lang).toBeDefined();
+      it('meta is defined', () => {
+        const config = createConfig({});
+        expect(config.meta).toBeDefined();
+      });
+
+      it('lang is defined', () => {
+        const config = createConfig({});
+        expect(config.lang).toBeDefined();
+      });
     });
   });
 
   describe('preset application', () => {
-    test('should apply overview preset', () => {
-      const config = createConfig({
-        presets: 'overview'
+    describe('overview preset', () => {
+      it('bindings.kind.declarative.var = true', () => {
+        const config = createConfig({ presets: 'overview' });
+        expect(config.lang?.bindings?.kind?.declarative?.var).toBe(true);
       });
 
-      // Overview preset characteristics
-      expect(config.lang?.bindings?.kind?.declarative?.var).toBe(true);
-      expect(config.lang?.bindings?.events?.read).toBe(false); // Overview disables reads
-      expect(config.meta?.location).toBe('line');
+      it('bindings.events.read = false', () => {
+        const config = createConfig({ presets: 'overview' });
+        expect(config.lang?.bindings?.events?.read).toBe(false);
+      });
+
+      it('meta.location = "line"', () => {
+        const config = createConfig({ presets: 'overview' });
+        expect(config.meta?.location).toBe('line');
+      });
     });
 
-    test('should apply detailed preset', () => {
-      const config = createConfig({
-        presets: 'detailed'
+    describe('detailed preset', () => {
+      it('bindings.kind.explicit.parameters = true', () => {
+        const config = createConfig({ presets: 'detailed' });
+        expect(config.lang?.bindings?.kind?.explicit?.parameters).toBe(true);
       });
 
-      // Detailed preset characteristics
-      expect(config.lang?.bindings?.kind?.explicit?.parameters).toBe(true);
-      expect(config.lang?.bindings?.events?.declare).toBe(true);
-      expect(config.lang?.controlFlow?.kind?.loops?.while).toBe(true);
-      expect(config.lang?.scopes?.kind?.block).toBe(true);
+      it('bindings.events.declare = true', () => {
+        const config = createConfig({ presets: 'detailed' });
+        expect(config.lang?.bindings?.events?.declare).toBe(true);
+      });
+
+      it('controlFlow.kind.loops.while = true', () => {
+        const config = createConfig({ presets: 'detailed' });
+        expect(config.lang?.controlFlow?.kind?.loops?.while).toBe(true);
+      });
+
+      it('scopes.kind.block = true', () => {
+        const config = createConfig({ presets: 'detailed' });
+        expect(config.lang?.scopes?.kind?.block).toBe(true);
+      });
     });
 
-    test('should apply exhaustive preset', () => {
-      const config = createConfig({
-        presets: 'exhaustive'
+    describe('exhaustive preset', () => {
+      it('bindings.kind.implicit.global = true', () => {
+        const config = createConfig({ presets: 'exhaustive' });
+        expect(config.lang?.bindings?.kind?.implicit?.global).toBe(true);
       });
 
-      // Exhaustive preset characteristics
-      expect(config.lang?.bindings?.kind?.implicit?.global).toBe(true);
-      expect(config.lang?.operators?.coercion).toBe(true);
-      expect(config.lang?.dynamic?.eval).toBe(true);
-      expect(config.meta?.debug?.configPath).toBe(true);
-      expect(config.meta?.location).toBe('full');
+      it('operators.coercion = true', () => {
+        const config = createConfig({ presets: 'exhaustive' });
+        expect(config.lang?.operators?.coercion).toBe(true);
+      });
+
+      it('dynamic.eval = true', () => {
+        const config = createConfig({ presets: 'exhaustive' });
+        expect(config.lang?.dynamic?.eval).toBe(true);
+      });
+
+      it('meta.debug.configPath = true', () => {
+        const config = createConfig({ presets: 'exhaustive' });
+        expect(config.meta?.debug?.configPath).toBe(true);
+      });
+
+      it('meta.location = "full"', () => {
+        const config = createConfig({ presets: 'exhaustive' });
+        expect(config.meta?.location).toBe('full');
+      });
     });
   });
 
   describe('boolean shorthand expansion', () => {
-    test('should expand lang: true to full structure', () => {
-      const config = createConfig({
-        lang: true as any
+    describe('lang: true', () => {
+      it('lang is defined', () => {
+        const config = createConfig({ lang: true as any });
+        expect(config.lang).toBeDefined();
       });
 
-      expect(config.lang).toBeDefined();
-      expect(typeof config.lang).toBe('object');
-      expect(config.lang?.bindings).toBeDefined();
-      expect(config.lang?.functions).toBeDefined();
-      expect(config.lang?.operators).toBeDefined();
+      it('typeof lang = "object"', () => {
+        const config = createConfig({ lang: true as any });
+        expect(typeof config.lang).toBe('object');
+      });
+
+      it('lang.bindings is defined', () => {
+        const config = createConfig({ lang: true as any });
+        expect(config.lang?.bindings).toBeDefined();
+      });
+
+      it('lang.functions is defined', () => {
+        const config = createConfig({ lang: true as any });
+        expect(config.lang?.functions).toBeDefined();
+      });
+
+      it('lang.operators is defined', () => {
+        const config = createConfig({ lang: true as any });
+        expect(config.lang?.operators).toBeDefined();
+      });
     });
 
-    test('should expand lang: false to disabled structure', () => {
-      const config = createConfig({
-        lang: false as any
+    describe('lang: false', () => {
+      it('lang is defined', () => {
+        const config = createConfig({ lang: false as any });
+        expect(config.lang).toBeDefined();
       });
 
-      expect(config.lang).toBeDefined();
-      expect(config.lang?.semantics).toBe(false);
-      expect(config.lang?.bindings?.kind?.declarative?.var).toBe(false);
-      expect(config.lang?.bindings?.events?.declare).toBe(false);
+      it('lang.semantics = false', () => {
+        const config = createConfig({ lang: false as any });
+        expect(config.lang?.semantics).toBe(false);
+      });
+
+      it('bindings.kind.declarative.var = false', () => {
+        const config = createConfig({ lang: false as any });
+        expect(config.lang?.bindings?.kind?.declarative?.var).toBe(false);
+      });
+
+      it('bindings.events.declare = false', () => {
+        const config = createConfig({ lang: false as any });
+        expect(config.lang?.bindings?.events?.declare).toBe(false);
+      });
     });
 
-    test('should expand nested boolean shorthand', () => {
-      const config = createConfig({
-        lang: {
-          bindings: true as any,
-          operators: false as any
-        }
+    describe('nested boolean shorthand', () => {
+      it('bindings: true → bindings.kind is defined', () => {
+        const config = createConfig({
+          lang: { bindings: true as any, operators: false as any },
+        });
+        expect(config.lang?.bindings?.kind).toBeDefined();
       });
 
-      // bindings should be expanded from true
-      expect(config.lang?.bindings?.kind).toBeDefined();
-      expect(config.lang?.bindings?.events).toBeDefined();
+      it('bindings: true → bindings.events is defined', () => {
+        const config = createConfig({
+          lang: { bindings: true as any, operators: false as any },
+        });
+        expect(config.lang?.bindings?.events).toBeDefined();
+      });
 
-      // operators should be disabled
-      expect(config.lang?.operators?.pure).toBe(false);
-      expect(config.lang?.operators?.mutating).toBe(false);
+      it('operators: false → operators.pure = false', () => {
+        const config = createConfig({
+          lang: { bindings: true as any, operators: false as any },
+        });
+        expect(config.lang?.operators?.pure).toBe(false);
+      });
+
+      it('operators: false → operators.mutating = false', () => {
+        const config = createConfig({
+          lang: { bindings: true as any, operators: false as any },
+        });
+        expect(config.lang?.operators?.mutating).toBe(false);
+      });
     });
 
-    test('should expand meta: true', () => {
-      const config = createConfig({
-        meta: true as any
+    describe('meta: true', () => {
+      it('meta is defined', () => {
+        const config = createConfig({ meta: true as any });
+        expect(config.meta).toBeDefined();
       });
 
-      expect(config.meta).toBeDefined();
-      expect(typeof config.meta).toBe('object');
-      expect(config.meta?.index).toBeDefined();
-      expect(config.meta?.location).toBeDefined();
-      expect(config.meta?.data).toBeDefined();
+      it('typeof meta = "object"', () => {
+        const config = createConfig({ meta: true as any });
+        expect(typeof config.meta).toBe('object');
+      });
+
+      it('meta.index is defined', () => {
+        const config = createConfig({ meta: true as any });
+        expect(config.meta?.index).toBeDefined();
+      });
+
+      it('meta.location is defined', () => {
+        const config = createConfig({ meta: true as any });
+        expect(config.meta?.location).toBeDefined();
+      });
+
+      it('meta.data is defined', () => {
+        const config = createConfig({ meta: true as any });
+        expect(config.meta?.data).toBeDefined();
+      });
     });
   });
 
   describe('user overrides with presets', () => {
-    test('should allow user overrides with preset', () => {
-      const config = createConfig({
-        presets: 'overview',
-        lang: {
-          bindings: {
-            events: {
-              read: true  // Override overview's false
-            }
-          }
-        },
-        meta: {
-          location: 'full'  // Override overview's 'line'
-        }
+    describe('overview preset with overrides', () => {
+      it('user override wins: bindings.events.read = true', () => {
+        const config = createConfig({
+          presets: 'overview',
+          lang: { bindings: { events: { read: true } } },
+          meta: { location: 'full' },
+        });
+        expect(config.lang?.bindings?.events?.read).toBe(true);
       });
 
-      // User overrides should win
-      expect(config.lang?.bindings?.events?.read).toBe(true);
-      expect(config.meta?.location).toBe('full');
+      it('user override wins: meta.location = "full"', () => {
+        const config = createConfig({
+          presets: 'overview',
+          lang: { bindings: { events: { read: true } } },
+          meta: { location: 'full' },
+        });
+        expect(config.meta?.location).toBe('full');
+      });
 
-      // Preset values should still be there for other fields
-      expect(config.lang?.bindings?.kind?.declarative?.var).toBe(true);
+      it('preset values preserved for other fields', () => {
+        const config = createConfig({
+          presets: 'overview',
+          lang: { bindings: { events: { read: true } } },
+          meta: { location: 'full' },
+        });
+        expect(config.lang?.bindings?.kind?.declarative?.var).toBe(true);
+      });
     });
 
-    test('should handle deep user overrides', () => {
-      const config = createConfig({
-        presets: 'detailed',
-        lang: {
-          bindings: {
-            kind: {
-              implicit: {
-                this: true  // Override detailed's false
-              }
-            }
-          }
-        }
+    describe('detailed preset with deep overrides', () => {
+      it('deep override applied: implicit.this = true', () => {
+        const config = createConfig({
+          presets: 'detailed',
+          lang: { bindings: { kind: { implicit: { this: true } } } },
+        });
+        expect(config.lang?.bindings?.kind?.implicit?.this).toBe(true);
       });
 
-      expect(config.lang?.bindings?.kind?.implicit?.this).toBe(true);
-      // Other detailed preset values should remain
-      expect(config.lang?.bindings?.kind?.implicit?.global).toBe(true);
+      it('other preset values preserved: implicit.global = true', () => {
+        const config = createConfig({
+          presets: 'detailed',
+          lang: { bindings: { kind: { implicit: { this: true } } } },
+        });
+        expect(config.lang?.bindings?.kind?.implicit?.global).toBe(true);
+      });
     });
   });
 
   describe('sanitization and validation', () => {
-    test('should handle invalid preset name gracefully', () => {
-      const config = createConfig({
-        presets: 'invalid-preset' as any
+    describe('invalid preset name', () => {
+      it('config is defined', () => {
+        const config = createConfig({ presets: 'invalid-preset' as any });
+        expect(config).toBeDefined();
       });
 
-      // Should fall back to default configuration
-      expect(config).toBeDefined();
-      expect(config.meta).toBeDefined();
-      expect(config.lang).toBeDefined();
-    });
-
-    test('should handle wrong type for presets field', () => {
-      const config = createConfig({
-        presets: 123 as any  // Wrong type
+      it('meta is defined', () => {
+        const config = createConfig({ presets: 'invalid-preset' as any });
+        expect(config.meta).toBeDefined();
       });
 
-      // Should use default preset (which is undefined — no preset by default)
-      expect(config).toBeDefined();
-      expect(config.presets).toBeUndefined();
+      it('lang is defined', () => {
+        const config = createConfig({ presets: 'invalid-preset' as any });
+        expect(config.lang).toBeDefined();
+      });
     });
 
-    test('should remove unknown fields', () => {
-      const config = createConfig({
-        presets: 'overview',
-        unknownField: 'should be removed',
-        lang: {
-          bindings: {
-            kind: {
-              declarative: {
-                var: true
-              }
+    describe('wrong type for presets field', () => {
+      it('config is defined', () => {
+        const config = createConfig({ presets: 123 as any });
+        expect(config).toBeDefined();
+      });
+
+      it('presets is undefined', () => {
+        const config = createConfig({ presets: 123 as any });
+        expect(config.presets).toBeUndefined();
+      });
+    });
+
+    describe('unknown fields removed', () => {
+      it('top-level unknown field removed', () => {
+        const config = createConfig({
+          presets: 'overview',
+          unknownField: 'should be removed',
+          lang: {
+            bindings: {
+              kind: { declarative: { var: true } },
+              unknownNestedField: 'should also be removed',
             },
-            unknownNestedField: 'should also be removed'
-          }
-        }
-      } as any);
+          },
+        } as any);
+        expect((config as any).unknownField).toBeUndefined();
+      });
 
-      // Unknown fields should not appear in result
-      expect((config as any).unknownField).toBeUndefined();
-      expect((config.lang?.bindings as any)?.unknownNestedField).toBeUndefined();
+      it('nested unknown field removed', () => {
+        const config = createConfig({
+          presets: 'overview',
+          unknownField: 'should be removed',
+          lang: {
+            bindings: {
+              kind: { declarative: { var: true } },
+              unknownNestedField: 'should also be removed',
+            },
+          },
+        } as any);
+        expect((config.lang?.bindings as any)?.unknownNestedField).toBeUndefined();
+      });
 
-      // Valid fields should remain
-      expect(config.lang?.bindings?.kind?.declarative?.var).toBe(true);
+      it('valid fields preserved', () => {
+        const config = createConfig({
+          presets: 'overview',
+          unknownField: 'should be removed',
+          lang: {
+            bindings: {
+              kind: { declarative: { var: true } },
+              unknownNestedField: 'should also be removed',
+            },
+          },
+        } as any);
+        expect(config.lang?.bindings?.kind?.declarative?.var).toBe(true);
+      });
     });
 
-    test('should handle null and undefined values', () => {
-      const config = createConfig({
-        meta: {
-          index: null as any,  // Should use default
-          location: undefined as any  // Should use default
-        }
+    describe('null and undefined values', () => {
+      it('null → uses default: meta.index = true', () => {
+        const config = createConfig({
+          meta: { index: null as any, location: undefined as any },
+        });
+        expect(config.meta?.index).toBe(true);
       });
 
-      // Should use defaults for null/undefined
-      expect(config.meta?.index).toBe(true);  // Default value
-      expect(config.meta?.location).toBe('line');  // Default value
+      it('undefined → uses default: meta.location = "line"', () => {
+        const config = createConfig({
+          meta: { index: null as any, location: undefined as any },
+        });
+        expect(config.meta?.location).toBe('line');
+      });
     });
 
-    test('should validate location enum values', () => {
-      const validConfig = createConfig({
-        meta: {
-          location: 'full'  // Valid enum value
-        }
+    describe('location enum validation', () => {
+      it('valid enum value preserved: "full"', () => {
+        const config = createConfig({ meta: { location: 'full' } });
+        expect(config.meta?.location).toBe('full');
       });
-      expect(validConfig.meta?.location).toBe('full');
 
-      const invalidConfig = createConfig({
-        meta: {
-          location: 'invalid' as any  // Invalid enum value
-        }
+      it('invalid enum value → uses default: "line"', () => {
+        const config = createConfig({ meta: { location: 'invalid' as any } });
+        expect(config.meta?.location).toBe('line');
       });
-      // Should use default for invalid enum
-      expect(invalidConfig.meta?.location).toBe('line');
     });
   });
 
   describe('complete pipeline', () => {
-    test('should handle preset + override + shorthand + sanitization', () => {
-      const config = createConfig({
-        presets: 'overview',
-        lang: {
-          bindings: true as any,  // Boolean shorthand
-          operators: {
-            pure: true,
-            mutating: false
-          }
-        },
-        meta: {
-          ast: true,
-          location: 'full'
-        },
-        unknownField: 'remove me'  // Should be sanitized out
-      } as any);
-
-      // Preset should be applied
-      expect(config.presets).toBe('overview');
-
-      // Boolean shorthand should be expanded
-      expect(config.lang?.bindings?.kind).toBeDefined();
-      expect(config.lang?.bindings?.events).toBeDefined();
-
-      // User overrides should be applied
-      expect(config.lang?.operators?.pure).toBe(true);
-      expect(config.lang?.operators?.mutating).toBe(false);
-      expect(config.meta?.ast).toBe(true);
-      expect(config.meta?.location).toBe('full');
-
-      // Unknown field should be removed
-      expect((config as any).unknownField).toBeUndefined();
-    });
-
-    test('should preserve all valid fields from defaults', () => {
-      const config = createConfig({
-        lang: {
-          bindings: {
-            kind: {
-              declarative: {
-                var: false
-              }
-            }
-          }
-        }
+    describe('preset + override + shorthand + sanitization', () => {
+      it('presets = "overview"', () => {
+        const config = createConfig({
+          presets: 'overview',
+          lang: {
+            bindings: true as any,
+            operators: { pure: true, mutating: false },
+          },
+          meta: { ast: true, location: 'full' },
+          unknownField: 'remove me',
+        } as any);
+        expect(config.presets).toBe('overview');
       });
 
-      // User override should be applied
-      expect(config.lang?.bindings?.kind?.declarative?.var).toBe(false);
+      it('boolean shorthand expanded: bindings.kind defined', () => {
+        const config = createConfig({
+          presets: 'overview',
+          lang: {
+            bindings: true as any,
+            operators: { pure: true, mutating: false },
+          },
+          meta: { ast: true, location: 'full' },
+          unknownField: 'remove me',
+        } as any);
+        expect(config.lang?.bindings?.kind).toBeDefined();
+      });
 
-      // All other default fields should still exist
-      expect(config.lang?.bindings?.kind?.declarative?.let).toBeDefined();
-      expect(config.lang?.bindings?.kind?.declarative?.const).toBeDefined();
-      expect(config.lang?.functions).toBeDefined();
-      expect(config.lang?.operators).toBeDefined();
-      expect(config.meta).toBeDefined();
+      it('boolean shorthand expanded: bindings.events defined', () => {
+        const config = createConfig({
+          presets: 'overview',
+          lang: {
+            bindings: true as any,
+            operators: { pure: true, mutating: false },
+          },
+          meta: { ast: true, location: 'full' },
+          unknownField: 'remove me',
+        } as any);
+        expect(config.lang?.bindings?.events).toBeDefined();
+      });
+
+      it('user override: operators.pure = true', () => {
+        const config = createConfig({
+          presets: 'overview',
+          lang: {
+            bindings: true as any,
+            operators: { pure: true, mutating: false },
+          },
+          meta: { ast: true, location: 'full' },
+          unknownField: 'remove me',
+        } as any);
+        expect(config.lang?.operators?.pure).toBe(true);
+      });
+
+      it('user override: operators.mutating = false', () => {
+        const config = createConfig({
+          presets: 'overview',
+          lang: {
+            bindings: true as any,
+            operators: { pure: true, mutating: false },
+          },
+          meta: { ast: true, location: 'full' },
+          unknownField: 'remove me',
+        } as any);
+        expect(config.lang?.operators?.mutating).toBe(false);
+      });
+
+      it('user override: meta.ast = true', () => {
+        const config = createConfig({
+          presets: 'overview',
+          lang: {
+            bindings: true as any,
+            operators: { pure: true, mutating: false },
+          },
+          meta: { ast: true, location: 'full' },
+          unknownField: 'remove me',
+        } as any);
+        expect(config.meta?.ast).toBe(true);
+      });
+
+      it('user override: meta.location = "full"', () => {
+        const config = createConfig({
+          presets: 'overview',
+          lang: {
+            bindings: true as any,
+            operators: { pure: true, mutating: false },
+          },
+          meta: { ast: true, location: 'full' },
+          unknownField: 'remove me',
+        } as any);
+        expect(config.meta?.location).toBe('full');
+      });
+
+      it('unknown field removed', () => {
+        const config = createConfig({
+          presets: 'overview',
+          lang: {
+            bindings: true as any,
+            operators: { pure: true, mutating: false },
+          },
+          meta: { ast: true, location: 'full' },
+          unknownField: 'remove me',
+        } as any);
+        expect((config as any).unknownField).toBeUndefined();
+      });
+    });
+
+    describe('preserves valid fields from defaults', () => {
+      it('user override applied: declarative.var = false', () => {
+        const config = createConfig({
+          lang: { bindings: { kind: { declarative: { var: false } } } },
+        });
+        expect(config.lang?.bindings?.kind?.declarative?.var).toBe(false);
+      });
+
+      it('default preserved: declarative.let defined', () => {
+        const config = createConfig({
+          lang: { bindings: { kind: { declarative: { var: false } } } },
+        });
+        expect(config.lang?.bindings?.kind?.declarative?.let).toBeDefined();
+      });
+
+      it('default preserved: declarative.const defined', () => {
+        const config = createConfig({
+          lang: { bindings: { kind: { declarative: { var: false } } } },
+        });
+        expect(config.lang?.bindings?.kind?.declarative?.const).toBeDefined();
+      });
+
+      it('default preserved: lang.functions defined', () => {
+        const config = createConfig({
+          lang: { bindings: { kind: { declarative: { var: false } } } },
+        });
+        expect(config.lang?.functions).toBeDefined();
+      });
+
+      it('default preserved: lang.operators defined', () => {
+        const config = createConfig({
+          lang: { bindings: { kind: { declarative: { var: false } } } },
+        });
+        expect(config.lang?.operators).toBeDefined();
+      });
+
+      it('default preserved: meta defined', () => {
+        const config = createConfig({
+          lang: { bindings: { kind: { declarative: { var: false } } } },
+        });
+        expect(config.meta).toBeDefined();
+      });
     });
   });
 
   describe('edge cases', () => {
-    test('should handle deeply nested boolean shorthand', () => {
-      const config = createConfig({
-        lang: {
-          bindings: {
-            kind: {
-              declarative: true as any
-            }
-          }
-        }
+    describe('deeply nested boolean shorthand', () => {
+      it('declarative.var defined', () => {
+        const config = createConfig({
+          lang: { bindings: { kind: { declarative: true as any } } },
+        });
+        expect(config.lang?.bindings?.kind?.declarative?.var).toBeDefined();
       });
 
-      expect(config.lang?.bindings?.kind?.declarative?.var).toBeDefined();
-      expect(config.lang?.bindings?.kind?.declarative?.let).toBeDefined();
-      expect(config.lang?.bindings?.kind?.declarative?.const).toBeDefined();
+      it('declarative.let defined', () => {
+        const config = createConfig({
+          lang: { bindings: { kind: { declarative: true as any } } },
+        });
+        expect(config.lang?.bindings?.kind?.declarative?.let).toBeDefined();
+      });
+
+      it('declarative.const defined', () => {
+        const config = createConfig({
+          lang: { bindings: { kind: { declarative: true as any } } },
+        });
+        expect(config.lang?.bindings?.kind?.declarative?.const).toBeDefined();
+      });
     });
 
-    test('should handle arrays correctly', () => {
-      const config = createConfig({
-        lang: {
-          bindings: {
-            filter: {
-              include: ['myVar'],
-              exclude: ['tempVar']
-            }
-          }
-        }
+    describe('arrays', () => {
+      it('filter.include preserved', () => {
+        const config = createConfig({
+          lang: {
+            bindings: { filter: { include: ['myVar'], exclude: ['tempVar'] } },
+          },
+        });
+        expect(config.lang?.bindings?.filter?.include).toEqual(['myVar']);
       });
 
-      expect(config.lang?.bindings?.filter?.include).toEqual(['myVar']);
-      expect(config.lang?.bindings?.filter?.exclude).toEqual(['tempVar']);
+      it('filter.exclude preserved', () => {
+        const config = createConfig({
+          lang: {
+            bindings: { filter: { include: ['myVar'], exclude: ['tempVar'] } },
+          },
+        });
+        expect(config.lang?.bindings?.filter?.exclude).toEqual(['tempVar']);
+      });
     });
 
-    test('should handle complete replacement of sections', () => {
-      const config = createConfig({
-        meta: false as any  // Replace entire meta section with disabled
+    describe('complete section replacement with false', () => {
+      it('meta defined', () => {
+        const config = createConfig({ meta: false as any });
+        expect(config.meta).toBeDefined();
       });
 
-      expect(config.meta).toBeDefined();
-      expect(config.meta?.index).toBe(false);
-      expect(config.meta?.ast).toBe(false);
-      expect(config.meta?.location).toBe(false);
+      it('meta.index = false', () => {
+        const config = createConfig({ meta: false as any });
+        expect(config.meta?.index).toBe(false);
+      });
+
+      it('meta.ast = false', () => {
+        const config = createConfig({ meta: false as any });
+        expect(config.meta?.ast).toBe(false);
+      });
+
+      it('meta.location = false', () => {
+        const config = createConfig({ meta: false as any });
+        expect(config.meta?.location).toBe(false);
+      });
     });
   });
 });

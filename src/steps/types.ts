@@ -20,4 +20,5 @@ export type ResolveStepsInput = string | readonly Step[] | undefined;
 export type ResolveStepsOutput = readonly Step[] | undefined;
 
 // Re-export Step for consumers that import from this module
-export type { Step };
+
+export { type Step } from '../types/api.js';

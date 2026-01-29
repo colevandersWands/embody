@@ -1,9 +1,8 @@
-import resolveSteps from '../../steps/resolve-steps.js';
-import parseJSON from '../../utils/parse-json.js';
-import isExpandableObject from '../../configuring/utils/is-expandable-object.js';
-
-import type { DeserializeInput, DeserializeOutput } from '../../types/api.js';
 import type { UserConfig } from '../../configuring/types.js';
+import isExpandableObject from '../../configuring/utils/is-expandable-object.js';
+import resolveSteps from '../../steps/resolve-steps.js';
+import type { DeserializeInput, DeserializeOutput } from '../../types/api.js';
+import parseJSON from '../../utils/parse-json.js';
 
 /**
  * Deserializes steps and/or config from JSON strings, or validates
@@ -39,9 +38,7 @@ import type { UserConfig } from '../../configuring/types.js';
  * deserialize()                             // → { steps: undefined, config: undefined }
  * ```
  */
-function deserialize(
-  { steps, config }: DeserializeInput = {},
-): DeserializeOutput {
+function deserialize({ steps, config }: DeserializeInput = {}): DeserializeOutput {
   return {
     steps: resolveSteps(steps),
     config: resolveConfig(config),
@@ -50,33 +47,28 @@ function deserialize(
 
 // --- Config resolution (local — mixes pickle + config concerns) ---
 
-function resolveConfig(
-  config: string | UserConfig | undefined,
-): UserConfig | undefined {
+function resolveConfig(config: string | UserConfig | undefined): UserConfig | undefined {
   if (config === undefined) return undefined;
 
   if (typeof config === 'string') {
     const parsed = parseJSON(config, 'deserialize: invalid JSON for config');
     if (!isExpandableObject(parsed)) {
       throw new Error(
-        'deserialize: expected config to be a plain object, got ' +
-          describeType(parsed),
+        `deserialize: expected config to be a plain object, got ${describeType(parsed)}`,
       );
     }
     return parsed as UserConfig;
   }
 
   if (typeof config !== 'object') {
-    throw new Error(
-      'deserialize: expected config to be a string or object, got ' +
-        typeof config,
+    throw new TypeError(
+      `deserialize: expected config to be a string or object, got ${typeof config}`,
     );
   }
 
   if (!isExpandableObject(config)) {
     throw new Error(
-      'deserialize: expected config to be a plain object, got ' +
-        describeType(config),
+      `deserialize: expected config to be a plain object, got ${describeType(config)}`,
     );
   }
 

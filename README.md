@@ -66,8 +66,8 @@ Like how:
 
 The configuration options and structure reflect the structure of their corresponding trace data. Example:
 
-| Config | Trace Log |
-| --- | --- |
+| Config                                                                              | Trace Log                                                                    |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | `{ lang: { bindings: { events: { assign: true }, kind: { declarative: true } } } }` | `[ ... { category: "binding", kind: "declarative", event: "assign" }, ... ]` |
 
 ### Only Log Learner-Visible Behavior
@@ -116,8 +116,8 @@ import { embodify } from '@study-lenses/embody';
 
 const chain = embodify({ code: 'let x = 5; console.log(x);' });
 const traced = chain.trace();
-console.log(traced.steps);         // Array of execution events
-console.log(traced.pickledSteps);  // JSON string of steps
+console.log(traced.steps); // Array of execution events
+console.log(traced.pickledSteps); // JSON string of steps
 ```
 
 ## Key Features
@@ -156,12 +156,15 @@ const exhaustive = base.filterSteps({ config: { presets: 'exhaustive' } });
 ## Documentation
 
 - [**API Reference**](./DOCS.md) - Complete API documentation
+- [**API Module**](./src/api/README.md) - API entry points overview and decision matrix
 - [**embodify API**](./src/api/embodify/README.md) - Chainable pipeline wrapper
 - [**Developer Guide**](./DEV.md) - Architecture and conventions
 - [**Code Conventions**](./DEV.md#codebase-conventions) - Coding standards and style guide
 - [**Tracing Pipeline**](./src/api/tracing/README.md) - Individual pipeline functions
 - [**Configuration**](./src/configuring/README.md) - Detailed configuration options
 - [**Contributing**](./CONTRIBUTING.md) - How to contribute
+
+**VS Code users**: Open the project and install recommended extensions when prompted. Format-on-save, linting, and debugging are pre-configured.
 
 ## Educational Presets
 

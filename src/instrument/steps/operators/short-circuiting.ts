@@ -1,12 +1,12 @@
 import representValue from '../utils/represent-value.js';
 
-type ShortCircuitingOperatorParams = {
+type ShortCircuitingOperatorParameters = {
   readonly operator?: string;
   readonly left: any;
   readonly right?: any;
   readonly result: any;
   readonly rightEvaluated: boolean;
-}
+};
 
 type ShortCircuitingOperatorEntry = {
   readonly category: string;
@@ -16,7 +16,7 @@ type ShortCircuitingOperatorEntry = {
   readonly right?: ReturnType<typeof representValue>;
   readonly result: ReturnType<typeof representValue>;
   readonly rightEvaluated: boolean;
-}
+};
 
 /**
  * Factory for short-circuiting operator step entries
@@ -30,26 +30,29 @@ type ShortCircuitingOperatorEntry = {
  * @param rightEvaluated - Whether the right operand was evaluated
  * @returns Step entry object for a short-circuiting operator
  */
-export default function createShortCircuitingOperator({
-  operator = '',
-  left,
-  right,
-  result,
-  rightEvaluated
-}: ShortCircuitingOperatorParams = {} as ShortCircuitingOperatorParams): ShortCircuitingOperatorEntry {
-  const entry: ShortCircuitingOperatorEntry = {
+function createShortCircuitingOperator(
+  {
+    operator = '',
+    left,
+    right,
+    result,
+    rightEvaluated,
+  }: ShortCircuitingOperatorParameters = {} as ShortCircuitingOperatorParameters,
+  {
+    data,
+  }: {
+    readonly data: 'full' | 'types' | 'values' | 'raw' | false;
+  } = {} as { readonly data: 'full' | 'types' | 'values' | 'raw' | false },
+): ShortCircuitingOperatorEntry {
+  return {
     category: 'operator',
     kind: 'short-circuiting',
     operator,
-    left: representValue(left),
-    result: representValue(result),
-    rightEvaluated
+    left: representValue(left, data),
+    result: representValue(result, data),
+    rightEvaluated,
+    ...(rightEvaluated && { right: representValue(right, data) }),
   };
-
-  // Only include right operand if it was evaluated
-  if (rightEvaluated) {
-    entry.right = representValue(right);
-  }
-
-  return entry;
 }
+
+export default createShortCircuitingOperator;

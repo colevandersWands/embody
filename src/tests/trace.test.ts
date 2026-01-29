@@ -35,9 +35,7 @@ describe('trace', () => {
   });
 
   it('invalid JSON config → throws', () => {
-    expect(() => trace('abc', '{bad json' as any)).toThrow(
-      'deserialize',
-    );
+    expect(() => trace('abc', '{bad json' as any)).toThrow('deserialize');
   });
 
   it('no args → empty steps (code defaults to empty string)', () => {

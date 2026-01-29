@@ -29,9 +29,7 @@ describe('resolveMethodConfig', () => {
   });
 
   it('throws on invalid JSON config', () => {
-    expect(() => resolveMethodConfig('{bad json', chainConfig)).toThrow(
-      'deserialize',
-    );
+    expect(() => resolveMethodConfig('{bad json', chainConfig)).toThrow('deserialize');
   });
 
   it('applies preset override (full expansion)', () => {

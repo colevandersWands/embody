@@ -39,35 +39,35 @@ const detailed: Partial<Config> = {
           const: true,
           function: true,
           class: true,
-          import: true
+          import: true,
         },
         explicit: {
           parameters: true,
-          catch: true
+          catch: true,
         },
         implicit: {
-          global: true,      // Track implicit globals
+          global: true, // Track implicit globals
           arguments: true,
           callee: false,
-          this: false,       // Advanced concept
+          this: false, // Advanced concept
           newTarget: false,
           super: false,
-          importMeta: false
+          importMeta: false,
         },
-        with: false
+        with: false,
       },
       events: {
-        declare: true,      // Show hoisting
+        declare: true, // Show hoisting
         available: true,
         initialize: true,
         implicit: true,
         assign: true,
-        read: true         // Track all variable reads
+        read: true, // Track all variable reads
       },
       filter: {
         include: [],
-        exclude: []
-      }
+        exclude: [],
+      },
     },
 
     functions: {
@@ -76,64 +76,64 @@ const detailed: Partial<Config> = {
         function: true,
         method: true,
         generator: true,
-        builtIn: false
+        builtIn: false,
       },
       events: {
         definition: true,
         call: {
-          arguments: true    // Show function arguments
+          arguments: true, // Show function arguments
         },
         construct: true,
-        return: true,       // Track returns
+        return: true, // Track returns
         coroutines: {
           await: true,
-          yield: true,      // Track generator yields
-          yieldDelegate: false
-        }
+          yield: true, // Track generator yields
+          yieldDelegate: false,
+        },
       },
       filter: {
         include: [],
-        exclude: []
-      }
+        exclude: [],
+      },
     },
 
     controlFlow: {
       kind: {
         conditionals: true,
         loops: {
-          while: true,      // Enable all loop types
+          while: true, // Enable all loop types
           for: {
             initialize: true,
             test: true,
-            increment: true
+            increment: true,
           },
           forOf: true,
-          forIn: true
+          forIn: true,
         },
-        switch: true       // Enable switch statements
+        switch: true, // Enable switch statements
       },
       events: {
         test: true,
         branch: true,
-        iteration: true,   // Track loop iterations
-        jump: true         // Track break/continue
+        iteration: true, // Track loop iterations
+        jump: true, // Track break/continue
       },
       filter: {
         include: [],
-        exclude: []
-      }
+        exclude: [],
+      },
     },
 
     operators: {
-      pure: true,          // Computing operators
-      mutating: true,      // Assignment operators
+      pure: true, // Computing operators
+      mutating: true, // Assignment operators
       shortCircuiting: true, // &&, ||, ??
       comma: false,
-      coercion: false,     // Advanced concept
+      coercion: false, // Advanced concept
       filter: {
         include: [],
-        exclude: []
-      }
+        exclude: [],
+      },
     },
 
     properties: {
@@ -143,36 +143,36 @@ const detailed: Partial<Config> = {
         method: true,
         accessors: {
           getters: true,
-          setters: true
+          setters: true,
         },
         class: false,
         static: false,
         private: false,
-        fields: false
+        fields: false,
       },
       access: true,
-      update: true,        // Track property writes
+      update: true, // Track property writes
       remove: true,
       optionalChaining: true,
-      lookup: false,       // Prototype chain (advanced)
-      filter: []
+      lookup: false, // Prototype chain (advanced)
+      filter: [],
     },
 
     scopes: {
       kind: {
         script: true,
         function: true,
-        block: true,       // Track block scopes
+        block: true, // Track block scopes
         module: true,
-        closure: true      // Track closures
+        closure: true, // Track closures
       },
       events: {
         create: true,
         enter: true,
         interrupt: true,
         completion: true,
-        leave: true
-      }
+        leave: true,
+      },
     },
 
     errorHandling: {
@@ -180,71 +180,71 @@ const detailed: Partial<Config> = {
       try: true,
       catch: true,
       finally: true,
-      callstack: true     // Include stack traces
+      callstack: true, // Include stack traces
     },
 
     matching: {
       read: {
-        spread: false      // Noise for intermediate
+        spread: false, // Noise for intermediate
       },
       assign: {
         destructure: true, // Enable destructuring
         rest: false,
-        defaultValues: true
-      }
+        defaultValues: true,
+      },
     },
 
     modules: {
       imports: {
         named: true,
-        default: true
+        default: true,
       },
       exports: {
         named: true,
-        default: true
+        default: true,
       },
       load: true,
-      await: true
+      await: true,
     },
 
     references: {
       create: true,
       access: true,
-      mutate: true
+      mutate: true,
     },
 
     templates: {
       literal: true,
-      tagged: false
+      tagged: false,
     },
 
     symbols: {
       create: false,
-      access: false
+      access: false,
     },
 
     parenthesis: {
       enter: false,
-      leave: false
+      leave: false,
     },
 
     classes: {
-      staticBlock: false
+      staticBlock: false,
     },
 
     dynamic: {
       eval: false,
-      function: false
+      function: false,
     },
 
     regex: false,
 
     meta: {
       proxy: false,
-      reflect: false
+      reflect: false,
     },
 
-    semantics: true
+    semantics: true,
   },
 
   meta: {
@@ -255,16 +255,16 @@ const detailed: Partial<Config> = {
       type: true,
       instance: true,
       value: true,
-      lookup: false
+      lookup: false,
     },
     references: true,
     debug: {
       configPath: false,
       AranNodeId: false,
-      adviceName: false
+      adviceName: false,
     },
-    timestamps: false      // Performance consideration
-  }
+    timestamps: false, // Performance consideration
+  },
 };
 
 export default detailed;

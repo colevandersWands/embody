@@ -52,10 +52,10 @@ function embodify({ code, config, steps, instrumented }: any = {}) {
   if (steps !== undefined) validateField('steps', steps);
 
   return chainEmbodify({
-    _code: code !== undefined ? code : null,
-    _config: config !== undefined ? createConfig(parseConfig(config)) : undefined,
-    _steps: steps !== undefined ? parseSteps(steps) : null,
-    _instrumented: instrumented !== undefined ? instrumented : null,
+    _code: code === undefined ? null : code,
+    _config: config === undefined ? undefined : createConfig(parseConfig(config)),
+    _steps: steps === undefined ? null : parseSteps(steps),
+    _instrumented: instrumented === undefined ? null : instrumented,
   });
 }
 

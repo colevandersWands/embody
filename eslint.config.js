@@ -2,6 +2,8 @@ import tseslint from 'typescript-eslint';
 import eslintPluginImport from 'eslint-plugin-import';
 import eslintPluginFunctional from 'eslint-plugin-functional';
 import eslintPluginUnicorn from 'eslint-plugin-unicorn';
+import eslintPluginSonarJS from 'eslint-plugin-sonarjs';
+import eslintPluginSecurity from 'eslint-plugin-security';
 import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default tseslint.config(
@@ -24,10 +26,12 @@ export default tseslint.config(
       import: eslintPluginImport,
       functional: eslintPluginFunctional,
       unicorn: eslintPluginUnicorn,
+      sonarjs: eslintPluginSonarJS,
+      security: eslintPluginSecurity,
     },
     languageOptions: {
       parserOptions: {
-        project: './tsconfig.json',
+        project: './tsconfig.lint.json',
       },
     },
     rules: {
@@ -35,6 +39,14 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
+      // `any` types: Warn during development, review in PR
+      // Acceptable uses (see DEV.md § When `any` is OK):
+      //   - Dynamic runtime values (JSON.parse, eval results)
+      //   - Untyped library boundaries (wrapping Aran)
+      //   - Generic utilities (deepClone, deepMerge)
+      //   - Test fixtures (intentionally breaking types)
+      //   - Stub implementations (temporary mock data)
+      // All `any` usage must be justified in code review.
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unsafe-assignment': 'warn',
       '@typescript-eslint/no-unsafe-call': 'warn',
@@ -43,7 +55,7 @@ export default tseslint.config(
       '@typescript-eslint/prefer-readonly': 'error',
       '@typescript-eslint/prefer-readonly-parameter-types': 'off',
       '@typescript-eslint/restrict-template-expressions': 'warn',
-      '@typescript-eslint/prefer-nullish-coalescing': 'error',
+      '@typescript-eslint/prefer-nullish-coalescing': 'off',
       '@typescript-eslint/prefer-optional-chain': 'error',
       '@typescript-eslint/no-non-null-assertion': 'warn',
       '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
@@ -101,6 +113,82 @@ export default tseslint.config(
       ],
       'no-invalid-this': 'error',
       'arrow-body-style': ['error', 'never'],
+
+      // --- Unicorn (recommended + additions) ---
+      ...eslintPluginUnicorn.configs.recommended.rules,
+      'unicorn/consistent-destructuring': 'error',
+      'unicorn/prefer-switch': 'off', // Conflicts with switch ban
+      'unicorn/switch-case-braces': 'off', // Conflicts with switch ban
+      'unicorn/prefer-ternary': 'off',
+      'unicorn/no-null': 'off',
+
+      // --- SonarJS (recommended + additions + overrides) ---
+      ...eslintPluginSonarJS.configs.recommended.rules,
+      // Override levels
+      'sonarjs/no-duplicate-string': 'error',
+      'sonarjs/no-identical-functions': 'error',
+      'sonarjs/cognitive-complexity': ['warn', 15],
+      'sonarjs/prefer-object-literal': 'error',
+      // Disable conflicts/irrelevant
+      'sonarjs/prefer-immediate-return': 'off',
+      'sonarjs/max-switch-cases': 'off',
+      'sonarjs/no-small-switch': 'off',
+      'sonarjs/prefer-single-boolean-return': 'off',
+      'sonarjs/enforce-trailing-comma': 'off',
+      // Add rules not in recommended
+      'sonarjs/bool-param-default': 'error',
+      'sonarjs/destructuring-assignment-syntax': 'error',
+      'sonarjs/values-not-convertible-to-numbers': 'error',
+      'sonarjs/useless-string-operation': 'error',
+      'sonarjs/strings-comparison': 'error',
+      'sonarjs/non-number-in-arithmetic-expression': 'error',
+      'sonarjs/no-unused-function-argument': 'error',
+      'sonarjs/no-nested-incdec': 'error',
+      'sonarjs/no-incorrect-string-concat': 'error',
+      'sonarjs/no-inconsistent-returns': 'error',
+      'sonarjs/no-function-declaration-in-block': 'error',
+      'sonarjs/no-for-in-iterable': 'error',
+      'sonarjs/no-collapsible-if': 'error',
+      'sonarjs/no-built-in-override': 'error',
+      'sonarjs/nested-control-flow': 'error',
+      'sonarjs/expression-complexity': 'error',
+      'sonarjs/no-inverted-boolean-check': 'error',
+
+      // --- Naming conventions ---
+      camelcase: [
+        'error',
+        {
+          properties: 'never',
+          ignoreDestructuring: true,
+          ignoreImports: true,
+        },
+      ],
+
+      // --- Ban switch statements ---
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'SwitchStatement',
+          message: 'Switch statements are not allowed. Use if-else or lookup objects.',
+        },
+      ],
+
+      // --- Security (warn only - educational codebase) ---
+      'security/detect-object-injection': 'off',
+      'security/detect-non-literal-require': 'warn',
+      'security/detect-eval-with-expression': 'warn',
+
+      // --- LLM Guardrails (limit code bloat) ---
+      'spaced-comment': ['error', 'always', { exceptions: ['-', '=', '*', '/'] }],
+      'max-len': [
+        'error',
+        {
+          code: 100,
+          comments: Infinity, // Disable comment checking - use editor word wrap
+          ignoreUrls: true,
+          ignoreStrings: true,
+        },
+      ],
     },
   },
 
@@ -120,7 +208,7 @@ export default tseslint.config(
 
   // --- Type definition files (named exports allowed) ---
   {
-    files: ['**/types.ts', '**/*.types.ts'],
+    files: ['**/types.ts', '**/*.types.ts', '**/types/*.ts'],
     rules: {
       'import/no-named-export': 'off',
     },

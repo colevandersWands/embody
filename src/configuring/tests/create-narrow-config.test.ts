@@ -19,7 +19,7 @@ describe('createNarrowConfig', () => {
   describe('partial expansion — no defaults filled', () => {
     test('returns only the keys the user provided', () => {
       const result = createNarrowConfig({
-        lang: { bindings: { events: { read: false } } }
+        lang: { bindings: { events: { read: false } } },
       });
 
       // Should have the user-provided path
@@ -44,7 +44,7 @@ describe('createNarrowConfig', () => {
 
     test('preserves primitive values as-is', () => {
       const result = createNarrowConfig({
-        lang: { semantics: false }
+        lang: { semantics: false },
       });
 
       expect(result.lang.semantics).toBe(false);
@@ -56,39 +56,33 @@ describe('createNarrowConfig', () => {
   describe('shorthand expansion — true becomes object', () => {
     test('true expands to default object for that key', () => {
       const result = createNarrowConfig({
-        lang: { bindings: true }
+        lang: { bindings: true },
       });
 
       // Should expand to the full bindings structure
       expect(typeof result.lang.bindings).toBe('object');
       expect(result.lang.bindings.kind).toBeDefined();
       expect(result.lang.bindings.events).toBeDefined();
-      expect(result.lang.bindings.kind.declarative.var)
-        .toBe(true);
+      expect(result.lang.bindings.kind.declarative.var).toBe(true);
     });
 
     test('nested true expands correctly', () => {
       const result = createNarrowConfig({
-        lang: { bindings: { kind: { declarative: true } } }
+        lang: { bindings: { kind: { declarative: true } } },
       });
 
-      expect(typeof result.lang.bindings.kind.declarative)
-        .toBe('object');
-      expect(result.lang.bindings.kind.declarative.var)
-        .toBe(true);
-      expect(result.lang.bindings.kind.declarative.let)
-        .toBe(true);
-      expect(result.lang.bindings.kind.declarative.const)
-        .toBe(true);
+      expect(typeof result.lang.bindings.kind.declarative).toBe('object');
+      expect(result.lang.bindings.kind.declarative.var).toBe(true);
+      expect(result.lang.bindings.kind.declarative.let).toBe(true);
+      expect(result.lang.bindings.kind.declarative.const).toBe(true);
 
       // Sibling not filled
-      expect(result.lang.bindings.kind.explicit)
-        .toBeUndefined();
+      expect(result.lang.bindings.kind.explicit).toBeUndefined();
     });
 
     test('meta: true expands meta section', () => {
       const result = createNarrowConfig({
-        meta: true
+        meta: true,
       });
 
       expect(typeof result.meta).toBe('object');
@@ -103,23 +97,19 @@ describe('createNarrowConfig', () => {
   describe('disabled expansion — false becomes zeroed', () => {
     test('false creates disabled version of default', () => {
       const result = createNarrowConfig({
-        lang: { bindings: false }
+        lang: { bindings: false },
       });
 
       expect(typeof result.lang.bindings).toBe('object');
-      expect(result.lang.bindings.kind.declarative.var)
-        .toBe(false);
-      expect(result.lang.bindings.events.declare)
-        .toBe(false);
-      expect(result.lang.bindings.events.read)
-        .toBe(false);
-      expect(result.lang.bindings.filter.include)
-        .toEqual([]);
+      expect(result.lang.bindings.kind.declarative.var).toBe(false);
+      expect(result.lang.bindings.events.declare).toBe(false);
+      expect(result.lang.bindings.events.read).toBe(false);
+      expect(result.lang.bindings.filter.include).toEqual([]);
     });
 
     test('nested false disables subtree', () => {
       const result = createNarrowConfig({
-        lang: { operators: false }
+        lang: { operators: false },
       });
 
       expect(result.lang.operators.pure).toBe(false);
@@ -129,7 +119,7 @@ describe('createNarrowConfig', () => {
 
     test('meta: false disables meta section', () => {
       const result = createNarrowConfig({
-        meta: false
+        meta: false,
       });
 
       expect(result.meta.index).toBe(false);
@@ -141,7 +131,7 @@ describe('createNarrowConfig', () => {
   describe('preset — delegates to createConfig', () => {
     test('preset produces full config via createConfig', () => {
       const narrow = createNarrowConfig({
-        presets: 'overview'
+        presets: 'overview',
       });
       const full = createConfig({ presets: 'overview' });
 
@@ -152,12 +142,11 @@ describe('createNarrowConfig', () => {
     test('preset with overrides delegates correctly', () => {
       const narrow = createNarrowConfig({
         presets: 'detailed',
-        meta: { location: 'full' }
+        meta: { location: 'full' },
       });
 
       // Should have detailed preset values
-      expect(narrow.lang.bindings.kind.explicit.parameters)
-        .toBe(true);
+      expect(narrow.lang.bindings.kind.explicit.parameters).toBe(true);
       // Should have user override
       expect(narrow.meta.location).toBe('full');
     });
@@ -170,14 +159,13 @@ describe('createNarrowConfig', () => {
           bindings: true,
           operators: false,
           functions: {
-            kind: { arrow: false }
-          }
-        }
+            kind: { arrow: false },
+          },
+        },
       });
 
       // true → expanded
-      expect(result.lang.bindings.kind.declarative.var)
-        .toBe(true);
+      expect(result.lang.bindings.kind.declarative.var).toBe(true);
 
       // false → disabled
       expect(result.lang.operators.pure).toBe(false);
@@ -195,8 +183,8 @@ describe('createNarrowConfig', () => {
     test('deeply nested partial preserves structure', () => {
       const result = createNarrowConfig({
         meta: {
-          data: { value: false }
-        }
+          data: { value: false },
+        },
       });
 
       expect(result.meta.data.value).toBe(false);

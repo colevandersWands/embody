@@ -33,9 +33,7 @@ describe('embody', () => {
   });
 
   it('invalid JSON config → throws', () => {
-    expect(() => embody({ code: 'abc', config: '{bad json' })).toThrow(
-      'deserialize',
-    );
+    expect(() => embody({ code: 'abc', config: '{bad json' })).toThrow('deserialize');
   });
 
   it('throws if code is not a string', () => {

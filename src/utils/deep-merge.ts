@@ -40,51 +40,61 @@
  * )
  * // Result: { a: { b: { c: 3, d: 2 } } }
  */
-export default function deepMerge(preset: any, user: any) {
+function deepMerge<T>(preset: T, user: unknown): T {
   // User value always wins for primitives, null, undefined
   if (user === null || user === undefined || typeof user !== 'object') {
-    return user;
+    return user as T;
   }
 
   // If preset is not an object, user value wins
   if (preset === null || preset === undefined || typeof preset !== 'object') {
-    return user;
+    return user as T;
   }
 
   // Arrays: user array completely replaces preset array (no element merging)
   if (Array.isArray(user)) {
-    return [...user];
+    return [...user] as T;
   }
 
   // If preset is array but user is object, user wins
   if (Array.isArray(preset)) {
-    return user;
+    return user as T;
   }
 
   // Both are objects: deep merge recursively
-  const result = { ...preset };
+  const presetObject = preset as Record<string, unknown>;
+  const userObject = user as Record<string, unknown>;
+  const result: Record<string, unknown> = { ...presetObject };
 
-  for (const key in user) {
-    if (user.hasOwnProperty(key)) {
+  for (const key in userObject) {
+    if (Object.prototype.hasOwnProperty.call(userObject, key)) {
       if (
-        typeof user[key] === 'object' &&
-        user[key] !== null &&
-        typeof preset[key] === 'object' &&
-        preset[key] !== null &&
-        !Array.isArray(user[key]) &&
-        !Array.isArray(preset[key])
+        isObjectTypeAndNotNull(userObject[key]) &&
+        isObjectTypeAndNotNull(presetObject[key]) &&
+        isNotAnArray(userObject[key]) &&
+        isNotAnArray(presetObject[key])
       ) {
         // Both are non-null objects (not arrays): recurse
-        result[key] = deepMerge(preset[key], user[key]);
+        result[key] = deepMerge(presetObject[key], userObject[key]);
       } else {
         // User value wins: primitive, array, null, or type mismatch
-        result[key] = user[key];
+        result[key] = userObject[key];
       }
     }
   }
 
-  return result;
+  return result as T;
 }
+
+function isObjectTypeAndNotNull(thing) {
+  return typeof thing === 'object' && thing !== null;
+}
+
+function isNotAnArray(thing) {
+  return !Array.isArray(thing);
+}
+
+export default deepMerge;
 
 /* note from Claude:
   One small observation: the tests are thorough, maar I notice line 188-194 tests circular references. The current implementation doesn't protect against infinite loops when both preset and user have circular refs pointing into each other's structure. Eigenlijk, for config objects this probably never happens in practice, so it's fine.

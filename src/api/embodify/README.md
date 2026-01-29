@@ -29,7 +29,7 @@ const base = embodify({ code: 'let x = 5;', config: {} }).trace();
 const filtered = base.filterSteps({ config: { presets: 'overview' } });
 
 // base is unchanged — filtered is a separate chain link
-base.steps;     // original steps
+base.steps; // original steps
 filtered.steps; // filtered steps
 ```
 
@@ -49,9 +49,9 @@ If only `code` is set, accessing `.instrumented` runs `instrument()` internally.
 const chain = embodify({ code: 'let x = 5;' });
 
 // Nothing computed yet
-chain.code;          // 'let x = 5;' (stored directly)
-chain.instrumented;  // computed via instrument()
-chain.steps;         // computed via instrument() + record()
+chain.code; // 'let x = 5;' (stored directly)
+chain.instrumented; // computed via instrument()
+chain.steps; // computed via instrument() + record()
 ```
 
 ### Pickle-Awareness
@@ -95,38 +95,38 @@ const exhaustive = base.filterSteps({ config: { presets: 'exhaustive' } });
 
 All getters are pure — they compute fresh on each access with no caching.
 
-| Getter           | Type             | Description                               | Cascades From                      |
-| ---------------- | ---------------- | ----------------------------------------- | ---------------------------------- |
-| `.code`          | `string`         | Source code (default `''`)                 | —                                  |
-| `.config`        | `ExpandedConfig` | Fully expanded config (always has value)   | —                                  |
-| `.instrumented`  | `string`         | Instrumented code                          | `.code` via `instrument()`         |
-| `.steps`         | `Step[]`         | Trace events                               | `.instrumented` via `record()`     |
-| `.pickledSteps`  | `string`         | JSON-serialized steps                      | `.steps` via `serialize()`         |
-| `.pickledConfig` | `string`         | JSON-serialized config                     | `.config` via `JSON.stringify()`   |
+| Getter           | Type             | Description                              | Cascades From                    |
+| ---------------- | ---------------- | ---------------------------------------- | -------------------------------- |
+| `.code`          | `string`         | Source code (default `''`)               | —                                |
+| `.config`        | `ExpandedConfig` | Fully expanded config (always has value) | —                                |
+| `.instrumented`  | `string`         | Instrumented code                        | `.code` via `instrument()`       |
+| `.steps`         | `Step[]`         | Trace events                             | `.instrumented` via `record()`   |
+| `.pickledSteps`  | `string`         | JSON-serialized steps                    | `.steps` via `serialize()`       |
+| `.pickledConfig` | `string`         | JSON-serialized config                   | `.config` via `JSON.stringify()` |
 
 ### Methods
 
 All methods return a new chain link (immutable).
 
-| Method                                              | Purpose                  | Resets                           |
-| --------------------------------------------------- | ------------------------ | -------------------------------- |
-| `.set({ code \| instrumented \| steps \| config })` | Single-property setter   | Dependents of changed property   |
-| `.mergeConfig({ config })`                          | Partial config merge     | `instrumented`, `steps`          |
-| `.instrument({ config? })`                          | Explicit instrumentation | `steps`                          |
-| `.trace({ code?, instrumented?, config? })`         | Full trace execution     | Creates fresh chain link         |
-| `.filterSteps({ steps?, config? })`                 | Filter trace data        | Creates filtered chain link      |
+| Method                                              | Purpose                  | Resets                         |
+| --------------------------------------------------- | ------------------------ | ------------------------------ |
+| `.set({ code \| instrumented \| steps \| config })` | Single-property setter   | Dependents of changed property |
+| `.mergeConfig({ config })`                          | Partial config merge     | `instrumented`, `steps`        |
+| `.instrument({ config? })`                          | Explicit instrumentation | `steps`                        |
+| `.trace({ code?, instrumented?, config? })`         | Full trace execution     | Creates fresh chain link       |
+| `.filterSteps({ steps?, config? })`                 | Filter trace data        | Creates filtered chain link    |
 
 ## When to Use `embodify` vs `embody`
 
-|                    | `embody()`                         | `embodify()`                              |
-| ------------------ | ---------------------------------- | ----------------------------------------- |
-| API Style          | Currying (functional)              | Chaining (fluent)                         |
-| Result             | Final `TraceResult`                | Chain link (intermediate states)          |
-| Branching          | Not supported                      | Branch from any chain link                |
-| Lazy evaluation    | No (eager execution)               | Yes (getters compute on demand)           |
-| Granular control   | Limited (instrument + record together) | Full (instrument, trace, filter separately) |
-| Serialization      | Manual                             | Built-in (`.pickledSteps`, `.pickledConfig`) |
-| Best for           | Simple trace-and-done              | Multi-step workflows, comparison, batch   |
+|                  | `embody()`                             | `embodify()`                                 |
+| ---------------- | -------------------------------------- | -------------------------------------------- |
+| API Style        | Currying (functional)                  | Chaining (fluent)                            |
+| Result           | Final `TraceResult`                    | Chain link (intermediate states)             |
+| Branching        | Not supported                          | Branch from any chain link                   |
+| Lazy evaluation  | No (eager execution)                   | Yes (getters compute on demand)              |
+| Granular control | Limited (instrument + record together) | Full (instrument, trace, filter separately)  |
+| Serialization    | Manual                                 | Built-in (`.pickledSteps`, `.pickledConfig`) |
+| Best for         | Simple trace-and-done                  | Multi-step workflows, comparison, batch      |
 
 **Rule of thumb**: Use `embody()` when you need a trace result and you're done. Use `embodify()` when you need to branch, compare, batch-process, or control individual pipeline stages.
 
@@ -151,6 +151,7 @@ src/api/embodify/
 ## Links
 
 - [Full API Reference](./DOCS.md) — every getter, method, cascade mechanic, and use case recipe
+- [API Module Overview](../README.md) — parent module with decision matrix
 - [Root API Documentation](../../DOCS.md) — complete `@study-lenses/embody` API reference
 - [Configuration System](../../configuring/README.md) — detailed configuration options
 - [Developer Guide](../../DEV.md) — architecture and codebase conventions

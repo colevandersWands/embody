@@ -9,7 +9,7 @@ Complete reference for the individual pipeline functions exposed via `tracing`. 
 - [`record`](#record-instrumented-config-)
 - [`instrumentRecord`](#instrumentrecord-code-config-)
 - [`filterSteps`](#filtersteps-steps-config-)
-- [`serialize`](#serialize-steps-)
+- [`serialize`](#serialize-steps--config-)
 - [`deserialize`](#deserialize-steps-config-)
 - [Object-Threading Pattern](#object-threading-pattern)
 - [Error Reference](#error-reference)
@@ -24,7 +24,7 @@ Normalizes user configuration into a fully expanded configuration object. First 
 ### Signature
 
 ```typescript
-function fillConfig({ config }: FillConfigInput = {}): FillConfigOutput
+function fillConfig({ config }: FillConfigInput = {}): FillConfigOutput;
 ```
 
 ### Parameters
@@ -67,6 +67,7 @@ const { config } = fillConfig({ config: undefined });
 ### Remarks
 
 The configuration pipeline runs four stages internally:
+
 1. **Preset application** -- if `presets` field is set, merge preset values
 2. **Default merge** -- deep-merge user config on top of defaults
 3. **Shorthand expansion** -- convert boolean values to full objects
@@ -83,9 +84,10 @@ Instruments JavaScript code for execution tracing using the Aran framework. Seco
 ### Signature
 
 ```typescript
-function instrument(
-  { code, config }: { readonly code?: string; readonly config?: ExpandedConfig } = {},
-): InstrumentOutput
+function instrument({
+  code,
+  config,
+}: { readonly code?: string; readonly config?: ExpandedConfig } = {}): InstrumentOutput;
 ```
 
 ### Parameters
@@ -130,6 +132,7 @@ const result = instrument({ code: 'let x = 5;' });
 ### Remarks
 
 The instrumentation process:
+
 1. **Parse** the code into an AST
 2. **Apply Aran transformations** based on which config features are enabled
 3. **Generate instrumented code** with advice hooks at relevant AST nodes
@@ -146,9 +149,10 @@ Executes instrumented code and records the execution trace. Third stage of the t
 ### Signature
 
 ```typescript
-function record(
-  { instrumented, config }: { readonly instrumented?: string; readonly config?: ExpandedConfig } = {},
-): RecordOutput
+function record({
+  instrumented,
+  config,
+}: { readonly instrumented?: string; readonly config?: ExpandedConfig } = {}): RecordOutput;
 ```
 
 ### Parameters
@@ -186,12 +190,12 @@ const { steps } = record({});
 
 Execution limits are controlled via the config's `meta` field:
 
-| Limit | Config Path | Effect |
-| --- | --- | --- |
-| `maxSteps` | `meta.maxSteps` | Stop after N trace events |
-| `maxMemory` | `meta.maxMemory` | Stop when trace exceeds N MB |
-| `maxRecursionDepth` | `meta.maxRecursionDepth` | Stop at recursion depth N |
-| `maxExecutionTime` | `meta.maxExecutionTime` | Stop after N milliseconds |
+| Limit               | Config Path              | Effect                       |
+| ------------------- | ------------------------ | ---------------------------- |
+| `maxSteps`          | `meta.maxSteps`          | Stop after N trace events    |
+| `maxMemory`         | `meta.maxMemory`         | Stop when trace exceeds N MB |
+| `maxRecursionDepth` | `meta.maxRecursionDepth` | Stop at recursion depth N    |
+| `maxExecutionTime`  | `meta.maxExecutionTime`  | Stop after N milliseconds    |
 
 When any limit is reached, execution stops gracefully and returns a partial trace with metadata indicating which limit was hit.
 
@@ -206,9 +210,10 @@ Complete pipeline orchestrator combining `instrument` and `record` into a single
 ### Signature
 
 ```typescript
-function instrumentRecord(
-  { code, config }: { readonly code?: string; readonly config?: ExpandedConfig } = {},
-): TraceOutput
+function instrumentRecord({
+  code,
+  config,
+}: { readonly code?: string; readonly config?: ExpandedConfig } = {}): TraceOutput;
 ```
 
 ### Parameters
@@ -281,9 +286,10 @@ Filters existing trace steps based on configuration settings. Post-processing st
 ### Signature
 
 ```typescript
-function filterSteps(
-  { steps, config }: { readonly steps?: readonly Step[]; readonly config?: ExpandedConfig } = {},
-): FilterStepsOutput
+function filterSteps({
+  steps,
+  config,
+}: { readonly steps?: readonly Step[]; readonly config?: ExpandedConfig } = {}): FilterStepsOutput;
 ```
 
 ### Parameters
@@ -339,47 +345,62 @@ This is the function that `squint` delegates to after normalizing its inputs.
 
 ---
 
-## `serialize({ steps })`
+## `serialize({ steps? | config? })`
 
-Serializes trace steps into a JSON string. Utility function for persisting trace data or transmitting it between systems.
+Serializes trace steps or configuration into a JSON string. Pass exactly one of `steps` or `config`. Utility function for persisting trace data or transmitting it between systems.
 
 ### Signature
 
 ```typescript
-function serialize({ steps }: { readonly steps?: readonly Step[] } = {}): string
+// Overload: steps → JSON string
+function serialize(input: { readonly steps: readonly Step[] }): string;
+
+// Overload: config → JSON string
+function serialize(input: { readonly config: UserConfig }): string;
 ```
 
 ### Parameters
 
-- `steps` (Step[], required) -- array of trace steps to serialize. Throws if not provided or not an array.
+Pass exactly one of:
+
+- `steps` (Step[], required in steps overload) -- array of trace steps to serialize. Throws if not an array.
+- `config` (UserConfig, required in config overload) -- configuration object to serialize. Throws if not a plain object.
 
 ### Returns
 
-`string` -- JSON string representation of the steps array.
+`string` -- JSON string representation of the provided field.
 
 ### Throws
 
-- `Error('serialize: expected steps to be an array (no steps provided)')` -- if steps is `undefined`
 - `Error('serialize: expected steps to be an array, got ...')` -- if steps is not an array
+- `Error('serialize: expected config to be a plain object, got ...')` -- if config is null, array, or primitive
+- `Error('serialize: expected steps or config to be provided (neither given)')` -- if neither field is provided
 
 ### Examples
 
 ```typescript
 import { tracing } from '@study-lenses/embody';
-const { serialize } = tracing;
+const { serialize, deserialize } = tracing;
 
 // Serialize trace steps
 const json = serialize({ steps: [{}, {}, {}] });
 // json: '[{},{},{}]'
 
+// Serialize config
+const configJson = serialize({ config: { presets: 'overview' } });
+// configJson: '{"presets":"overview"}'
+
 // Round-trip with deserialize
 const { steps } = deserialize({ steps: json });
 // steps: [{}, {}, {}]
+
+const { config } = deserialize({ config: configJson });
+// config: { presets: 'overview' }
 ```
 
 ### Remarks
 
-Thin wrapper around `JSON.stringify`. The primary value is consistent validation: always call `serialize` rather than `JSON.stringify` directly to get consistent error messages when steps are missing or wrong type.
+Thin wrapper around `JSON.stringify`. The primary value is consistent validation: always call `serialize` rather than `JSON.stringify` directly to get consistent error messages when the input is missing or the wrong type. Both `steps` and `config` are validated before serialization -- arrays that aren't `Step[]`, or objects that aren't plain objects (null, arrays), are rejected with descriptive errors.
 
 ---
 
@@ -390,9 +411,7 @@ General-purpose parsing and validation layer for the tracing pipeline. Handles b
 ### Signature
 
 ```typescript
-function deserialize(
-  { steps, config }: DeserializeInput = {},
-): DeserializeOutput
+function deserialize({ steps, config }: DeserializeInput = {}): DeserializeOutput;
 ```
 
 ### Parameters
@@ -506,6 +525,7 @@ Each stage follows the same contract:
 5. **Returns** an enriched object preserving input data while adding new fields
 
 This pattern enables:
+
 - **Composability** -- stages can be combined in any order
 - **Debuggability** -- each stage's output is inspectable
 - **Flexibility** -- skip stages or add custom stages between them
@@ -518,25 +538,27 @@ The `serialize` and `deserialize` functions are utilities that don't follow the 
 
 All error messages include the function name and a description of what was expected vs received.
 
-| Error Message | Function | Trigger |
-| --- | --- | --- |
-| `'fillConfig: expected config to be a plain object, got ...'` | fillConfig | config is array, primitive, or null |
-| `'instrument: expected code to be a string, got ...'` | instrument | code is not a string |
-| `'instrument: expected config to be an object, got ...'` | instrument | config is array, primitive, or null |
-| `'record: expected instrumented to be a string, got ...'` | record | instrumented is not a string |
-| `'record: expected config to be an object, got ...'` | record | config is array, primitive, or null |
-| `'instrumentRecord: expected code to be a string, got ...'` | instrumentRecord | code is not a string |
-| `'instrumentRecord: expected config to be an object, got ...'` | instrumentRecord | config is array, primitive, or null |
-| `'filterSteps: expected steps to be an array, got ...'` | filterSteps | steps is not an array |
-| `'filterSteps: expected config to be an object, got ...'` | filterSteps | config is array, primitive, or null |
-| `'serialize: expected steps to be an array ...'` | serialize | steps undefined or not an array |
-| `'resolveSteps: expected steps to be a string or array, got ...'` | resolveSteps | steps is not string, array, or undefined |
-| `'validateSteps: expected steps to be an array, got ...'` | validateSteps | JSON string parses to non-array |
-| `'validateSteps: expected every step to be an object, got ... at index ...'` | validateSteps | step element is not an object |
-| `'resolveSteps: invalid JSON for steps -- ...'` | resolveSteps | steps string is malformed JSON |
-| `'deserialize: expected config to be a plain object, got ...'` | deserialize | config is null, array, or primitive |
-| `'deserialize: expected config to be a string or object, got ...'` | deserialize | config is not string, object, or undefined |
-| `'deserialize: invalid JSON for config -- ...'` | deserialize | config string is malformed JSON |
+| Error Message                                                                | Function         | Trigger                                    |
+| ---------------------------------------------------------------------------- | ---------------- | ------------------------------------------ |
+| `'fillConfig: expected config to be a plain object, got ...'`                | fillConfig       | config is array, primitive, or null        |
+| `'instrument: expected code to be a string, got ...'`                        | instrument       | code is not a string                       |
+| `'instrument: expected config to be an object, got ...'`                     | instrument       | config is array, primitive, or null        |
+| `'record: expected instrumented to be a string, got ...'`                    | record           | instrumented is not a string               |
+| `'record: expected config to be an object, got ...'`                         | record           | config is array, primitive, or null        |
+| `'instrumentRecord: expected code to be a string, got ...'`                  | instrumentRecord | code is not a string                       |
+| `'instrumentRecord: expected config to be an object, got ...'`               | instrumentRecord | config is array, primitive, or null        |
+| `'filterSteps: expected steps to be an array, got ...'`                      | filterSteps      | steps is not an array                      |
+| `'filterSteps: expected config to be an object, got ...'`                    | filterSteps      | config is array, primitive, or null        |
+| `'serialize: expected steps to be an array, got ...'`                        | serialize        | steps is not an array                      |
+| `'serialize: expected config to be a plain object, got ...'`                 | serialize        | config is null, array, or primitive        |
+| `'serialize: expected steps or config to be provided (neither given)'`       | serialize        | neither steps nor config provided          |
+| `'resolveSteps: expected steps to be a string or array, got ...'`            | resolveSteps     | steps is not string, array, or undefined   |
+| `'validateSteps: expected steps to be an array, got ...'`                    | validateSteps    | JSON string parses to non-array            |
+| `'validateSteps: expected every step to be an object, got ... at index ...'` | validateSteps    | step element is not an object              |
+| `'resolveSteps: invalid JSON for steps -- ...'`                              | resolveSteps     | steps string is malformed JSON             |
+| `'deserialize: expected config to be a plain object, got ...'`               | deserialize      | config is null, array, or primitive        |
+| `'deserialize: expected config to be a string or object, got ...'`           | deserialize      | config is not string, object, or undefined |
+| `'deserialize: invalid JSON for config -- ...'`                              | deserialize      | config string is malformed JSON            |
 
 ---
 
@@ -544,14 +566,14 @@ All error messages include the function name and a description of what was expec
 
 Seven test files, one per function, in the `tests/` directory:
 
-| File | Covers |
-| --- | --- |
-| `fill-config.test.ts` | Config normalization, preset application, defaults, invalid input |
-| `instrument.test.ts` | Code instrumentation, validation, empty code, default config |
-| `record.test.ts` | Execution recording, validation, empty input, execution limits |
-| `instrument-record.test.ts` | Pipeline orchestration, object-threading, validation |
-| `filter-steps.test.ts` | Step filtering, validation, empty steps, default config |
-| `serialize.test.ts` | JSON serialization, missing steps, wrong type |
-| `deserialize.test.ts` | JSON deserialization, passthrough validation, error handling |
+| File                        | Covers                                                                      |
+| --------------------------- | --------------------------------------------------------------------------- |
+| `fill-config.test.ts`       | Config normalization, preset application, defaults, invalid input           |
+| `instrument.test.ts`        | Code instrumentation, validation, empty code, default config                |
+| `record.test.ts`            | Execution recording, validation, empty input, execution limits              |
+| `instrument-record.test.ts` | Pipeline orchestration, object-threading, validation                        |
+| `filter-steps.test.ts`      | Step filtering, validation, empty steps, default config                     |
+| `serialize.test.ts`         | JSON serialization (steps + config), missing input, wrong types, round-trip |
+| `deserialize.test.ts`       | JSON deserialization, passthrough validation, error handling                |
 
 All tests follow the pattern: valid inputs, boundary validation (wrong types throw), missing inputs (defaults applied), and edge cases (empty strings, empty arrays).

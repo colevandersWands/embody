@@ -7,7 +7,7 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
         type: 'object',
         value: null,
         lookup: [],
-        instance: null
+        instance: null,
       });
     });
 
@@ -16,7 +16,7 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
         type: 'undefined',
         value: undefined,
         lookup: [],
-        instance: null
+        instance: null,
       });
     });
   });
@@ -27,7 +27,7 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
         type: 'number',
         value: 5,
         lookup: ['Number', 'Object', 'null'],
-        instance: null
+        instance: null,
       });
     });
 
@@ -36,7 +36,7 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
         type: 'string',
         value: 'hello',
         lookup: ['String', 'Object', 'null'],
-        instance: null
+        instance: null,
       });
     });
 
@@ -45,14 +45,14 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
         type: 'boolean',
         value: true,
         lookup: ['Boolean', 'Object', 'null'],
-        instance: null
+        instance: null,
       });
 
       expect(representValue(false, 'full')).toEqual({
         type: 'boolean',
         value: false,
         lookup: ['Boolean', 'Object', 'null'],
-        instance: null
+        instance: null,
       });
     });
 
@@ -62,7 +62,7 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
         type: 'symbol',
         value: 'Symbol(test)',
         lookup: ['Symbol', 'Object', 'null'],
-        instance: null
+        instance: null,
       });
     });
 
@@ -71,7 +71,7 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
         type: 'bigint',
         value: 123n,
         lookup: ['BigInt', 'Object', 'null'],
-        instance: null
+        instance: null,
       });
     });
   });
@@ -89,7 +89,7 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
         type: 'number',
         value: Infinity,
         lookup: ['Number', 'Object', 'null'],
-        instance: null
+        instance: null,
       });
     });
 
@@ -98,7 +98,7 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
         type: 'number',
         value: -Infinity,
         lookup: ['Number', 'Object', 'null'],
-        instance: null
+        instance: null,
       });
     });
 
@@ -107,7 +107,7 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
         type: 'number',
         value: -0,
         lookup: ['Number', 'Object', 'null'],
-        instance: null
+        instance: null,
       });
     });
   });
@@ -163,7 +163,7 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
         type: 'object',
         value: [],
         lookup: ['Array', 'Object', 'null'],
-        instance: 'Array'
+        instance: 'Array',
       });
     });
 
@@ -180,7 +180,7 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
         type: 'object',
         value: {},
         lookup: ['Object', 'null'],
-        instance: 'Object'
+        instance: 'Object',
       });
     });
 
@@ -269,7 +269,7 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
       expect(result.value).toEqual({
         name: 'test',
         length: 0,
-        preview: 'function test() { }'
+        preview: 'function test() { }',
       });
       expect(result.lookup).toEqual(['Function', 'Object', 'null']);
       expect(result.instance).toBe('Function');
@@ -403,7 +403,7 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
         'x',
         'y',
         'z',
-        'return x + y + z + x + y + z + x + y + z + x + y + z'
+        'return x + y + z + x + y + z + x + y + z + x + y + z',
       );
       const result = representValue(veryLong, 'full');
       expect(result.value.preview).toMatch(/^function anonymous\(/);

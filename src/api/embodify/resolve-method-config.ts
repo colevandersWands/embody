@@ -1,6 +1,7 @@
-import parseConfig from './parse-config.js';
 import createNarrowConfig from '../../configuring/create-narrow-config.js';
 import deepMerge from '../../utils/deep-merge.js';
+
+import parseConfig from './parse-config.js';
 
 /**
  * Resolves the effective config for a pipeline method call.

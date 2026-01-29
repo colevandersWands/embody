@@ -1,25 +1,62 @@
+import type { UserConfig } from '../../configuring/types.js';
 import type { Step } from '../../types/api.js';
 
 /**
- * Serializes trace steps into a JSON string.
+ * Serializes trace steps or configuration into a JSON string.
  *
- * Takes an array of steps and returns their JSON representation.
- * Used for persisting trace data or transmitting it between systems.
+ * Takes an array of steps or a config object and returns their JSON
+ * representation. Used for persisting trace data or transmitting it
+ * between systems. Pass exactly one of `steps` or `config`.
  *
- * @param input - Object containing steps to serialize
+ * @example
+ * ```typescript
+ * // Serialize steps
+ * const json = serialize({ steps: [{}, {}] });
+ * // json === '[{},{}]'
+ *
+ * // Serialize config
+ * const json = serialize({ config: { presets: 'overview' } });
+ * // json === '{"presets":"overview"}'
+ * ```
+ *
+ * @param input - Object containing steps or config to serialize
  * @param input.steps - Array of trace steps to serialize
- * @returns JSON string representation of the steps array
- * @throws {Error} If steps is not an array or is not provided
+ * @param input.config - Configuration object to serialize
+ * @returns JSON string representation of the provided field
+ * @throws {Error} If neither steps nor config is provided
+ * @throws {Error} If steps is provided but not an array
+ * @throws {Error} If config is provided but not a plain object
+ *
+ * @since 1.0.0
  */
-function serialize({ steps }: { readonly steps?: readonly Step[] } = {}): string {
-  if (!Array.isArray(steps)) {
-    throw new Error(
-      'serialize: expected steps to be an array' +
-        (steps === undefined ? ' (no steps provided)' : ', got ' + typeof steps),
-    );
+
+// Overload: steps → string
+function serialize(input: { readonly steps: readonly Step[] }): string;
+// Overload: config → string
+function serialize(input: { readonly config: UserConfig }): string;
+
+// Implementation
+function serialize({
+  steps,
+  config,
+}: { readonly steps?: readonly Step[]; readonly config?: UserConfig } = {}): string {
+  if (steps !== undefined) {
+    if (!Array.isArray(steps)) {
+      throw new TypeError(`serialize: expected steps to be an array, got ${typeof steps}`);
+    }
+    return JSON.stringify(steps);
   }
 
-  return JSON.stringify(steps);
+  if (config !== undefined) {
+    if (typeof config !== 'object' || config === null || Array.isArray(config)) {
+      throw new Error(
+        `serialize: expected config to be a plain object, got ${config === null ? 'null' : (Array.isArray(config) ? 'array' : typeof config)}`,
+      );
+    }
+    return JSON.stringify(config);
+  }
+
+  throw new Error('serialize: expected steps or config to be provided (neither given)');
 }
 
 export default serialize;

@@ -2,8 +2,8 @@
  * @file Integration tests for tracer advice function workflows
  */
 
-import { factory } from '../factory';
-import { isWrapper } from '../is-wrapper';
+import factory from '../factory.js';
+import isWrapper from '../is-wrapper.js';
 
 describe('Tracer Integration Workflows', () => {
   describe('Advice Function Integration', () => {
@@ -13,7 +13,7 @@ describe('Tracer Integration Workflows', () => {
       const tracker = factory({
         secret,
         id: 1000,
-        record: new WeakMap()
+        record: new WeakMap(),
       });
 
       // Simulate advice function tracking a value
@@ -116,7 +116,7 @@ describe('Tracer Integration Workflows', () => {
         value: 'test',
         id: 'not-a-number', // Wrong type
         secret: 'not-a-symbol', // Wrong type
-        type: 123 // Wrong type
+        type: 123, // Wrong type
       };
 
       // isWrapper catches the malformation
@@ -135,7 +135,7 @@ describe('Tracer Integration Workflows', () => {
       const mixedArray = [trackedData, 'regular string', 42, { regular: 'object' }];
 
       // Process array items
-      const processedItems = mixedArray.map(item => {
+      const processedItems = mixedArray.map((item) => {
         if (isWrapper(item)) {
           return { type: 'tracked', id: item.id, originalType: item.type };
         } else {
@@ -189,13 +189,13 @@ describe('Tracer Integration Workflows', () => {
           name: `User ${i}`,
           preferences: {
             theme: 'dark',
-            notifications: true
-          }
+            notifications: true,
+          },
         })),
         metadata: new Map([
           ['version', '1.0'],
-          ['created', new Date()]
-        ])
+          ['created', new Date()],
+        ]),
       };
 
       const start = performance.now();
@@ -222,8 +222,8 @@ describe('Tracer Integration Workflows', () => {
       const returnValue = { result: 'success', data: [1, 2, 3] };
 
       // Track arguments
-      const trackedArgs = args.map(arg => tracker.shadow(arg));
-      trackedArgs.forEach(arg => {
+      const trackedArgs = args.map((arg) => tracker.shadow(arg));
+      trackedArgs.forEach((arg) => {
         expect(isWrapper(arg)).toBe(true);
       });
 
@@ -235,14 +235,14 @@ describe('Tracer Integration Workflows', () => {
       // Simulate generating trace event
       const traceEvent = {
         type: 'function-call',
-        argumentIds: trackedArgs.map(arg => (isWrapper(arg) ? arg.id : null)),
-        returnValueId: trackedReturn.id
+        argumentIds: trackedArgs.map((arg) => (isWrapper(arg) ? arg.id : null)),
+        returnValueId: trackedReturn.id,
       };
 
       expect(traceEvent.argumentIds).toEqual([
         expect.any(Number), // Object argument
         null, // String primitive
-        null // Number primitive
+        null, // Number primitive
       ]);
       expect(traceEvent.returnValueId).toEqual(expect.any(Number));
     });

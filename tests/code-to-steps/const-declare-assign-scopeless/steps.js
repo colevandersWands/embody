@@ -4,7 +4,7 @@ export default [
     kind: 'declarative',
     keyword: 'const',
     name: 'x',
-    event: 'declare'
+    event: 'declare',
   },
   {
     category: 'binding',
@@ -12,13 +12,13 @@ export default [
     keyword: 'const',
     name: 'x',
     event: 'initialize',
-    value: 1
+    value: 1,
   },
   {
     category: 'binding',
     kind: 'declarative',
     keyword: 'const',
     name: 'x',
-    event: 'available'
-  }
+    event: 'available',
+  },
 ];

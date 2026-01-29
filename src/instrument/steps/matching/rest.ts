@@ -1,7 +1,9 @@
-export default function rest() {
+function rest() {
   return {
     category: 'matching',
     kind: 'assign',
-    syntax: 'rest'
+    syntax: 'rest',
   };
 }
+
+export default rest;

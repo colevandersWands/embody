@@ -45,18 +45,18 @@ function factory(options: TrackerFactoryOptions = {}) {
   const { record = new WeakMap(), id = 0, secret = Symbol('tracked') } = options;
 
   // Create the wrap function with shared secret and ID counter
-  const wrapFn = wrap(secret, id);
+  const wrapFunction = wrap(secret, id);
 
   // Create the unwrap function with shared secret
-  const unwrapFn = unwrap(secret);
+  const unwrapFunction = unwrap(secret);
 
   // Create the shadow function with shared record and wrap function
-  const shadowFn = shadow(record, wrapFn);
+  const shadowFunction = shadow(record, wrapFunction);
 
   return {
-    wrap: wrapFn,
-    unwrap: unwrapFn,
-    shadow: shadowFn
+    wrap: wrapFunction,
+    unwrap: unwrapFunction,
+    shadow: shadowFunction,
   };
 }
 

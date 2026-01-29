@@ -1,8 +1,13 @@
-export default function closure({
-  event = null,
-  bindings = null,
-  parentName = null,
-  parentCall = null // ID reference to the enclosing function call entry
+function closure({
+  event,
+  bindings,
+  parentName,
+  parentCall, // ID reference to the enclosing function call entry
+}: {
+  readonly event?: string;
+  readonly bindings?: any;
+  readonly parentName?: string;
+  readonly parentCall?: any;
 } = {}) {
   return {
     category: 'scope',
@@ -10,6 +15,8 @@ export default function closure({
     event,
     bindings,
     parentName,
-    parentCall
+    parentCall,
   };
 }
+
+export default closure;

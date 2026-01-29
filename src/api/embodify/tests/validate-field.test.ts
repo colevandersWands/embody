@@ -21,9 +21,7 @@ describe('validateField', () => {
     });
 
     it('throws for a number', () => {
-      expect(() => validateField('instrumented', 42)).toThrow(
-        'instrumented must be a string',
-      );
+      expect(() => validateField('instrumented', 42)).toThrow('instrumented must be a string');
     });
   });
 
@@ -65,9 +63,7 @@ describe('validateField', () => {
     });
 
     it('throws for a number', () => {
-      expect(() => validateField('steps', 123)).toThrow(
-        'steps must be an array or JSON string',
-      );
+      expect(() => validateField('steps', 123)).toThrow('steps must be an array or JSON string');
     });
   });
 

@@ -38,11 +38,11 @@ const exhaustive: Partial<Config> = {
           const: true,
           function: true,
           class: true,
-          import: true
+          import: true,
         },
         explicit: {
           parameters: true,
-          catch: true
+          catch: true,
         },
         implicit: {
           global: true,
@@ -51,9 +51,9 @@ const exhaustive: Partial<Config> = {
           this: true,
           newTarget: true,
           super: true,
-          importMeta: true
+          importMeta: true,
         },
-        with: true
+        with: true,
       },
       events: {
         declare: true,
@@ -61,12 +61,12 @@ const exhaustive: Partial<Config> = {
         initialize: true,
         implicit: true,
         assign: true,
-        read: true
+        read: true,
       },
       filter: {
         include: [],
-        exclude: []
-      }
+        exclude: [],
+      },
     },
 
     functions: {
@@ -75,25 +75,25 @@ const exhaustive: Partial<Config> = {
         function: true,
         method: true,
         generator: true,
-        builtIn: true
+        builtIn: true,
       },
       events: {
         definition: true,
         call: {
-          arguments: true
+          arguments: true,
         },
         construct: true,
         return: true,
         coroutines: {
           await: true,
           yield: true,
-          yieldDelegate: true
-        }
+          yieldDelegate: true,
+        },
       },
       filter: {
         include: [],
-        exclude: []
-      }
+        exclude: [],
+      },
     },
 
     controlFlow: {
@@ -104,23 +104,23 @@ const exhaustive: Partial<Config> = {
           for: {
             initialize: true,
             test: true,
-            increment: true
+            increment: true,
           },
           forOf: true,
-          forIn: true
+          forIn: true,
         },
-        switch: true
+        switch: true,
       },
       events: {
         test: true,
         branch: true,
         iteration: true,
-        jump: true
+        jump: true,
       },
       filter: {
         include: [],
-        exclude: []
-      }
+        exclude: [],
+      },
     },
 
     operators: {
@@ -128,11 +128,11 @@ const exhaustive: Partial<Config> = {
       mutating: true,
       shortCircuiting: true,
       comma: true,
-      coercion: true,         // Advanced: type coercion
+      coercion: true, // Advanced: type coercion
       filter: {
         include: [],
-        exclude: []
-      }
+        exclude: [],
+      },
     },
 
     properties: {
@@ -142,19 +142,19 @@ const exhaustive: Partial<Config> = {
         method: true,
         accessors: {
           getters: true,
-          setters: true
+          setters: true,
         },
         class: true,
         static: true,
         private: true,
-        fields: true
+        fields: true,
       },
       access: true,
       update: true,
       remove: true,
       optionalChaining: true,
-      lookup: true,            // Advanced: prototype chain
-      filter: []
+      lookup: true, // Advanced: prototype chain
+      filter: [],
     },
 
     scopes: {
@@ -163,15 +163,15 @@ const exhaustive: Partial<Config> = {
         function: true,
         block: true,
         module: true,
-        closure: true
+        closure: true,
       },
       events: {
         create: true,
         enter: true,
         interrupt: true,
         completion: true,
-        leave: true
-      }
+        leave: true,
+      },
     },
 
     errorHandling: {
@@ -179,93 +179,93 @@ const exhaustive: Partial<Config> = {
       try: true,
       catch: true,
       finally: true,
-      callstack: true
+      callstack: true,
     },
 
     matching: {
       read: {
-        spread: true           // Advanced: spread in destructuring
+        spread: true, // Advanced: spread in destructuring
       },
       assign: {
         destructure: true,
-        rest: true,            // Advanced: rest parameters
-        defaultValues: true
-      }
+        rest: true, // Advanced: rest parameters
+        defaultValues: true,
+      },
     },
 
     modules: {
       imports: {
         named: true,
-        default: true
+        default: true,
       },
       exports: {
         named: true,
-        default: true
+        default: true,
       },
       load: true,
-      await: true
+      await: true,
     },
 
     references: {
       create: true,
       access: true,
-      mutate: true
+      mutate: true,
     },
 
     templates: {
       literal: true,
-      tagged: true
+      tagged: true,
     },
 
     symbols: {
       create: true,
-      access: true
+      access: true,
     },
 
     parenthesis: {
       enter: true,
-      leave: true
+      leave: true,
     },
 
     classes: {
-      staticBlock: true
+      staticBlock: true,
     },
 
     dynamic: {
-      eval: true,             // Advanced: eval()
-      function: true          // Advanced: new Function()
+      eval: true, // Advanced: eval()
+      function: true, // Advanced: new Function()
     },
 
     regex: true,
 
     meta: {
-      proxy: true,            // Advanced: Proxy operations
-      reflect: true           // Advanced: Reflect operations
+      proxy: true, // Advanced: Proxy operations
+      reflect: true, // Advanced: Reflect operations
     },
 
-    semantics: true
+    semantics: true,
   },
 
   meta: {
     index: true,
-    location: 'full',         // Full [line, column] location
-    ast: true,                // Include AST
+    location: 'full', // Full [line, column] location
+    ast: true, // Include AST
     data: {
       type: true,
       instance: true,
       value: true,
-      lookup: true
+      lookup: true,
     },
     references: true,
     debug: {
-      configPath: true,       // Debug: show config path
-      AranNodeId: true,       // Debug: show Aran node ID
-      adviceName: true        // Debug: show advice function name
+      configPath: true, // Debug: show config path
+      AranNodeId: true, // Debug: show Aran node ID
+      adviceName: true, // Debug: show advice function name
     },
-    timestamps: true,         // Include timestamps for async analysis
-    maxIterations: 10000,     // Reasonable limit for loops
-    maxCallstack: 1000        // Reasonable recursion limit
-  }
+    timestamps: true, // Include timestamps for async analysis
+    maxIterations: 10_000, // Reasonable limit for loops
+    maxCallstack: 1000, // Reasonable recursion limit
+  },
 };
 
 export default exhaustive;

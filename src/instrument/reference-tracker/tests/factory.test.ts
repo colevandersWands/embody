@@ -1,8 +1,4 @@
-/**
- * @file Jest test suite for the modular reference tracker factory
- */
-
-import { factory } from '../factory';
+import factory from '../factory.js';
 
 describe('Factory Function', () => {
   it('should return an object with wrap, unwrap, and shadow functions', () => {
@@ -21,7 +17,7 @@ describe('Factory Function', () => {
     const tracker = factory({
       secret: customSecret,
       record: customRecord,
-      id: 100
+      id: 100,
     });
 
     expect(tracker).toHaveProperty('wrap');
@@ -89,7 +85,6 @@ describe('Shadow Function (Public Interface)', () => {
     expect(typeof tracked!.secret).toBe('symbol');
     expect(tracked!.type).toBe('Object');
 
-    // Verify nested primitives are also wrapped
     expect(tracked!.value.name.value).toBe('test');
     expect(tracked!.value.name.id).toBeNull();
     expect(tracked!.value.name.type).toBe('string');
@@ -130,7 +125,6 @@ describe('Shadow Function (Public Interface)', () => {
     const tracked1 = tracker.shadow(42);
     const tracked2 = tracker.shadow(42);
 
-    // Each call should return a new TrackedObject wrapper
     expect(tracked1).not.toBe(tracked2);
     expect(tracked1.value).toBe(tracked2.value);
     expect(tracked1.id).toBeNull();
@@ -149,19 +143,15 @@ describe('Deep Nested Structures', () => {
     const complex = {
       data: 'test',
       nested: { count: 42 },
-      array: [1, { item: 'nested' }]
+      array: [1, { item: 'nested' }],
     };
 
     const tracked = tracker.shadow(complex);
     expect(tracked).toBeTruthy();
-
-    // Check nested object is tracked
     const nestedTracked = tracked!.value.nested;
     expect(nestedTracked).toBeTruthy();
     expect(typeof nestedTracked.id).toBe('number');
     expect(nestedTracked.type).toBe('Object');
-
-    // Check array element is tracked
     const arrayItemTracked = tracked!.value.array.value[1];
     expect(arrayItemTracked).toBeTruthy();
     expect(typeof arrayItemTracked.id).toBe('number');
@@ -210,7 +200,7 @@ describe('Unwrap Function', () => {
     const complex = {
       data: 'test',
       nested: { count: 42 },
-      array: [1, { item: 'nested' }]
+      array: [1, { item: 'nested' }],
     };
 
     const tracked = tracker.shadow(complex);
@@ -315,7 +305,6 @@ describe('Multiple Tracker Instances', () => {
     const obj = { test: true };
     const tracked1 = tracker1.shadow(obj);
 
-    // tracker2 should not unwrap tracker1's objects
     const result = tracker2.unwrap(tracked1!);
     expect(result).toBe(tracked1);
   });
@@ -337,13 +326,13 @@ describe('Integration Tests', () => {
       user: { name: 'John', age: 30 },
       posts: [
         { title: 'Post 1', tags: ['js', 'web'] },
-        { title: 'Post 2', tags: ['node', 'api'] }
+        { title: 'Post 2', tags: ['node', 'api'] },
       ],
       metadata: new Map([
         ['created', new Date('2024-01-01')],
-        ['config', { theme: 'dark', lang: 'en' }]
+        ['config', { theme: 'dark', lang: 'en' }],
       ]),
-      permissions: new Set(['read', 'write'])
+      permissions: new Set(['read', 'write']),
     };
 
     const tracked = tracker.shadow(complex);

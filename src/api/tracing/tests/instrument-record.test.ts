@@ -36,7 +36,9 @@ describe('instrumentRecord', () => {
 
   it('throws if config is not an object', () => {
     expect(() => instrumentRecord({ code: 'abc', config: 42 as any })).toThrow('instrumentRecord');
-    expect(() => instrumentRecord({ code: 'abc', config: 'bad' as any })).toThrow('instrumentRecord');
+    expect(() => instrumentRecord({ code: 'abc', config: 'bad' as any })).toThrow(
+      'instrumentRecord',
+    );
     expect(() => instrumentRecord({ code: 'abc', config: [] as any })).toThrow('instrumentRecord');
   });
 });

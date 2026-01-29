@@ -1,7 +1,9 @@
-export default function spread() {
+function spread() {
   return {
     category: 'matching',
     kind: 'read',
-    syntax: 'spread'
+    syntax: 'spread',
   };
 }
+
+export default spread;

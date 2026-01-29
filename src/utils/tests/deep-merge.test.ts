@@ -52,21 +52,21 @@ describe('deepMerge', () => {
           level2: {
             level3: {
               a: 1,
-              b: 2
+              b: 2,
             },
-            other: 'keep'
-          }
-        }
+            other: 'keep',
+          },
+        },
       };
 
       const user = {
         level1: {
           level2: {
             level3: {
-              a: 10 // override
-            }
-          }
-        }
+              a: 10, // override
+            },
+          },
+        },
       };
 
       const result = deepMerge(preset, user);
@@ -151,13 +151,13 @@ describe('deepMerge', () => {
       const preset = {
         variables: { read: false, write: true, filter: [] },
         functions: { calls: true, returns: false },
-        errors: { throw: true, catch: false }
+        errors: { throw: true, catch: false },
       };
 
       const user = {
         variables: { read: true, filter: ['x', 'y'] },
         functions: true, // boolean shorthand
-        errors: { catch: true }
+        errors: { catch: true },
       };
 
       const result = deepMerge(preset, user);

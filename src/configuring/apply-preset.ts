@@ -18,6 +18,7 @@ const PRESETS: Record<string, Partial<Config>> = { overview, detailed, exhaustiv
 
 /**
  * Applies a preset configuration, merging with existing config
+ * Supports single preset string or array of presets (merged in order)
  * Uses deep merge with user config taking precedence over preset defaults
  * Uses graceful degradation - invalid presets are ignored
  *
@@ -31,15 +32,27 @@ function applyPreset(userConfig: Partial<Config>): Partial<Config> {
     return userConfig;
   }
 
-  // Get preset definition - gracefully handle invalid presets
-  const presetConfig = PRESETS[userConfig.presets];
-  if (!presetConfig) {
-    // Graceful degradation: ignore invalid preset, return config without preset applied
+  // Normalize to array for uniform handling
+  const presetNames = Array.isArray(userConfig.presets) ? userConfig.presets : [userConfig.presets];
+
+  // Collect valid preset configs (gracefully skip invalid ones)
+  const presetConfigs = presetNames
+    .map((name) => PRESETS[name])
+    .filter((config): config is Partial<Config> => config !== undefined);
+
+  // If no valid presets found, return config as-is
+  if (presetConfigs.length === 0) {
     return userConfig;
   }
 
-  // Deep merge with correct precedence: preset as base, user as override
-  return deepMerge(presetConfig, userConfig) as Partial<Config>;
+  // Merge presets in order, then apply user config as final override
+  const mergedPresets = presetConfigs.reduce(
+    (accumulator, preset) => deepMerge(accumulator, preset),
+    {} as Partial<Config>,
+  );
+
+  // Deep merge with correct precedence: merged presets as base, user as override
+  return deepMerge(mergedPresets, userConfig);
 }
 
 export default applyPreset;

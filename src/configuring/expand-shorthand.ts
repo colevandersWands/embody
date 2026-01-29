@@ -32,7 +32,7 @@ function expandObjectRecursively(current: any, defaults: any): any {
   const result = { ...current };
 
   // Process each key in the current object
-  Object.keys(current).forEach((key) => {
+  for (const key of Object.keys(current)) {
     const currentValue = current[key];
     const defaultValue = defaults[key];
 
@@ -51,7 +51,7 @@ function expandObjectRecursively(current: any, defaults: any): any {
       result[key] = expandObjectRecursively(currentValue, defaultValue);
     }
     // Otherwise, leave value as-is
-  });
+  }
 
   return result;
 }
@@ -68,7 +68,7 @@ function expandShorthand(config: Config): ExpandedConfig {
 
   // Dynamically process all keys based on defaultConfig structure
   // No hardcoded lists - automatically detects expandable object fields
-  Object.keys(expanded).forEach((key) => {
+  for (const key of Object.keys(expanded)) {
     const currentValue = expanded[key];
     const defaultValue = (defaultConfig as any)[key];
 
@@ -87,7 +87,7 @@ function expandShorthand(config: Config): ExpandedConfig {
       expanded[key] = expandObjectRecursively(currentValue, defaultValue);
     }
     // Primitive fields (string, boolean, number) and arrays are left as-is
-  });
+  }
 
   return expanded as ExpandedConfig;
 }

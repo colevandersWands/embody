@@ -12,14 +12,14 @@
  * with no side effects or param reassignment.
  */
 
-import createConfig from '../../configuring/create.js';
 import createNarrowConfig from '../../configuring/create-narrow-config.js';
+import createConfig from '../../configuring/create.js';
 import deepMerge from '../../utils/deep-merge.js';
-import filterStepsFn from '../tracing/filter-steps.js';
-import instrumentFn from '../tracing/instrument.js';
+import filterStepsFunction from '../tracing/filter-steps.js';
+import instrumentRecord from '../tracing/instrument-record.js';
+import instrumentFunction from '../tracing/instrument.js';
 import record from '../tracing/record.js';
 import serialize from '../tracing/serialize.js';
-import instrumentRecord from '../tracing/instrument-record.js';
 
 import parseConfig from './parse-config.js';
 import parseSteps from './parse-steps.js';
@@ -67,7 +67,7 @@ function chainEmbodify({
     get instrumented() {
       if (_instrumented !== null) return _instrumented;
       if (_code === null) return '';
-      return instrumentFn({ code: _code, config: _config }).instrumented;
+      return instrumentFunction({ code: _code, config: _config }).instrumented;
     },
 
     /**
@@ -228,7 +228,7 @@ function chainEmbodify({
     instrument({ config: cfgOverride }: any = {}) {
       const resolvedCfg = resolveMethodConfig(cfgOverride, _config);
       const c = _code ?? '';
-      const result = instrumentFn({
+      const result = instrumentFunction({
         code: c,
         config: resolvedCfg,
       });
@@ -273,9 +273,9 @@ function chainEmbodify({
       } else if (_instrumented !== null && codeOvr === undefined) {
         instr = _instrumented;
       } else {
-        const c = codeOvr !== undefined ? codeOvr : (_code ?? '');
+        const c = codeOvr === undefined ? (_code ?? '') : codeOvr;
         if (codeOvr !== undefined) codeUsed = codeOvr;
-        const instrResult = instrumentFn({
+        const instrResult = instrumentFunction({
           code: c,
           config: resolvedCfg,
         });
@@ -305,10 +305,10 @@ function chainEmbodify({
      * @returns {object} New chainable chainLink with filtered steps
      */
     filterSteps({ steps: stepsOvr, config: cfgOvr }: any = {}) {
-      const s = stepsOvr !== undefined ? parseSteps(stepsOvr) : chainLink.steps;
+      const s = stepsOvr === undefined ? chainLink.steps : parseSteps(stepsOvr);
 
       const resolvedCfg = resolveMethodConfig(cfgOvr, _config);
-      const result = filterStepsFn({
+      const result = filterStepsFunction({
         steps: s,
         config: resolvedCfg,
       });

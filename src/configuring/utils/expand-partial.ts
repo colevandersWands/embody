@@ -22,34 +22,24 @@ function expandPartial(current: any, defaults: any): any {
   if (current === null || defaults === null) {
     return current;
   }
-  if (!isExpandableObject(current)
-      || !isExpandableObject(defaults)) {
+  if (!isExpandableObject(current) || !isExpandableObject(defaults)) {
     return current;
   }
 
   const result = { ...current };
 
-  Object.keys(current).forEach(key => {
-    const val = current[key];
+  for (const key of Object.keys(current)) {
+    const value = current[key];
     const def = defaults[key];
 
-    if (val === true
-        && def !== undefined
-        && isExpandableObject(def)) {
+    if (value === true && def !== undefined && isExpandableObject(def)) {
       result[key] = expandPartial(def, def);
-    } else if (
-      val === false
-      && def !== undefined
-      && isExpandableObject(def)
-    ) {
+    } else if (value === false && def !== undefined && isExpandableObject(def)) {
       result[key] = createDisabledVersion(def);
-    } else if (
-      isExpandableObject(val)
-      && isExpandableObject(def)
-    ) {
-      result[key] = expandPartial(val, def);
+    } else if (isExpandableObject(value) && isExpandableObject(def)) {
+      result[key] = expandPartial(value, def);
     }
-  });
+  }
 
   return result;
 }

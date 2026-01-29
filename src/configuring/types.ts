@@ -22,30 +22,33 @@ export type PresetName = 'overview' | 'detailed' | 'exhaustive';
  * is included, rather than what language features are traced.
  */
 export type MetaConfig = {
-  readonly default?: null | boolean;           // When set to boolean, all meta fields default to this value
-  readonly maxIterations?: number | null;      // Limit loop iterations (prevents infinite loops)
-  readonly maxCallstack?: number | null;       // Limit call stack depth (prevents infinite recursion)
-  readonly index?: boolean;                    // Include numbered indexes for trace entries
-  readonly range?: {                          // Code range to trace
-    readonly start: number;                   // Starting line number
-    readonly end: number;                     // Ending line number
+  readonly default?: null | boolean; // When set to boolean, all meta fields default to this value
+  readonly maxIterations?: number | null; // Limit loop iterations (prevents infinite loops)
+  readonly maxCallstack?: number | null; // Limit call stack depth (prevents infinite recursion)
+  readonly index?: boolean; // Include numbered indexes for trace entries
+  readonly range?: {
+    // Code range to trace
+    readonly start: number; // Starting line number
+    readonly end: number; // Ending line number
   };
   readonly location?: 'line' | 'full' | false; // Source location format: line only, [line,col], or none
-  readonly ast?: boolean;                      // Include AST and path to node for each entry
-  readonly data?: {                           // Control what value data is included
-    readonly type: boolean;                   // Include JavaScript type (string, number, etc.)
-    readonly instance: boolean;               // Include constructor/class info
-    readonly value: boolean;                  // Include actual value
-    readonly lookup: boolean;                 // Include prototype chain lookup details
+  readonly ast?: boolean; // Include AST and path to node for each entry
+  readonly data?: {
+    // Control what value data is included
+    readonly type: boolean; // Include JavaScript type (string, number, etc.)
+    readonly instance: boolean; // Include constructor/class info
+    readonly value: boolean; // Include actual value
+    readonly lookup: boolean; // Include prototype chain lookup details
   };
-  readonly references?: boolean;               // Include reference type information
-  readonly debug?: {                          // Debugging information (not for learners)
-    readonly configPath: boolean;             // Path to config option that caused this trace
-    readonly AranNodeId: boolean;             // Internal Aran node identifier
-    readonly adviceName: boolean;             // Name of advice function that generated trace
+  readonly references?: boolean; // Include reference type information
+  readonly debug?: {
+    // Debugging information (not for learners)
+    readonly configPath: boolean; // Path to config option that caused this trace
+    readonly AranNodeId: boolean; // Internal Aran node identifier
+    readonly adviceName: boolean; // Name of advice function that generated trace
   };
-  readonly timestamps?: boolean;               // Include timestamps (mainly for async tracing)
-}
+  readonly timestamps?: boolean; // Include timestamps (mainly for async tracing)
+};
 
 /**
  * Language configuration - all JavaScript language features that can be traced
@@ -54,11 +57,13 @@ export type MetaConfig = {
  * and operations that can appear in the execution trace.
  */
 export type LangConfig = {
-  readonly semantics?: boolean;                // Label trace entries as 'statement', 'expression', 'value', etc.
+  readonly semantics?: boolean; // Label trace entries as 'statement', 'expression', 'value', etc.
 
-  readonly bindings?: {                       // Variable/binding operations
+  readonly bindings?: {
+    // Variable/binding operations
     readonly kind?: {
-      readonly declarative?: {                // Keyword-based declarations
+      readonly declarative?: {
+        // Keyword-based declarations
         readonly var?: boolean;
         readonly let?: boolean;
         readonly const?: boolean;
@@ -66,137 +71,150 @@ export type LangConfig = {
         readonly class?: boolean;
         readonly import?: boolean;
       };
-      readonly explicit?: {                   // Named but no keyword
-        readonly parameters?: boolean;        // Function parameters
-        readonly catch?: boolean;            // Catch block parameter
+      readonly explicit?: {
+        // Named but no keyword
+        readonly parameters?: boolean; // Function parameters
+        readonly catch?: boolean; // Catch block parameter
       };
-      readonly implicit?: {                   // Created without declaration
-        readonly global?: boolean;            // x = 5 creates global
-        readonly arguments?: boolean;         // arguments object
+      readonly implicit?: {
+        // Created without declaration
+        readonly global?: boolean; // x = 5 creates global
+        readonly arguments?: boolean; // arguments object
         readonly callee?: boolean;
         readonly this?: boolean;
-        readonly newTarget?: boolean;         // new.target
+        readonly newTarget?: boolean; // new.target
         readonly super?: boolean;
-        readonly importMeta?: boolean;        // import.meta
+        readonly importMeta?: boolean; // import.meta
       };
-      readonly with?: boolean;               // with statement bindings
+      readonly with?: boolean; // with statement bindings
     };
-    readonly events?: {                       // Binding lifecycle events
-      readonly declare?: boolean;            // When binding enters scope
-      readonly available?: boolean;          // When binding becomes accessible
-      readonly initialize?: boolean;         // Initial value assignment
-      readonly implicit?: boolean;           // Implicit initialization
-      readonly assign?: boolean;             // Value changes
-      readonly read?: boolean;              // Value access
+    readonly events?: {
+      // Binding lifecycle events
+      readonly declare?: boolean; // When binding enters scope
+      readonly available?: boolean; // When binding becomes accessible
+      readonly initialize?: boolean; // Initial value assignment
+      readonly implicit?: boolean; // Implicit initialization
+      readonly assign?: boolean; // Value changes
+      readonly read?: boolean; // Value access
     };
-    readonly filter?: {                      // Filter by variable name
+    readonly filter?: {
+      // Filter by variable name
       readonly include?: readonly string[];
       readonly exclude?: readonly string[];
     };
   };
 
-  readonly properties?: {                     // Property operations on objects
+  readonly properties?: {
+    // Property operations on objects
     readonly create?: {
-      readonly literal?: boolean;              // { prop: value }
-      readonly computed?: boolean;             // { [expr]: value }
-      readonly method?: boolean;               // { method() {} }
+      readonly literal?: boolean; // { prop: value }
+      readonly computed?: boolean; // { [expr]: value }
+      readonly method?: boolean; // { method() {} }
       readonly accessors?: {
-        readonly getters?: boolean;            // { get prop() {} }
-        readonly setters?: boolean;            // { set prop(v) {} }
+        readonly getters?: boolean; // { get prop() {} }
+        readonly setters?: boolean; // { set prop(v) {} }
       };
-      readonly class?: boolean;                // Class properties
-      readonly static?: boolean;               // Static class properties
-      readonly private?: boolean;              // Private class fields
-      readonly fields?: boolean;               // Class fields with initial values
+      readonly class?: boolean; // Class properties
+      readonly static?: boolean; // Static class properties
+      readonly private?: boolean; // Private class fields
+      readonly fields?: boolean; // Class fields with initial values
     };
-    readonly access?: boolean;                 // obj.prop, obj['prop']
-    readonly update?: boolean;                 // obj.prop = value
-    readonly remove?: boolean;                 // delete obj.prop
-    readonly optionalChaining?: boolean;       // obj?.prop
-    readonly lookup?: boolean;                 // Prototype chain traversal
-    readonly filter?: readonly string[];                // Filter by property name
+    readonly access?: boolean; // obj.prop, obj['prop']
+    readonly update?: boolean; // obj.prop = value
+    readonly remove?: boolean; // delete obj.prop
+    readonly optionalChaining?: boolean; // obj?.prop
+    readonly lookup?: boolean; // Prototype chain traversal
+    readonly filter?: readonly string[]; // Filter by property name
   };
 
-  readonly references?: {                      // Reference type operations
-    readonly create?: boolean;                 // Creating objects/arrays
-    readonly access?: boolean;                 // Accessing reference values
-    readonly mutate?: boolean;                 // Modifying reference values
+  readonly references?: {
+    // Reference type operations
+    readonly create?: boolean; // Creating objects/arrays
+    readonly access?: boolean; // Accessing reference values
+    readonly mutate?: boolean; // Modifying reference values
   };
 
-  readonly operators?: {                       // JavaScript operators
-    readonly pure?: boolean;                   // Non-mutating operators
-    readonly mutating?: boolean;               // Assignment operators
-    readonly shortCircuiting?: boolean;        // &&, ||, ??
-    readonly comma?: boolean;                  // Comma operator
-    readonly coercion?: boolean;               // Type coercion tracking
+  readonly operators?: {
+    // JavaScript operators
+    readonly pure?: boolean; // Non-mutating operators
+    readonly mutating?: boolean; // Assignment operators
+    readonly shortCircuiting?: boolean; // &&, ||, ??
+    readonly comma?: boolean; // Comma operator
+    readonly coercion?: boolean; // Type coercion tracking
     readonly filter?: {
       readonly include?: readonly string[];
       readonly exclude?: readonly string[];
     };
   };
-  readonly parenthesis?: {                     // Parenthesis tracking
-    readonly enter?: boolean;                  // Entering parenthesized expression
-    readonly leave?: boolean;                  // Leaving parenthesized expression
+  readonly parenthesis?: {
+    // Parenthesis tracking
+    readonly enter?: boolean; // Entering parenthesized expression
+    readonly leave?: boolean; // Leaving parenthesized expression
   };
 
-  readonly templates?: {                       // Template literals
-    readonly literal?: boolean;                // `string ${expr}`
-    readonly tagged?: boolean;                 // tag`string ${expr}`
+  readonly templates?: {
+    // Template literals
+    readonly literal?: boolean; // `string ${expr}`
+    readonly tagged?: boolean; // tag`string ${expr}`
   };
 
-  readonly symbols?: {                         // Symbol operations
-    readonly create?: boolean;                 // Symbol(), Symbol.for()
-    readonly access?: boolean;                 // Accessing symbol properties
+  readonly symbols?: {
+    // Symbol operations
+    readonly create?: boolean; // Symbol(), Symbol.for()
+    readonly access?: boolean; // Accessing symbol properties
   };
 
-  readonly matching?: {                        // Destructuring and spread operations
+  readonly matching?: {
+    // Destructuring and spread operations
     readonly read?: {
-      readonly spread?: boolean;               // ...rest in destructuring
+      readonly spread?: boolean; // ...rest in destructuring
     };
     readonly assign?: {
-      readonly destructure?: boolean;          // {a, b} = obj, [x, y] = arr
-      readonly rest?: boolean;                 // ...rest in patterns
-      readonly defaultValues?: boolean;        // {a = 5} = obj
+      readonly destructure?: boolean; // {a, b} = obj, [x, y] = arr
+      readonly rest?: boolean; // ...rest in patterns
+      readonly defaultValues?: boolean; // {a = 5} = obj
     };
   };
 
-  readonly scopes?: {                          // Scope tracking
+  readonly scopes?: {
+    // Scope tracking
     readonly kind?: {
-      readonly script?: boolean;               // Top-level script scope
-      readonly function?: boolean;             // Function scope
-      readonly block?: boolean;                // Block scope
-      readonly module?: boolean;               // Module scope
-      readonly closure?: boolean;              // Closure scope
+      readonly script?: boolean; // Top-level script scope
+      readonly function?: boolean; // Function scope
+      readonly block?: boolean; // Block scope
+      readonly module?: boolean; // Module scope
+      readonly closure?: boolean; // Closure scope
     };
     readonly events?: {
-      readonly create?: boolean;               // Scope creation
-      readonly enter?: boolean;                // Entering scope
-      readonly interrupt?: boolean;            // Scope interruption (exceptions)
-      readonly completion?: boolean;           // Normal scope completion
-      readonly leave?: boolean;                // Leaving scope
+      readonly create?: boolean; // Scope creation
+      readonly enter?: boolean; // Entering scope
+      readonly interrupt?: boolean; // Scope interruption (exceptions)
+      readonly completion?: boolean; // Normal scope completion
+      readonly leave?: boolean; // Leaving scope
     };
   };
 
-  readonly controlFlow?: {                     // Control flow constructs
+  readonly controlFlow?: {
+    // Control flow constructs
     readonly kind?: {
-      readonly conditionals?: boolean;         // if/else
+      readonly conditionals?: boolean; // if/else
       readonly loops?: {
-        readonly while?: boolean;              // while loops
+        readonly while?: boolean; // while loops
         readonly for?: {
-          readonly initialize?: boolean;       // for loop init
-          readonly test?: boolean;            // for loop condition
-          readonly increment?: boolean;       // for loop update
+          readonly initialize?: boolean; // for loop init
+          readonly test?: boolean; // for loop condition
+          readonly increment?: boolean; // for loop update
         };
-        readonly forOf?: boolean;              // for...of loops
-        readonly forIn?: boolean;              // for...in loops
+        readonly forOf?: boolean; // for...of loops
+        readonly forIn?: boolean; // for...in loops
       };
-      readonly switch?: boolean;               // switch statements
+      readonly switch?: boolean; // switch statements
     };
     readonly events?: {
-      readonly test?: boolean;                 // Condition evaluation
-      readonly branch?: boolean;               // Branch taken
-      readonly iteration?: boolean;            // Loop iteration
-      readonly jump?: boolean;                 // break/continue
+      readonly test?: boolean; // Condition evaluation
+      readonly branch?: boolean; // Branch taken
+      readonly iteration?: boolean; // Loop iteration
+      readonly jump?: boolean; // break/continue
     };
     readonly filter?: {
       readonly include?: readonly string[];
@@ -204,33 +222,35 @@ export type LangConfig = {
     };
   };
 
-  readonly errorHandling?: {                   // Error handling
-    readonly throw?: boolean;                  // throw statements
-    readonly try?: boolean;                    // try blocks
-    readonly catch?: boolean;                  // catch blocks
-    readonly finally?: boolean;                // finally blocks
-    readonly callstack?: boolean;              // Include call stack info
+  readonly errorHandling?: {
+    // Error handling
+    readonly throw?: boolean; // throw statements
+    readonly try?: boolean; // try blocks
+    readonly catch?: boolean; // catch blocks
+    readonly finally?: boolean; // finally blocks
+    readonly callstack?: boolean; // Include call stack info
   };
 
-  readonly functions?: {                       // Function operations
+  readonly functions?: {
+    // Function operations
     readonly kind?: {
-      readonly arrow?: boolean;                // Arrow functions
-      readonly function?: boolean;             // Regular functions
-      readonly method?: boolean;               // Object methods
-      readonly generator?: boolean;            // Generator functions
-      readonly builtIn?: boolean;              // Built-in functions
+      readonly arrow?: boolean; // Arrow functions
+      readonly function?: boolean; // Regular functions
+      readonly method?: boolean; // Object methods
+      readonly generator?: boolean; // Generator functions
+      readonly builtIn?: boolean; // Built-in functions
     };
     readonly events?: {
-      readonly definition?: boolean;           // Function definition
+      readonly definition?: boolean; // Function definition
       readonly call?: {
-        readonly arguments?: boolean;          // Track arguments
+        readonly arguments?: boolean; // Track arguments
       };
-      readonly construct?: boolean;            // new Function()
-      readonly return?: boolean;               // Return statements
+      readonly construct?: boolean; // new Function()
+      readonly return?: boolean; // Return statements
       readonly coroutines?: {
-        readonly await?: boolean;              // await expressions
-        readonly yield?: boolean;              // yield expressions
-        readonly yieldDelegate?: boolean;      // yield* delegation
+        readonly await?: boolean; // await expressions
+        readonly yield?: boolean; // yield expressions
+        readonly yieldDelegate?: boolean; // yield* delegation
       };
     };
     readonly filter?: {
@@ -239,35 +259,39 @@ export type LangConfig = {
     };
   };
 
-  readonly classes?: {                         // Class-specific features
-    readonly staticBlock?: boolean;            // static {} blocks
+  readonly classes?: {
+    // Class-specific features
+    readonly staticBlock?: boolean; // static {} blocks
   };
 
-  readonly modules?: {                         // Module operations
+  readonly modules?: {
+    // Module operations
     readonly imports?: {
-      readonly named?: boolean;                // import { x }
-      readonly default?: boolean;              // import x
+      readonly named?: boolean; // import { x }
+      readonly default?: boolean; // import x
     };
     readonly exports?: {
-      readonly named?: boolean;                // export { x }
-      readonly default?: boolean;              // export default
+      readonly named?: boolean; // export { x }
+      readonly default?: boolean; // export default
     };
-    readonly load?: boolean;                   // Module loading events
-    readonly await?: boolean;                  // Top-level await
+    readonly load?: boolean; // Module loading events
+    readonly await?: boolean; // Top-level await
   };
 
-  readonly dynamic?: {                         // Dynamic code evaluation
-    readonly eval?: boolean;                   // eval() calls
-    readonly function?: boolean;               // new Function()
+  readonly dynamic?: {
+    // Dynamic code evaluation
+    readonly eval?: boolean; // eval() calls
+    readonly function?: boolean; // new Function()
   };
 
-  readonly regex?: boolean;                    // Regular expressions
+  readonly regex?: boolean; // Regular expressions
 
-  readonly meta?: {                            // Meta-programming features
-    readonly proxy?: boolean;                  // Proxy operations
-    readonly reflect?: boolean;                // Reflect operations
+  readonly meta?: {
+    // Meta-programming features
+    readonly proxy?: boolean; // Proxy operations
+    readonly reflect?: boolean; // Reflect operations
   };
-}
+};
 
 /**
  * Main configuration interface - combines meta settings (output format)
@@ -277,22 +301,18 @@ export type LangConfig = {
  * boolean shorthand is expanded, and missing fields are filled from defaults.
  */
 export type Config = {
-  readonly presets?: string;                   // Preset name (e.g., 'overview', 'detailed', 'exhaustive')
-  readonly meta?: MetaConfig;                  // Trace output format and limits
-  readonly lang?: LangConfig;                  // Language features to trace
-}
+  readonly presets?: PresetName | readonly PresetName[]; // Single preset or array of presets
+  readonly meta?: MetaConfig; // Trace output format and limits
+  readonly lang?: LangConfig; // Language features to trace
+};
 
 /**
- * Fully expanded configuration (after processing)
+ * Configuration after all defaults have been applied and shorthand expanded.
  *
- * Same structure as Config but used after all processing is complete.
- * In the new structure, there's no boolean shorthand expansion at the
- * root level - that happens within the lang sections.
+ * Structurally identical to Config, but semantically indicates processing complete.
+ * Use this type when you need to guarantee the config has been through fillConfig.
  */
-export type ExpandedConfig = {
-  // Inherits presets, meta, lang from Config
-  // Used to distinguish processed configs from user inputs
-} & Config
+export type ExpandedConfig = Config;
 
 /**
  * User-provided configuration (partial)

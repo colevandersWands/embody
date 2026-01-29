@@ -12,7 +12,7 @@ import representValue from './represent-value.js';
 export default function representCoercion(
   operator: string,
   operands: readonly any[],
-  mode: 'full' | 'types' | 'values' | 'raw' | false
+  mode: 'full' | 'types' | 'values' | 'raw' | false,
 ): readonly any[] {
   // Handle unary operators
   if (operands.length === 1) {
@@ -103,12 +103,12 @@ export default function representCoercion(
       if (leftType === 'object' && left !== null && rightType !== 'object') {
         // This is a simplification - actual ToPrimitive is complex
         const primitive =
-          left.valueOf !== Object.prototype.valueOf ? left.valueOf() : left.toString();
+          left.valueOf === Object.prototype.valueOf ? left.toString() : left.valueOf();
         return [representValue(primitive, mode), representValue(right, mode)];
       }
       if (rightType === 'object' && right !== null && leftType !== 'object') {
         const primitive =
-          right.valueOf !== Object.prototype.valueOf ? right.valueOf() : right.toString();
+          right.valueOf === Object.prototype.valueOf ? right.toString() : right.valueOf();
         return [representValue(left, mode), representValue(primitive, mode)];
       }
 
@@ -133,5 +133,5 @@ export default function representCoercion(
   }
 
   // For ternary or other operators, return all operands as-is
-  return operands.map(op => representValue(op, mode));
+  return operands.map((op) => representValue(op, mode));
 }

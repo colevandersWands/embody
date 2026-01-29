@@ -75,11 +75,11 @@ function getInstance(value: any): string | null {
  */
 export default function representValue(
   value: any,
-  mode: 'full' | 'types' | 'values' | 'raw' | false
+  mode: 'full' | 'types' | 'values' | 'raw' | false,
 ) {
   // Early return for false mode
   if (mode === false) {
-    return undefined;
+    return;
   }
 
   const type = typeof value;
@@ -113,7 +113,7 @@ export default function representValue(
     valueRepresentation = {
       name: value.name || 'anonymous',
       length: value.length,
-      preview: firstLine
+      preview: firstLine,
     };
   } else {
     // Objects - use deepClone for serialization

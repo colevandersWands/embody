@@ -1,9 +1,19 @@
-export default function script({ event = null, file = null, bindings = null } = {}) {
+function script({
+  event,
+  file,
+  bindings,
+}: {
+  readonly event?: string;
+  readonly file?: string;
+  readonly bindings?: any;
+} = {}) {
   return {
     category: 'scope',
     kind: 'script',
     event,
     file,
-    bindings
+    bindings,
   };
 }
+
+export default script;

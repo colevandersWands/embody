@@ -6,21 +6,17 @@
  * This exception exists to provide a flexible public API for consumers.
  */
 
+import deserialize from './api/tracing/deserialize.js';
 import fillConfig from './api/tracing/fill-config.js';
 import filterSteps from './api/tracing/filter-steps.js';
+import instrumentRecord from './api/tracing/instrument-record.js';
 import instrument from './api/tracing/instrument.js';
 import record from './api/tracing/record.js';
-import instrumentRecord from './api/tracing/instrument-record.js';
 import serialize from './api/tracing/serialize.js';
-import deserialize from './api/tracing/deserialize.js';
-
-import trace from './trace.js';
 
 // ============================================================================
 // Main Public API - Default Export
 // ============================================================================
-
-export default trace;
 
 // ============================================================================
 // Main Public API - Named Exports
@@ -89,3 +85,5 @@ export type {
   PicklesInput,
   PicklesOutput,
 } from './types/api.js';
+
+export { default } from './trace.js';

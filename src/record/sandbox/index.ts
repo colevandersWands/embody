@@ -7,7 +7,7 @@
  * @param {HTMLElement} container - DOM element to render results into
  * @returns {Promise<void>} Resolves when execution completes
  */
-export async function executeJavaScript(code, config = {}, container = null) {
+function executeJavaScript(code, config = {}, container = null) {
   if (!container) {
     console.warn('No container provided for JavaScript execution');
     return;
@@ -20,7 +20,7 @@ export async function executeJavaScript(code, config = {}, container = null) {
 
   // Clean up container
   while (container.firstChild) {
-    container.removeChild(container.firstChild);
+    container.firstChild.remove();
   }
 
   // Default configuration
@@ -30,9 +30,9 @@ export async function executeJavaScript(code, config = {}, container = null) {
     testing: false,
     loopGuard: {
       active: false,
-      max: 100
+      max: 100,
     },
-    ...config
+    ...config,
   };
 
   try {
@@ -57,34 +57,9 @@ export async function executeJavaScript(code, config = {}, container = null) {
 		`;
 
     // Set up iframe load handler
-    iframe.onload = () => {
-      try {
-        const iframeWindow = iframe.contentWindow;
-        const iframeDocument = iframe.contentDocument;
+    iframe.addEventListener('load', configureAndLoadIFrame);
 
-        if (!iframeWindow || !iframeDocument) {
-          throw new Error('Failed to access iframe window or document');
-        }
-
-        // Add globals to iframe (like old-runner.js)
-        Object.assign(iframeWindow, finalConfig.globals || {});
-
-        // Create and execute script (use innerHTML like old-runner.js)
-        const script = document.createElement('script');
-        script.innerHTML = finalCode;
-
-        if (finalConfig.type === 'module') {
-          script.type = 'module';
-        }
-
-        // Execute the script
-        iframeDocument.body.appendChild(script);
-      } catch (error) {
-        // console.error('❌ JavaScript execution error:', error);
-      }
-    };
-
-    container.appendChild(iframe);
+    container.append(iframe);
 
     // Iframe loads automatically when appended - no need to set src
   } catch (error) {
@@ -92,3 +67,28 @@ export async function executeJavaScript(code, config = {}, container = null) {
     throw error;
   }
 }
+
+function configureAndLoadIFrame() {
+  const iframeWindow = iframe.contentWindow;
+  const iframeDocument = iframe.contentDocument;
+
+  if (!iframeWindow || !iframeDocument) {
+    throw new Error('Failed to access iframe window or document');
+  }
+
+  // Add globals to iframe (like old-runner.js)
+  Object.assign(iframeWindow, finalConfig.globals || {});
+
+  // Create and execute script (use innerHTML like old-runner.js)
+  const script = document.createElement('script');
+  script.innerHTML = finalCode;
+
+  if (finalConfig.type === 'module') {
+    script.type = 'module';
+  }
+
+  // Execute the script
+  iframeDocument.body.append(script);
+}
+
+export default executeJavaScript;

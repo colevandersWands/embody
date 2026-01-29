@@ -38,21 +38,21 @@ import type { Step } from '../../types/api.js';
  *
  * @since 1.0.0
  */
-function record(
-  { instrumented, config }: { readonly instrumented?: string; readonly config?: ExpandedConfig } = {},
-): RecordOutput {
+function record({
+  instrumented,
+  config,
+}: { readonly instrumented?: string; readonly config?: ExpandedConfig } = {}): RecordOutput {
   if (instrumented !== undefined && typeof instrumented !== 'string') {
-    throw new Error(
-      'record: expected instrumented to be a string, got ' + typeof instrumented,
-    );
+    throw new Error(`record: expected instrumented to be a string, got ${typeof instrumented}`);
   }
   if (
     config !== undefined &&
     (typeof config !== 'object' || config === null || Array.isArray(config))
   ) {
     throw new Error(
-      'record: expected config to be an object, got ' +
-        (Array.isArray(config) ? 'array' : typeof config),
+      `record: expected config to be an object, got ${
+        Array.isArray(config) ? 'array' : typeof config
+      }`,
     );
   }
 

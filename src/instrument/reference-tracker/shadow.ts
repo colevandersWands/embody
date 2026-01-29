@@ -46,7 +46,7 @@ import type { TrackedObject, ShadowFunction } from './types.js';
  * traceEvent.objectId = trackedObject.id;
  * ```
  */
-function shadow(record: WeakMap<object, TrackedObject>, wrapFn: (value: any) => any) {
+function shadow(record: WeakMap<object, TrackedObject>, wrapFunction: (value: any) => any) {
   /**
    * Shadows values by wrapping all types, storing reference types in record
    *
@@ -57,14 +57,14 @@ function shadow(record: WeakMap<object, TrackedObject>, wrapFn: (value: any) => 
   return function shadowValues<T>(value: T): TrackedObject<T> {
     // For primitives, use wrap function directly (no WeakMap storage)
     if (Object(value) !== value) {
-      return wrapFn(value) as TrackedObject<T>;
+      return wrapFunction(value) as TrackedObject<T>;
     }
 
     // Check if we already have this object in our record
     if (record.has(value as object)) {
       const existing = record.get(value as object) as TrackedObject<T>;
       // Re-wrap to capture potential mutations
-      const rewrapped = wrapFn(value) as TrackedObject<T>;
+      const rewrapped = wrapFunction(value) as TrackedObject<T>;
       // Update the existing wrapper's value but keep the same wrapper
       // INTENTIONAL MUTATION: Performance optimization to avoid object churn
       // in high-frequency advice function calls. The TrackedObject retains
@@ -74,7 +74,7 @@ function shadow(record: WeakMap<object, TrackedObject>, wrapFn: (value: any) => 
     }
 
     // First time seeing this object - wrap and store
-    const wrapped = wrapFn(value) as TrackedObject<T>;
+    const wrapped = wrapFunction(value) as TrackedObject<T>;
     record.set(value as object, wrapped);
     return wrapped;
   };

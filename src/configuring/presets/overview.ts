@@ -38,11 +38,11 @@ const overview: Partial<Config> = {
           const: true,
           function: true,
           class: false,
-          import: false
+          import: false,
         },
         explicit: {
           parameters: false,
-          catch: false
+          catch: false,
         },
         implicit: {
           global: false,
@@ -51,22 +51,22 @@ const overview: Partial<Config> = {
           this: false,
           newTarget: false,
           super: false,
-          importMeta: false
+          importMeta: false,
         },
-        with: false
+        with: false,
       },
       events: {
-        declare: false,    // Hide hoisting complexity
-        available: true,   // When variable becomes usable
-        initialize: true,  // Initial value
+        declare: false, // Hide hoisting complexity
+        available: true, // When variable becomes usable
+        initialize: true, // Initial value
         implicit: false,
-        assign: true,      // Value changes
-        read: false        // Reduce noise
+        assign: true, // Value changes
+        read: false, // Reduce noise
       },
       filter: {
         include: [],
-        exclude: []
-      }
+        exclude: [],
+      },
     },
 
     functions: {
@@ -75,52 +75,52 @@ const overview: Partial<Config> = {
         function: true,
         method: true,
         generator: false,
-        builtIn: false
+        builtIn: false,
       },
       events: {
         definition: true,
         call: {
-          arguments: false   // Hide argument details
+          arguments: false, // Hide argument details
         },
-        construct: true,     // new Class()
-        return: false,       // Reduce detail
+        construct: true, // new Class()
+        return: false, // Reduce detail
         coroutines: {
           await: true,
           yield: false,
-          yieldDelegate: false
-        }
+          yieldDelegate: false,
+        },
       },
       filter: {
         include: [],
-        exclude: []
-      }
+        exclude: [],
+      },
     },
 
     controlFlow: {
       kind: {
-        conditionals: true,   // if/else
+        conditionals: true, // if/else
         loops: {
-          while: false,       // Too much detail
+          while: false, // Too much detail
           for: {
             initialize: false,
             test: false,
-            increment: false
+            increment: false,
           },
           forOf: false,
-          forIn: false
+          forIn: false,
         },
-        switch: false
+        switch: false,
       },
       events: {
-        test: true,          // Condition evaluation
-        branch: true,        // Which branch taken
-        iteration: false,    // Loop iterations
-        jump: false          // break/continue
+        test: true, // Condition evaluation
+        branch: true, // Which branch taken
+        iteration: false, // Loop iterations
+        jump: false, // break/continue
       },
       filter: {
         include: [],
-        exclude: []
-      }
+        exclude: [],
+      },
     },
 
     properties: {
@@ -130,36 +130,36 @@ const overview: Partial<Config> = {
         method: false,
         accessors: {
           getters: false,
-          setters: false
+          setters: false,
         },
         class: false,
         static: false,
         private: false,
-        fields: false
+        fields: false,
       },
-      access: true,         // Reading properties
-      update: false,        // Writing properties
+      access: true, // Reading properties
+      update: false, // Writing properties
       remove: false,
       optionalChaining: false,
-      lookup: false,        // Prototype chain
-      filter: []
+      lookup: false, // Prototype chain
+      filter: [],
     },
 
     scopes: {
       kind: {
         script: true,
         function: true,
-        block: false,       // Too detailed
+        block: false, // Too detailed
         module: true,
-        closure: false      // Advanced concept
+        closure: false, // Advanced concept
       },
       events: {
         create: true,
         enter: true,
         interrupt: false,
         completion: false,
-        leave: true
-      }
+        leave: true,
+      },
     },
 
     errorHandling: {
@@ -167,7 +167,7 @@ const overview: Partial<Config> = {
       try: false,
       catch: true,
       finally: false,
-      callstack: false
+      callstack: false,
     },
 
     operators: {
@@ -178,64 +178,64 @@ const overview: Partial<Config> = {
       coercion: false,
       filter: {
         include: [],
-        exclude: []
-      }
+        exclude: [],
+      },
     },
 
     modules: {
       imports: {
         named: true,
-        default: true
+        default: true,
       },
       exports: {
         named: true,
-        default: true
+        default: true,
       },
       load: false,
-      await: true
+      await: true,
     },
 
     // Disabled features for simplicity
     references: {
       create: false,
       access: false,
-      mutate: false
+      mutate: false,
     },
     parenthesis: {
       enter: false,
-      leave: false
+      leave: false,
     },
     templates: {
       literal: false,
-      tagged: false
+      tagged: false,
     },
     symbols: {
       create: false,
-      access: false
+      access: false,
     },
     matching: {
       read: {
-        spread: false
+        spread: false,
       },
       assign: {
         destructure: false,
         rest: false,
-        defaultValues: false
-      }
+        defaultValues: false,
+      },
     },
     classes: {
-      staticBlock: false
+      staticBlock: false,
     },
     dynamic: {
       eval: false,
-      function: false
+      function: false,
     },
     regex: false,
     meta: {
       proxy: false,
-      reflect: false
+      reflect: false,
     },
-    semantics: false
+    semantics: false,
   },
 
   meta: {
@@ -246,16 +246,16 @@ const overview: Partial<Config> = {
       type: true,
       instance: false,
       value: true,
-      lookup: false
+      lookup: false,
     },
     references: false,
     debug: {
       configPath: false,
       AranNodeId: false,
-      adviceName: false
+      adviceName: false,
     },
-    timestamps: false
-  }
+    timestamps: false,
+  },
 };
 
 export default overview;

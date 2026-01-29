@@ -6,8 +6,8 @@
  * and the hybrid typing approach for object-threading patterns.
  */
 
-import type { SpecificTraceEvent } from '../../types.js';
-import type { UserConfig, ExpandedConfig, PresetName } from '../configuring/types.js';
+import type { UserConfig, ExpandedConfig } from '../configuring/types.js';
+import type { SpecificTraceEvent } from '../instrument/types.js';
 
 // ============================================================================
 // Core Types
@@ -187,9 +187,7 @@ export type FilterStepsOutput = {
 
 // --- serialize ---
 
-export type SerializeInput = {
-  readonly steps: readonly Step[];
-};
+export type SerializeInput = { readonly steps: readonly Step[] } | { readonly config: UserConfig };
 
 export type SerializeOutput = string;
 
@@ -208,12 +206,19 @@ export type DeserializeOutput = {
 // --- pickles ---
 
 export type PicklesInput = {
-  readonly steps: readonly Step[] | string;
+  readonly steps?: readonly Step[] | string;
+  readonly config?: UserConfig | string;
 };
 
 export type PicklesOutput =
   | { readonly steps: string }
-  | { readonly steps: readonly Step[] };
+  | { readonly steps: readonly Step[] }
+  | { readonly config: string }
+  | { readonly config: UserConfig }
+  | { readonly steps: string; readonly config: string }
+  | { readonly steps: readonly Step[]; readonly config: UserConfig }
+  | { readonly steps: string; readonly config: UserConfig }
+  | { readonly steps: readonly Step[]; readonly config: string };
 
 // ============================================================================
 // Function Signatures with Overloads
@@ -222,34 +227,46 @@ export type PicklesOutput =
 /**
  * Main entry point for tracing JavaScript code execution.
  * Supports currying for performance optimization when reusing configurations.
+ *
+ * Config accepts UserConfig object or JSON string (pickle format).
  */
 export type EmbodyFunction = {
-  // All three overloads
-  (input: { readonly config: UserConfig; readonly code: string }): TraceResult;
-  (input: { readonly config: UserConfig }): (input: { readonly code: string }) => TraceResult;
-  (input: { readonly code: string }): (input: { readonly config?: UserConfig }) => TraceResult;
+  // All three overloads - config can be object or pickle string
+  (input: { readonly config: UserConfig | string; readonly code: string }): TraceResult;
+  (input: {
+    readonly config: UserConfig | string;
+  }): (input: { readonly code: string }) => TraceResult;
+  (input: {
+    readonly code: string;
+  }): (input: { readonly config?: UserConfig | string }) => TraceResult;
 };
 
 /**
  * Post-processing filter for existing trace steps.
  * Supports currying for applying same filters to multiple traces.
+ *
+ * Steps and config can be objects or JSON strings (pickle format).
  */
 export type SquintFunction = {
-  // All three overloads
-  (input: { readonly steps: readonly Step[]; readonly config: UserConfig }): FilterResult;
+  // All three overloads - steps and config can be objects or pickle strings
   (input: {
-    readonly config: UserConfig;
-  }): (input: { readonly steps: readonly Step[] }) => FilterResult;
+    readonly steps: readonly Step[] | string;
+    readonly config: UserConfig | string;
+  }): FilterResult;
   (input: {
-    readonly steps: readonly Step[];
-  }): (input: { readonly config?: UserConfig }) => FilterResult;
+    readonly config: UserConfig | string;
+  }): (input: { readonly steps: readonly Step[] | string }) => FilterResult;
+  (input: {
+    readonly steps: readonly Step[] | string;
+  }): (input: { readonly config?: UserConfig | string }) => FilterResult;
 };
 
 /**
- * Simple default export for quick tracing without metadata
+ * Simple default export for quick tracing without metadata.
+ * Config accepts UserConfig object or JSON string (pickle format).
  */
 export type EmbodyTraceFunction = {
-  (code?: string, config?: UserConfig): readonly Step[];
+  (code?: string, config?: UserConfig | string): readonly Step[];
 };
 
 // ============================================================================
@@ -267,64 +284,7 @@ export type ExecutionLimits = {
 };
 
 // ============================================================================
-// Default Export - All API Types
+// Re-exports from configuring module (for public API consumers)
 // ============================================================================
 
-/**
- * Complete collection of public API types for the embody library.
- * Exported as a single default object following codebase convention.
- */
-const apiTypes = {
-  // Re-export everything for type imports
-  // Note: In TypeScript, we can't actually export types as values,
-  // so this serves as documentation. Actual types must be imported
-  // with `import type ApiTypes from './types/api'` and used as generics.
-};
-
-export default apiTypes;
-
-// Type exports for TypeScript consumers
-// These are available via: import type { Step, TraceResult, etc } from './types/api'
-export type {
-  // Core types
-  Step,
-  TraceResult,
-  FilterResult,
-
-  // Configuration
-  UserConfig,
-  ExpandedConfig,
-  PresetName,
-
-  // Function signatures
-  EmbodyFunction,
-  SquintFunction,
-  EmbodyTraceFunction,
-
-  // Input/Output types
-  EmbodyInput,
-  SquintInput,
-  FillConfigInput,
-  FillConfigOutput,
-  InstrumentInput,
-  InstrumentOutput,
-  RecordInput,
-  RecordOutput,
-  TraceInput,
-  TraceOutput,
-  FilterStepsInput,
-  FilterStepsOutput,
-  SerializeInput,
-  SerializeOutput,
-  DeserializeInput,
-  DeserializeOutput,
-  PicklesInput,
-  PicklesOutput,
-
-  // Execution limits
-  ExecutionLimits,
-
-  // Pipeline types
-  ConfiguredInput,
-  PipelineOutput,
-};
+export type { UserConfig, ExpandedConfig, PresetName } from '../configuring/types.js';

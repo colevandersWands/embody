@@ -1,186 +1,349 @@
-/**
- * @file TDD tests for expand-shorthand.ts with new Config structure
- */
-
 import expandShorthand from '../expand-shorthand.js';
-import type { Config, ExpandedConfig } from '../types.js';
+import type { Config } from '../types.js';
 
-describe('expandShorthand with new Config structure', () => {
+describe('expandShorthand', () => {
   describe('meta section expansion', () => {
-    test('should expand meta: true to default meta config', () => {
-      const config: Config = {
-        meta: true as any  // Boolean shorthand
-      };
+    describe('meta: true', () => {
+      it('meta is defined', () => {
+        const config: Config = { meta: true as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.meta).toBeDefined();
+      });
 
-      const expanded = expandShorthand(config);
+      it('meta is object', () => {
+        const config: Config = { meta: true as any };
+        const expanded = expandShorthand(config);
+        expect(typeof expanded.meta).toBe('object');
+      });
 
-      // Should expand to default meta structure
-      expect(expanded.meta).toBeDefined();
-      expect(typeof expanded.meta).toBe('object');
-      expect(expanded.meta?.index).toBeDefined();
-      expect(expanded.meta?.location).toBeDefined();
-      expect(expanded.meta?.data).toBeDefined();
+      it('meta.index is defined', () => {
+        const config: Config = { meta: true as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.meta?.index).toBeDefined();
+      });
+
+      it('meta.location is defined', () => {
+        const config: Config = { meta: true as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.meta?.location).toBeDefined();
+      });
+
+      it('meta.data is defined', () => {
+        const config: Config = { meta: true as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.meta?.data).toBeDefined();
+      });
     });
 
-    test('should expand meta: false to disabled meta config', () => {
-      const config: Config = {
-        meta: false as any  // Boolean shorthand
-      };
+    describe('meta: false', () => {
+      it('meta is defined', () => {
+        const config: Config = { meta: false as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.meta).toBeDefined();
+      });
 
-      const expanded = expandShorthand(config);
+      it('meta is object', () => {
+        const config: Config = { meta: false as any };
+        const expanded = expandShorthand(config);
+        expect(typeof expanded.meta).toBe('object');
+      });
 
-      // Should expand to disabled meta structure
-      expect(expanded.meta).toBeDefined();
-      expect(typeof expanded.meta).toBe('object');
-      expect(expanded.meta?.index).toBe(false);
-      expect(expanded.meta?.location).toBe(false);
-      expect(expanded.meta?.ast).toBe(false);
-      expect(expanded.meta?.data?.type).toBe(false);
-      expect(expanded.meta?.data?.value).toBe(false);
+      it('meta.index = false', () => {
+        const config: Config = { meta: false as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.meta?.index).toBe(false);
+      });
+
+      it('meta.location = false', () => {
+        const config: Config = { meta: false as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.meta?.location).toBe(false);
+      });
+
+      it('meta.ast = false', () => {
+        const config: Config = { meta: false as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.meta?.ast).toBe(false);
+      });
+
+      it('meta.data.type = false', () => {
+        const config: Config = { meta: false as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.meta?.data?.type).toBe(false);
+      });
+
+      it('meta.data.value = false', () => {
+        const config: Config = { meta: false as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.meta?.data?.value).toBe(false);
+      });
     });
 
-    test('should pass through explicit meta config unchanged', () => {
+    describe('explicit meta config', () => {
       const config: Config = {
         meta: {
           index: true,
           location: 'line',
-          ast: false
-        }
+          ast: false,
+        },
       };
 
-      const expanded = expandShorthand(config);
+      it('meta.index = true', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.meta?.index).toBe(true);
+      });
 
-      expect(expanded.meta?.index).toBe(true);
-      expect(expanded.meta?.location).toBe('line');
-      expect(expanded.meta?.ast).toBe(false);
+      it('meta.location = "line"', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.meta?.location).toBe('line');
+      });
+
+      it('meta.ast = false', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.meta?.ast).toBe(false);
+      });
     });
   });
 
   describe('lang section expansion', () => {
-    test('should expand lang: true to default lang config', () => {
-      const config: Config = {
-        lang: true as any  // Boolean shorthand
-      };
+    describe('lang: true', () => {
+      it('lang is defined', () => {
+        const config: Config = { lang: true as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.lang).toBeDefined();
+      });
 
-      const expanded = expandShorthand(config);
+      it('lang is object', () => {
+        const config: Config = { lang: true as any };
+        const expanded = expandShorthand(config);
+        expect(typeof expanded.lang).toBe('object');
+      });
 
-      // Should expand to default lang structure
-      expect(expanded.lang).toBeDefined();
-      expect(typeof expanded.lang).toBe('object');
-      expect(expanded.lang?.bindings).toBeDefined();
-      expect(expanded.lang?.functions).toBeDefined();
-      expect(expanded.lang?.controlFlow).toBeDefined();
-      expect(expanded.lang?.operators).toBeDefined();
+      it('lang.bindings is defined', () => {
+        const config: Config = { lang: true as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings).toBeDefined();
+      });
+
+      it('lang.functions is defined', () => {
+        const config: Config = { lang: true as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.functions).toBeDefined();
+      });
+
+      it('lang.controlFlow is defined', () => {
+        const config: Config = { lang: true as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.controlFlow).toBeDefined();
+      });
+
+      it('lang.operators is defined', () => {
+        const config: Config = { lang: true as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.operators).toBeDefined();
+      });
     });
 
-    test('should expand lang: false to disabled lang config', () => {
-      const config: Config = {
-        lang: false as any  // Boolean shorthand
-      };
+    describe('lang: false', () => {
+      it('lang is defined', () => {
+        const config: Config = { lang: false as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.lang).toBeDefined();
+      });
 
-      const expanded = expandShorthand(config);
+      it('lang is object', () => {
+        const config: Config = { lang: false as any };
+        const expanded = expandShorthand(config);
+        expect(typeof expanded.lang).toBe('object');
+      });
 
-      // Should expand to disabled lang structure
-      expect(expanded.lang).toBeDefined();
-      expect(typeof expanded.lang).toBe('object');
-      expect(expanded.lang?.semantics).toBe(false);
+      it('lang.semantics = false', () => {
+        const config: Config = { lang: false as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.semantics).toBe(false);
+      });
 
-      // Nested objects should be disabled
-      expect(expanded.lang?.bindings?.kind?.declarative?.var).toBe(false);
-      expect(expanded.lang?.bindings?.kind?.declarative?.let).toBe(false);
-      expect(expanded.lang?.bindings?.events?.declare).toBe(false);
+      it('lang.bindings.kind.declarative.var = false', () => {
+        const config: Config = { lang: false as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.kind?.declarative?.var).toBe(false);
+      });
 
-      // Arrays should be empty
-      expect(expanded.lang?.bindings?.filter?.include).toEqual([]);
-      expect(expanded.lang?.bindings?.filter?.exclude).toEqual([]);
+      it('lang.bindings.kind.declarative.let = false', () => {
+        const config: Config = { lang: false as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.kind?.declarative?.let).toBe(false);
+      });
+
+      it('lang.bindings.events.declare = false', () => {
+        const config: Config = { lang: false as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.events?.declare).toBe(false);
+      });
+
+      it('lang.bindings.filter.include = []', () => {
+        const config: Config = { lang: false as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.filter?.include).toEqual([]);
+      });
+
+      it('lang.bindings.filter.exclude = []', () => {
+        const config: Config = { lang: false as any };
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.filter?.exclude).toEqual([]);
+      });
     });
 
-    test('should expand nested lang.bindings: true', () => {
-      const config: Config = {
-        lang: {
-          bindings: true as any  // Boolean shorthand
-        }
-      };
+    describe('lang.bindings: true', () => {
+      const config: Config = { lang: { bindings: true as any } };
 
-      const expanded = expandShorthand(config);
+      it('lang.bindings is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings).toBeDefined();
+      });
 
-      // Should expand bindings to default structure
-      expect(expanded.lang?.bindings).toBeDefined();
-      expect(expanded.lang?.bindings?.kind).toBeDefined();
-      expect(expanded.lang?.bindings?.kind?.declarative).toBeDefined();
-      expect(expanded.lang?.bindings?.kind?.declarative?.var).toBeDefined();
-      expect(expanded.lang?.bindings?.events).toBeDefined();
-      expect(expanded.lang?.bindings?.filter).toBeDefined();
+      it('lang.bindings.kind is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.kind).toBeDefined();
+      });
+
+      it('lang.bindings.kind.declarative is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.kind?.declarative).toBeDefined();
+      });
+
+      it('lang.bindings.kind.declarative.var is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.kind?.declarative?.var).toBeDefined();
+      });
+
+      it('lang.bindings.events is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.events).toBeDefined();
+      });
+
+      it('lang.bindings.filter is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.filter).toBeDefined();
+      });
     });
 
-    test('should expand nested lang.bindings: false', () => {
-      const config: Config = {
-        lang: {
-          bindings: false as any  // Boolean shorthand
-        }
-      };
+    describe('lang.bindings: false', () => {
+      const config: Config = { lang: { bindings: false as any } };
 
-      const expanded = expandShorthand(config);
+      it('lang.bindings is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings).toBeDefined();
+      });
 
-      // Should expand to disabled bindings
-      expect(expanded.lang?.bindings).toBeDefined();
-      expect(expanded.lang?.bindings?.kind?.declarative?.var).toBe(false);
-      expect(expanded.lang?.bindings?.kind?.declarative?.let).toBe(false);
-      expect(expanded.lang?.bindings?.kind?.explicit?.parameters).toBe(false);
-      expect(expanded.lang?.bindings?.events?.declare).toBe(false);
-      expect(expanded.lang?.bindings?.filter?.include).toEqual([]);
+      it('lang.bindings.kind.declarative.var = false', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.kind?.declarative?.var).toBe(false);
+      });
+
+      it('lang.bindings.kind.declarative.let = false', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.kind?.declarative?.let).toBe(false);
+      });
+
+      it('lang.bindings.kind.explicit.parameters = false', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.kind?.explicit?.parameters).toBe(false);
+      });
+
+      it('lang.bindings.events.declare = false', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.events?.declare).toBe(false);
+      });
+
+      it('lang.bindings.filter.include = []', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.filter?.include).toEqual([]);
+      });
     });
 
-    test('should expand deeply nested boolean shorthand', () => {
+    describe('deeply nested: lang.bindings.kind.declarative: true', () => {
       const config: Config = {
         lang: {
           bindings: {
             kind: {
-              declarative: true as any  // Boolean shorthand
-            }
-          }
-        }
+              declarative: true as any,
+            },
+          },
+        },
       };
 
-      const expanded = expandShorthand(config);
+      it('lang.bindings.kind.declarative is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.kind?.declarative).toBeDefined();
+      });
 
-      // Should expand declarative to default structure
-      expect(expanded.lang?.bindings?.kind?.declarative).toBeDefined();
-      expect(expanded.lang?.bindings?.kind?.declarative?.var).toBeDefined();
-      expect(expanded.lang?.bindings?.kind?.declarative?.let).toBeDefined();
-      expect(expanded.lang?.bindings?.kind?.declarative?.const).toBeDefined();
-      expect(expanded.lang?.bindings?.kind?.declarative?.function).toBeDefined();
-      expect(expanded.lang?.bindings?.kind?.declarative?.class).toBeDefined();
-      expect(expanded.lang?.bindings?.kind?.declarative?.import).toBeDefined();
+      it('lang.bindings.kind.declarative.var is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.kind?.declarative?.var).toBeDefined();
+      });
+
+      it('lang.bindings.kind.declarative.let is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.kind?.declarative?.let).toBeDefined();
+      });
+
+      it('lang.bindings.kind.declarative.const is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.kind?.declarative?.const).toBeDefined();
+      });
+
+      it('lang.bindings.kind.declarative.function is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.kind?.declarative?.function).toBeDefined();
+      });
+
+      it('lang.bindings.kind.declarative.class is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.kind?.declarative?.class).toBeDefined();
+      });
+
+      it('lang.bindings.kind.declarative.import is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.kind?.declarative?.import).toBeDefined();
+      });
     });
 
-    test('should expand lang.operators: true', () => {
-      const config: Config = {
-        lang: {
-          operators: true as any  // Boolean shorthand
-        }
-      };
+    describe('lang.operators: true', () => {
+      const config: Config = { lang: { operators: true as any } };
 
-      const expanded = expandShorthand(config);
+      it('lang.operators is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.operators).toBeDefined();
+      });
 
-      // Should expand operators to default structure
-      expect(expanded.lang?.operators).toBeDefined();
-      expect(expanded.lang?.operators?.pure).toBeDefined();
-      expect(expanded.lang?.operators?.mutating).toBeDefined();
-      expect(expanded.lang?.operators?.shortCircuiting).toBeDefined();
+      it('lang.operators.pure is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.operators?.pure).toBeDefined();
+      });
+
+      it('lang.operators.mutating is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.operators?.mutating).toBeDefined();
+      });
+
+      it('lang.operators.shortCircuiting is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.operators?.shortCircuiting).toBeDefined();
+      });
     });
 
-    test('should handle mixed explicit and shorthand config', () => {
+    describe('mixed explicit and shorthand', () => {
       const config: Config = {
         lang: {
-          bindings: true as any,  // Shorthand
-          functions: {            // Explicit
+          bindings: true as any,
+          functions: {
             kind: {
               arrow: true,
               function: false,
               method: true,
               generator: false,
-              builtIn: false
+              builtIn: false,
             },
             events: {
               definition: true,
@@ -190,100 +353,162 @@ describe('expandShorthand with new Config structure', () => {
               coroutines: {
                 await: true,
                 yield: false,
-                yieldDelegate: false
-              }
-            }
+                yieldDelegate: false,
+              },
+            },
           },
-          controlFlow: false as any  // Shorthand disabled
-        }
+          controlFlow: false as any,
+        },
       };
 
-      const expanded = expandShorthand(config);
+      it('bindings shorthand expanded → kind is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.kind).toBeDefined();
+      });
 
-      // bindings should be expanded from true
-      expect(expanded.lang?.bindings?.kind).toBeDefined();
-      expect(expanded.lang?.bindings?.events).toBeDefined();
+      it('bindings shorthand expanded → events is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.events).toBeDefined();
+      });
 
-      // functions should remain as specified
-      expect(expanded.lang?.functions?.kind?.arrow).toBe(true);
-      expect(expanded.lang?.functions?.kind?.function).toBe(false);
-      expect(expanded.lang?.functions?.events?.call?.arguments).toBe(false);
+      it('explicit functions.kind.arrow = true', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.functions?.kind?.arrow).toBe(true);
+      });
 
-      // controlFlow should be disabled
-      expect(expanded.lang?.controlFlow?.kind?.conditionals).toBe(false);
-      expect(expanded.lang?.controlFlow?.kind?.loops?.while).toBe(false);
-      expect(expanded.lang?.controlFlow?.events?.test).toBe(false);
+      it('explicit functions.kind.function = false', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.functions?.kind?.function).toBe(false);
+      });
+
+      it('explicit functions.events.call.arguments = false', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.functions?.events?.call?.arguments).toBe(false);
+      });
+
+      it('controlFlow shorthand false → kind.conditionals = false', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.controlFlow?.kind?.conditionals).toBe(false);
+      });
+
+      it('controlFlow shorthand false → kind.loops.while = false', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.controlFlow?.kind?.loops?.while).toBe(false);
+      });
+
+      it('controlFlow shorthand false → events.test = false', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.controlFlow?.events?.test).toBe(false);
+      });
     });
   });
 
   describe('presets field handling', () => {
-    test('should pass through presets string unchanged', () => {
-      const config: Config = {
-        presets: 'variables'
-      };
-
-      const expanded = expandShorthand(config);
-
-      expect(expanded.presets).toBe('variables');
+    describe('presets string passthrough', () => {
+      it('presets = "variables"', () => {
+        const config: Config = { presets: 'variables' };
+        const expanded = expandShorthand(config);
+        expect(expanded.presets).toBe('variables');
+      });
     });
 
-    test('should handle config with all sections', () => {
+    describe('config with all sections', () => {
       const config: Config = {
         presets: 'custom',
         meta: {
           index: true,
-          location: 'full'
+          location: 'full',
         },
         lang: {
           bindings: true as any,
-          operators: false as any
-        }
+          operators: false as any,
+        },
       };
 
-      const expanded = expandShorthand(config);
+      it('presets = "custom"', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.presets).toBe('custom');
+      });
 
-      expect(expanded.presets).toBe('custom');
-      expect(expanded.meta?.index).toBe(true);
-      expect(expanded.meta?.location).toBe('full');
-      expect(expanded.lang?.bindings?.kind).toBeDefined();
-      expect(expanded.lang?.operators?.pure).toBe(false);
+      it('meta.index = true', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.meta?.index).toBe(true);
+      });
+
+      it('meta.location = "full"', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.meta?.location).toBe('full');
+      });
+
+      it('lang.bindings.kind is defined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.bindings?.kind).toBeDefined();
+      });
+
+      it('lang.operators.pure = false', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang?.operators?.pure).toBe(false);
+      });
     });
   });
 
   describe('edge cases', () => {
-    test('should handle empty config', () => {
-      const config: Config = {};
-      const expanded = expandShorthand(config);
+    describe('empty config', () => {
+      it('expanded is defined', () => {
+        const config: Config = {};
+        const expanded = expandShorthand(config);
+        expect(expanded).toBeDefined();
+      });
 
-      expect(expanded).toBeDefined();
-      expect(expanded).toEqual({});
+      it('expanded equals {}', () => {
+        const config: Config = {};
+        const expanded = expandShorthand(config);
+        expect(expanded).toEqual({});
+      });
     });
 
-    test('should handle config with only presets', () => {
-      const config: Config = {
-        presets: 'overview'
-      };
-      const expanded = expandShorthand(config);
+    describe('config with only presets', () => {
+      const config: Config = { presets: 'overview' };
 
-      expect(expanded.presets).toBe('overview');
-      expect(expanded.meta).toBeUndefined();
-      expect(expanded.lang).toBeUndefined();
+      it('presets = "overview"', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.presets).toBe('overview');
+      });
+
+      it('meta is undefined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.meta).toBeUndefined();
+      });
+
+      it('lang is undefined', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.lang).toBeUndefined();
+      });
     });
 
-    test('should handle null values correctly', () => {
+    describe('null values', () => {
       const config: Config = {
         meta: {
           default: null,
           maxIterations: null,
-          maxCallstack: null
-        }
+          maxCallstack: null,
+        },
       };
 
-      const expanded = expandShorthand(config);
+      it('meta.default is null', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.meta?.default).toBeNull();
+      });
 
-      expect(expanded.meta?.default).toBeNull();
-      expect(expanded.meta?.maxIterations).toBeNull();
-      expect(expanded.meta?.maxCallstack).toBeNull();
+      it('meta.maxIterations is null', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.meta?.maxIterations).toBeNull();
+      });
+
+      it('meta.maxCallstack is null', () => {
+        const expanded = expandShorthand(config);
+        expect(expanded.meta?.maxCallstack).toBeNull();
+      });
     });
   });
 });

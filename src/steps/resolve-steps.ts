@@ -1,7 +1,7 @@
-import validateSteps from './validate-steps.js';
 import parseJSON from '../utils/parse-json.js';
 
 import type { Step, ResolveStepsInput, ResolveStepsOutput } from './types.js';
+import validateSteps from './validate-steps.js';
 
 /**
  * Resolves steps from a JSON string or validates an existing array.
@@ -26,24 +26,18 @@ import type { Step, ResolveStepsInput, ResolveStepsOutput } from './types.js';
  * resolveSteps(42)              // → throws (wrong type)
  * ```
  */
-function resolveSteps(
-  steps: ResolveStepsInput,
-): ResolveStepsOutput {
+function resolveSteps(steps: ResolveStepsInput): ResolveStepsOutput {
   if (steps === undefined) return undefined;
 
   if (typeof steps === 'string') {
-    return validateSteps(
-      parseJSON(steps, 'resolveSteps: invalid JSON for steps'),
-    );
+    return validateSteps(parseJSON(steps, 'resolveSteps: invalid JSON for steps'));
   }
 
   if (Array.isArray(steps)) {
     return validateSteps(steps);
   }
 
-  throw new Error(
-    'resolveSteps: expected steps to be a string or array, got ' + typeof steps,
-  );
+  throw new Error(`resolveSteps: expected steps to be a string or array, got ${typeof steps}`);
 }
 
 export default resolveSteps;

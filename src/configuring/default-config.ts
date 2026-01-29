@@ -55,7 +55,7 @@ const defaultConfig: Config = {
   // === PRESETS SYSTEM & CONFIG CONFIGS ===
   // presets hide full trace & meta configurations, hard-coded in the /presets directory
   // any additional manual configs will override the preset configs
-  presets: undefined,
+  // Note: presets key omitted here (no default preset) - user explicitly chooses
   // ? array of presets, which will be merged in the precedence they are listed
   //    or better as an object with preset fields? avoids sneaky trace changes based on sequence
   /* other possible preset options

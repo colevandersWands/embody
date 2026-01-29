@@ -1,9 +1,8 @@
-import createConfig from './configuring/create.js';
-import instrumentRecord from './api/tracing/instrument-record.js';
 import deserialize from './api/tracing/deserialize.js';
-
-import type { Step } from './types/api.js';
+import instrumentRecord from './api/tracing/instrument-record.js';
+import createConfig from './configuring/create.js';
 import type { UserConfig } from './configuring/types.js';
+import type { Step } from './types/api.js';
 
 /**
  * Simple tracing function for quick usage without metadata.
@@ -34,25 +33,16 @@ import type { UserConfig } from './configuring/types.js';
 function trace(code: string = '', config: UserConfig | string = {}): readonly Step[] {
   // Type validation
   if (typeof code !== 'string') {
-    throw new Error(
-      'trace: expected code to be a string, got ' + typeof code,
-    );
+    throw new TypeError(`trace: expected code to be a string, got ${typeof code}`);
   }
-  if (
-    typeof config !== 'object' &&
-    typeof config !== 'string'
-  ) {
-    throw new Error(
-      'trace: expected config to be an object or string, got ' + typeof config,
-    );
+  if (typeof config !== 'object' && typeof config !== 'string') {
+    throw new TypeError(`trace: expected config to be an object or string, got ${typeof config}`);
   }
-  if (
-    typeof config === 'object' &&
-    (config === null || Array.isArray(config))
-  ) {
+  if (typeof config === 'object' && (config === null || Array.isArray(config))) {
     throw new Error(
-      'trace: expected config to be a plain object, got ' +
-        (Array.isArray(config) ? 'array' : 'null'),
+      `trace: expected config to be a plain object, got ${
+        Array.isArray(config) ? 'array' : 'null'
+      }`,
     );
   }
 

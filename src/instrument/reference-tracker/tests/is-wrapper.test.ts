@@ -1,8 +1,4 @@
-/**
- * @file Test suite for isWrapper pure function
- */
-
-import { isWrapper } from '../is-wrapper';
+import isWrapper from '../is-wrapper.js';
 
 describe('isWrapper', () => {
   const validSecret = Symbol('test-secret');
@@ -14,7 +10,7 @@ describe('isWrapper', () => {
         value: 'test',
         id: 123,
         secret: validSecret,
-        type: 'string'
+        type: 'string',
       };
       expect(isWrapper(obj)).toBe(true);
     });
@@ -24,7 +20,7 @@ describe('isWrapper', () => {
         value: 42,
         id: null,
         secret: validSecret,
-        type: 'number'
+        type: 'number',
       };
       expect(isWrapper(obj)).toBe(true);
     });
@@ -34,7 +30,7 @@ describe('isWrapper', () => {
         value: [],
         id: 456,
         secret: otherSecret,
-        type: 'Array'
+        type: 'Array',
       };
       expect(isWrapper(objWithDifferentSecret)).toBe(true);
     });
@@ -44,7 +40,7 @@ describe('isWrapper', () => {
         value: { nested: { deep: { data: 'test' } } },
         id: 789,
         secret: validSecret,
-        type: 'Object'
+        type: 'Object',
       };
       expect(isWrapper(obj)).toBe(true);
     });
@@ -54,7 +50,7 @@ describe('isWrapper', () => {
         value: () => 'test',
         id: 101,
         secret: validSecret,
-        type: 'Function'
+        type: 'Function',
       };
       expect(isWrapper(obj)).toBe(true);
     });
@@ -64,7 +60,7 @@ describe('isWrapper', () => {
         value: undefined,
         id: 202,
         secret: validSecret,
-        type: 'undefined'
+        type: 'undefined',
       };
       expect(isWrapper(obj)).toBe(true);
     });
@@ -75,7 +71,7 @@ describe('isWrapper', () => {
       const obj = {
         value: 'test',
         secret: validSecret,
-        type: 'string'
+        type: 'string',
       };
       expect(isWrapper(obj)).toBe(false);
     });
@@ -84,7 +80,7 @@ describe('isWrapper', () => {
       const obj = {
         value: 'test',
         id: 123,
-        secret: validSecret
+        secret: validSecret,
       };
       expect(isWrapper(obj)).toBe(false);
     });
@@ -93,7 +89,7 @@ describe('isWrapper', () => {
       const obj = {
         id: 123,
         secret: validSecret,
-        type: 'string'
+        type: 'string',
       };
       expect(isWrapper(obj)).toBe(false);
     });
@@ -102,7 +98,7 @@ describe('isWrapper', () => {
       const obj = {
         value: 'test',
         id: 123,
-        type: 'string'
+        type: 'string',
       };
       expect(isWrapper(obj)).toBe(false);
     });
@@ -118,7 +114,7 @@ describe('isWrapper', () => {
         value: 'test',
         id: '123',
         secret: validSecret,
-        type: 'string'
+        type: 'string',
       };
       expect(isWrapper(obj)).toBe(false);
     });
@@ -128,7 +124,7 @@ describe('isWrapper', () => {
         value: 'test',
         id: true,
         secret: validSecret,
-        type: 'string'
+        type: 'string',
       };
       expect(isWrapper(obj)).toBe(false);
     });
@@ -138,7 +134,7 @@ describe('isWrapper', () => {
         value: 'test',
         id: undefined,
         secret: validSecret,
-        type: 'string'
+        type: 'string',
       };
       expect(isWrapper(obj)).toBe(false);
     });
@@ -148,7 +144,7 @@ describe('isWrapper', () => {
         value: 'test',
         id: 123,
         secret: validSecret,
-        type: 42
+        type: 42,
       };
       expect(isWrapper(obj)).toBe(false);
     });
@@ -158,7 +154,7 @@ describe('isWrapper', () => {
         value: 'test',
         id: 123,
         secret: validSecret,
-        type: null
+        type: null,
       };
       expect(isWrapper(obj)).toBe(false);
     });
@@ -168,7 +164,7 @@ describe('isWrapper', () => {
         value: 'test',
         id: 123,
         secret: validSecret,
-        type: undefined
+        type: undefined,
       };
       expect(isWrapper(obj)).toBe(false);
     });
@@ -178,7 +174,7 @@ describe('isWrapper', () => {
         value: 'test',
         id: 123,
         secret: 'not-a-symbol',
-        type: 'string'
+        type: 'string',
       };
       expect(isWrapper(obj)).toBe(false);
     });
@@ -188,7 +184,7 @@ describe('isWrapper', () => {
         value: 'test',
         id: 123,
         secret: 12345,
-        type: 'string'
+        type: 'string',
       };
       expect(isWrapper(obj)).toBe(false);
     });
@@ -198,7 +194,7 @@ describe('isWrapper', () => {
         value: 'test',
         id: 123,
         secret: null,
-        type: 'string'
+        type: 'string',
       };
       expect(isWrapper(obj)).toBe(false);
     });
@@ -208,7 +204,7 @@ describe('isWrapper', () => {
         value: 'test',
         id: 123,
         secret: undefined,
-        type: 'string'
+        type: 'string',
       };
       expect(isWrapper(obj)).toBe(false);
     });
@@ -218,7 +214,7 @@ describe('isWrapper', () => {
         value: 'test',
         id: 123,
         secret: true,
-        type: 'string'
+        type: 'string',
       };
       expect(isWrapper(obj)).toBe(false);
     });
@@ -228,7 +224,7 @@ describe('isWrapper', () => {
         value: 'test',
         id: 123,
         secret: { fake: 'symbol' },
-        type: 'string'
+        type: 'string',
       };
       expect(isWrapper(obj)).toBe(false);
     });
@@ -262,7 +258,7 @@ describe('isWrapper', () => {
       const obj = {
         data: 'test',
         count: 123,
-        metadata: { info: 'extra' }
+        metadata: { info: 'extra' },
       };
       expect(isWrapper(obj)).toBe(false);
     });
@@ -299,7 +295,7 @@ describe('isWrapper', () => {
         value: 'test',
         id: 123,
         secret: validSecret,
-        type: 'string'
+        type: 'string',
       };
 
       const start = performance.now();
@@ -308,7 +304,6 @@ describe('isWrapper', () => {
       }
       const end = performance.now();
 
-      // Should complete 1000 calls in well under 10ms
       expect(end - start).toBeLessThan(10);
     });
 
@@ -322,7 +317,7 @@ describe('isWrapper', () => {
         value: largeValue,
         id: 123,
         secret: validSecret,
-        type: 'Object'
+        type: 'Object',
       };
 
       const start = performance.now();
@@ -330,7 +325,7 @@ describe('isWrapper', () => {
       const end = performance.now();
 
       expect(result).toBe(true);
-      expect(end - start).toBeLessThan(5); // Should be very fast regardless of value size
+      expect(end - start).toBeLessThan(5);
     });
   });
 
@@ -340,11 +335,10 @@ describe('isWrapper', () => {
         value: 'test',
         id: 123,
         secret: validSecret,
-        type: 'string'
+        type: 'string',
       };
 
       if (isWrapper(obj)) {
-        // TypeScript should know obj is TrackedObject here
         expect(obj.value).toBe('test');
         expect(obj.id).toBe(123);
         expect(obj.secret).toBe(validSecret);
@@ -355,23 +349,19 @@ describe('isWrapper', () => {
 
   describe.skip('Error condition handling (defensive programming)', () => {
     it('should handle corrupted memory scenarios', () => {
-      // Test for theoretical memory corruption where object properties change unexpectedly
       const obj = {
         value: 'test',
         id: 123,
         secret: validSecret,
-        type: 'string'
+        type: 'string',
       };
 
       expect(isWrapper(obj)).toBe(true);
-
-      // Simulate memory corruption
       delete (obj as any).secret;
       expect(isWrapper(obj)).toBe(false);
     });
 
     it('should handle prototype pollution attacks', () => {
-      // Test protection against prototype pollution
       const maliciousObj = Object.create(null);
       Object.prototype.secret = validSecret;
       Object.prototype.id = 123;
@@ -379,8 +369,6 @@ describe('isWrapper', () => {
       Object.prototype.value = 'malicious';
 
       expect(isWrapper(maliciousObj)).toBe(false);
-
-      // Cleanup
       delete Object.prototype.secret;
       delete Object.prototype.id;
       delete Object.prototype.type;
@@ -388,13 +376,11 @@ describe('isWrapper', () => {
     });
 
     it('should handle extremely large objects without stack overflow', () => {
-      // Test with deeply nested object that could cause stack issues
       let deepObj: any = { value: 'deep', id: 123, secret: validSecret, type: 'Object' };
       for (let i = 0; i < 10000; i++) {
         deepObj = { nested: deepObj };
       }
 
-      // Should not throw stack overflow
       expect(() => isWrapper(deepObj)).not.toThrow();
       expect(isWrapper(deepObj)).toBe(false); // Missing required properties
     });
@@ -404,7 +390,7 @@ describe('isWrapper', () => {
         value: 'test',
         id: 123,
         secret: validSecret,
-        type: 'string'
+        type: 'string',
       });
 
       expect(isWrapper(frozenObj)).toBe(true);
@@ -413,7 +399,7 @@ describe('isWrapper', () => {
         value: 'test',
         id: 123,
         secret: validSecret,
-        type: 'string'
+        type: 'string',
       });
 
       expect(isWrapper(sealedObj)).toBe(true);
@@ -422,56 +408,50 @@ describe('isWrapper', () => {
 
   describe.skip('Concurrent access patterns (defensive programming)', () => {
     it('should handle rapid successive calls', async () => {
-      // Test high-frequency calls that might reveal race conditions in pure function
       const obj = {
         value: 'test',
         id: 123,
         secret: validSecret,
-        type: 'string'
+        type: 'string',
       };
 
       const promises = Array.from({ length: 1000 }, () =>
-        Promise.resolve().then(() => isWrapper(obj))
+        Promise.resolve().then(() => isWrapper(obj)),
       );
 
       const results = await Promise.all(promises);
-      expect(results.every(result => result === true)).toBe(true);
+      expect(results.every((result) => result === true)).toBe(true);
     });
 
     it('should handle concurrent validation of different objects', async () => {
-      // Test concurrent validation of multiple objects
       const objects = Array.from({ length: 100 }, (_, i) => ({
         value: `test-${i}`,
         id: i,
         secret: validSecret,
-        type: 'string'
+        type: 'string',
       }));
 
-      const promises = objects.map(obj => Promise.resolve().then(() => isWrapper(obj)));
+      const promises = objects.map((obj) => Promise.resolve().then(() => isWrapper(obj)));
 
       const results = await Promise.all(promises);
-      expect(results.every(result => result === true)).toBe(true);
+      expect(results.every((result) => result === true)).toBe(true);
     });
 
     it('should handle mixed valid/invalid object validation concurrently', async () => {
-      // Test concurrent validation with mixed object types
       const validObj = { value: 'test', id: 123, secret: validSecret, type: 'string' };
       const invalidObj = { value: 'test' }; // Missing required properties
 
       const promises = Array.from({ length: 500 }, (_, i) =>
-        Promise.resolve().then(() => isWrapper(i % 2 === 0 ? validObj : invalidObj))
+        Promise.resolve().then(() => isWrapper(i % 2 === 0 ? validObj : invalidObj)),
       );
 
       const results = await Promise.all(promises);
-
-      // Verify alternating pattern of results
       results.forEach((result, i) => {
         expect(result).toBe(i % 2 === 0);
       });
     });
 
     it('should be thread-safe for symbol comparison', async () => {
-      // Test that symbol comparison works correctly under concurrent access
       const symbol1 = Symbol('test1');
       const symbol2 = Symbol('test2');
 
@@ -479,11 +459,11 @@ describe('isWrapper', () => {
       const obj2 = { value: 'test', id: 456, secret: symbol2, type: 'string' };
 
       const promises = Array.from({ length: 1000 }, (_, i) =>
-        Promise.resolve().then(() => isWrapper(i % 2 === 0 ? obj1 : obj2))
+        Promise.resolve().then(() => isWrapper(i % 2 === 0 ? obj1 : obj2)),
       );
 
       const results = await Promise.all(promises);
-      expect(results.every(result => result === true)).toBe(true);
+      expect(results.every((result) => result === true)).toBe(true);
     });
   });
 });

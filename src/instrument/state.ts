@@ -5,6 +5,6 @@ export const state = ({ start = Date.now(), step = 0 }) => ({
   depth: {
     blocks: 0,
     callstack: 0,
-    parenthesis: 0
-  }
+    parenthesis: 0,
+  },
 });

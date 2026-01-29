@@ -4,9 +4,7 @@ export default {
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
-  testMatch: [
-    '**/tests/**/*.test.{ts,js}',
-  ],
+  testMatch: ['**/tests/**/*.test.{ts,js}'],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!**/*.d.ts',

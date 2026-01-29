@@ -1,7 +1,9 @@
-export default function destructure() {
+function destructure() {
   return {
     category: 'matching',
     kind: 'assign',
-    syntax: 'destructure'
+    syntax: 'destructure',
   };
 }
+
+export default destructure;

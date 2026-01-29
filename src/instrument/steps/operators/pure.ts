@@ -8,7 +8,7 @@ type PureOperatorEntry = {
   readonly operands?: readonly any[];
   readonly result?: any;
   readonly coercion?: readonly any[];
-}
+};
 
 /**
  * Factory for pure operator step entries
@@ -18,43 +18,41 @@ type PureOperatorEntry = {
  * @param meta - Object containing configuration (data mode)
  * @returns Step entry object for a pure operator
  */
-export default function createPureOperationEntry(
+function createPureOperationEntry(
   {
     operator = '',
     result,
-    operands = []
+    operands = [],
   }: {
     readonly operator?: string;
     readonly result: any;
     readonly operands?: readonly any[];
-  } = {} as { readonly operator?: string; readonly result: any; readonly operands?: readonly any[] },
+  } = {} as {
+    readonly operator?: string;
+    readonly result: any;
+    readonly operands?: readonly any[];
+  },
   {
     data,
-    coercion
+    coercion,
   }: {
     readonly data: 'full' | 'types' | 'values' | 'raw' | false;
     readonly coercion: boolean;
-  } = {} as { readonly data: 'full' | 'types' | 'values' | 'raw' | false; readonly coercion: boolean }
+  } = {} as {
+    readonly data: 'full' | 'types' | 'values' | 'raw' | false;
+    readonly coercion: boolean;
+  },
 ): PureOperatorEntry {
-  // Create basic entry structure
-  const entry: PureOperatorEntry = {
+  return {
     category: 'operator',
     kind: 'pure',
-    operator
+    operator,
+    ...(data !== false && {
+      operands: operands.map((op) => representValue(op, data)),
+      result: representValue(result, data),
+      ...(coercion && { coercion: representCoercion(operator, operands, data) }),
+    }),
   };
-
-  // Early return if data is false - no value representation needed
-  if (data === false) {
-    return entry;
-  }
-
-  // Add value properties since data were requested
-  entry.operands = operands.map(op => representValue(op, data));
-  entry.result = representValue(result, data);
-
-  if (coercion) {
-    entry.coercion = representCoercion(operator, operands, data);
-  }
-
-  return entry;
 }
+
+export default createPureOperationEntry;

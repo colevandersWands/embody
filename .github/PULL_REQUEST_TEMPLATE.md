@@ -12,18 +12,45 @@
 
 ## Testing
 
-<!-- How did you verify these changes work? -->
-
 - [ ] Ran `npm run validate` (lint + typecheck + tests all pass)
 - [ ] Tested the specific feature/fix manually
 
-## Checklist
+## Code Quality Checklist
 
-- [ ] I followed the [code conventions](./DEV.md#codebase-conventions) (named functions, no `this`, default exports, `.js` extensions in imports)
-- [ ] I added/updated tests for my changes
-- [ ] I updated relevant documentation (DEV.md, DOCS.md, README.md, CLAUDE.md)
-- [ ] My changes do not introduce new TypeScript `any` types
-- [ ] I have read the [CONTRIBUTING guide](./CONTRIBUTING.md)
+### Automated (must pass before merge)
+
+- [ ] `npm run lint` exits with zero errors
+- [ ] `npm run format:check` passes (or ran `npm run format`)
+- [ ] `npm run type-check` passes
+- [ ] `npm test` passes (all tests green)
+
+### Manual Review Conventions (honor system)
+
+**Function & File Conventions:**
+
+- [ ] Destructured object parameters have `= {}` default
+- [ ] Function names are verb-first (`processConfig` not `configProcessor`)
+- [ ] One concept per file (no kitchen-sink modules)
+- [ ] Functions use `function` declarations (not `const fn = () =>`)
+
+**Code Simplicity (LLM Anti-Patterns):**
+
+- [ ] No helper functions used exactly once (inline them)
+- [ ] No configuration objects with unused fields
+- [ ] No error handling for internal function calls (only at boundaries)
+- [ ] No backwards-compatibility shims for first-time implementations
+- [ ] No future-proofing for non-existent requirements
+
+**Comments & Documentation:**
+
+- [ ] Comments explain "why" not "what" (or are removed)
+- [ ] No verbose JSDoc for trivial operations
+- [ ] Updated README.md/DOCS.md in affected directories
+
+**Advanced Conventions:**
+
+- [ ] No mutable closures (closures over `let` variables)
+- [ ] No `this` keyword (except low-level instrumentation)
 
 ## Related Issues
 

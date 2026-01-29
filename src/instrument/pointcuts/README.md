@@ -162,7 +162,7 @@ const pointcut: string[] = ['read@after', 'write@before', 'apply@around'];
 const pointcut = {
   'read@after': true,
   'write@before': true,
-  'apply@around': false
+  'apply@around': false,
   // ... other join points default to false
 };
 
@@ -323,21 +323,21 @@ The granular join points enable **progressive complexity** for different skill l
 const beginnerConfig = {
   variables: { read: true, assign: true },
   functions: { calls: true },
-  debugging: { statements: false, expressions: false, effects: false }
+  debugging: { statements: false, expressions: false, effects: false },
 };
 
 // INTERMEDIATE: Add control flow understanding
 const intermediateConfig = {
   ...beginnerConfig,
   controlFlow: { conditionals: true, loops: true },
-  debugging: { statements: true, expressions: false, effects: false }
+  debugging: { statements: true, expressions: false, effects: false },
 };
 
 // ADVANCED: Full debugging detail
 const advancedConfig = {
   ...intermediateConfig,
   operators: { valueProducing: true },
-  debugging: { statements: true, expressions: true, effects: true }
+  debugging: { statements: true, expressions: true, effects: true },
 };
 ```
 
@@ -407,7 +407,7 @@ const CONFIG_TO_JOINPOINTS = {
   'debugging.statements': ['statement@before', 'statement@after'],
   'debugging.expressions': ['expression@before', 'expression@after'],
   'debugging.effects': ['effect@before', 'effect@after'],
-  'debugging.scopeEntry': ['block@before']
+  'debugging.scopeEntry': ['block@before'],
 } as const;
 ```
 
@@ -434,7 +434,7 @@ function configToJoinPoints(config: ExpandedConfig): string[] {
 // Example usage:
 const config = {
   variables: { read: true, write: true, declare: false },
-  functions: { calls: true, declarations: false }
+  functions: { calls: true, declarations: false },
   // ...
 };
 
@@ -449,12 +449,12 @@ function createAranPointcut(enabledJoinPoints: string[]): Record<string, boolean
   const pointcut: Record<string, boolean> = {};
 
   // All 31 join points default to false
-  ALL_ARAN_JOINPOINTS.forEach(joinPoint => {
+  ALL_ARAN_JOINPOINTS.forEach((joinPoint) => {
     pointcut[joinPoint] = false;
   });
 
   // Enable only the ones we want
-  enabledJoinPoints.forEach(joinPoint => {
+  enabledJoinPoints.forEach((joinPoint) => {
     pointcut[joinPoint] = true;
   });
 
@@ -547,9 +547,9 @@ const variableAspect = {
       const identifier = extractIdentifier(path);
       // Filter logic in pointcut would have already excluded unwanted variables
       return logger.createVariableEvent('read', identifier, args, path);
-    }
+    },
     // ... other variable advice
-  }
+  },
 };
 
 const debuggingAspect = {
@@ -558,14 +558,14 @@ const debuggingAspect = {
     'statement@before': (state, path, ...args) => {
       if (!config.debugging.statements) return;
       return logger.createDebugEvent('statement.start', path, args);
-    }
+    },
     // ... other debugging advice
-  }
+  },
 };
 
 // Filter logic applied at aspect registration:
-const aspects = [variableAspect, functionAspect, debuggingAspect].filter(aspect =>
-  isAspectEnabled(aspect, config)
+const aspects = [variableAspect, functionAspect, debuggingAspect].filter((aspect) =>
+  isAspectEnabled(aspect, config),
 );
 ```
 
@@ -585,7 +585,7 @@ const advice = {
   'read@after': (state, identifier, value, tag) => {
     const timestamp = config.timestamps ? performance.now() - startTime : undefined;
     return createVariableEvent(tag, timestamp, 'read', identifier, value, {});
-  }
+  },
 };
 
 // Use logging abstraction:
@@ -593,7 +593,7 @@ const advice = {
   'read@after': (state, identifier, value, tag) => {
     return logger.createVariableEvent(tag, 'read', identifier, value, {});
     // Timestamp logic handled inside logger.createVariableEvent()
-  }
+  },
 };
 ```
 
@@ -658,8 +658,8 @@ const variableAspect = {
     },
     'block@declaration': (state, path, identifier, kind) => {
       return logger.createEvent('variable.declare', { identifier, kind, path });
-    }
-  }
+    },
+  },
 };
 
 const debuggingAspect = {
@@ -676,8 +676,8 @@ const debuggingAspect = {
     },
     'expression@after': (state, path, node, result) => {
       return logger.createEvent('debug.expression.end', { node, result, path });
-    }
-  }
+    },
+  },
 };
 
 const functionAspect = {
@@ -687,16 +687,16 @@ const functionAspect = {
       const result = Reflect.apply(callee, thisArg, args);
       logger.createEvent('function.call', { callee, args, result, path });
       return result;
-    }
+    },
     // ... other function advice
-  }
+  },
 };
 
 // Aspects are conditionally registered based on config
 const enabledAspects = [
   config.variables && variableAspect,
   config.debugging && debuggingAspect,
-  config.functions && functionAspect
+  config.functions && functionAspect,
 ].filter(Boolean);
 ```
 
@@ -716,9 +716,9 @@ const monolithicAspect = {
       // More conditionals - BAD!
       if (!config.debugging.statements) return;
       return logger.createEvent('debug.statement.start', { node, path });
-    }
+    },
     // ... hundreds of lines of conditional logic
-  }
+  },
 };
 ```
 
@@ -820,7 +820,7 @@ function setupEducationalTracing(code: string, config: ExpandedConfig) {
   const runtime = createRuntime({
     console: globalThis.console,
     Reflect: globalThis.Reflect,
-    performance: globalThis.performance
+    performance: globalThis.performance,
   });
 
   // Create focused aspects based on config
@@ -830,7 +830,7 @@ function setupEducationalTracing(code: string, config: ExpandedConfig) {
   const instrumentedCode = weaveFlexible(code, aspects, runtime, {
     // Flexible API specific options
     mode: 'normal',
-    warning: 'console'
+    warning: 'console',
   });
 
   return instrumentedCode;
@@ -848,35 +848,35 @@ const LEARNING_PROGRESSIONS = {
   beginner: {
     variables: { declare: true, assign: true, read: true },
     functions: { calls: true, declarations: true },
-    debugging: { statements: false, expressions: false, effects: false }
+    debugging: { statements: false, expressions: false, effects: false },
   },
 
   // Week 4: Add control flow and statement awareness
   intermediate: {
     ...LEARNING_PROGRESSIONS.beginner,
     controlFlow: { conditionals: true, loops: true },
-    debugging: { statements: true, expressions: false, effects: false }
+    debugging: { statements: true, expressions: false, effects: false },
   },
 
   // Week 8: Full debugging detail for complex problems
   advanced: {
     ...LEARNING_PROGRESSIONS.intermediate,
     operators: { valueProducing: true, controlFlow: true },
-    debugging: { statements: true, expressions: true, effects: true }
+    debugging: { statements: true, expressions: true, effects: true },
   },
 
   // Debugging specific issues
   operatorPrecedence: {
     variables: { read: true },
     operators: { valueProducing: true },
-    debugging: { expressions: true, statements: false, effects: false }
+    debugging: { expressions: true, statements: false, effects: false },
   },
 
   sideEffectAnalysis: {
     variables: { assign: true, read: true },
     functions: { calls: true },
-    debugging: { effects: true, statements: true, expressions: false }
-  }
+    debugging: { effects: true, statements: true, expressions: false },
+  },
 };
 
 // Usage in educational contexts
@@ -929,7 +929,7 @@ The granular join points do create more events, but smart filtering keeps overhe
 ```typescript
 // Performance optimization through selective aspect registration
 function optimizeAspects(aspects: Aspect[], codeAnalysis: CodeAnalysis): Aspect[] {
-  return aspects.filter(aspect => {
+  return aspects.filter((aspect) => {
     // Don't register expression aspect if code has no complex expressions
     if (aspect.name === 'expression' && !codeAnalysis.hasComplexExpressions) {
       return false;

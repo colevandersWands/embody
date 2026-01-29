@@ -40,21 +40,21 @@ import record from './record.js';
  *
  * @since 1.0.0
  */
-function instrumentRecord(
-  { code, config }: { readonly code?: string; readonly config?: ExpandedConfig } = {},
-): TraceOutput {
+function instrumentRecord({
+  code,
+  config,
+}: { readonly code?: string; readonly config?: ExpandedConfig } = {}): TraceOutput {
   if (code !== undefined && typeof code !== 'string') {
-    throw new Error(
-      'instrumentRecord: expected code to be a string, got ' + typeof code,
-    );
+    throw new Error(`instrumentRecord: expected code to be a string, got ${typeof code}`);
   }
   if (
     config !== undefined &&
     (typeof config !== 'object' || config === null || Array.isArray(config))
   ) {
     throw new Error(
-      'instrumentRecord: expected config to be an object, got ' +
-        (Array.isArray(config) ? 'array' : typeof config),
+      `instrumentRecord: expected config to be an object, got ${
+        Array.isArray(config) ? 'array' : typeof config
+      }`,
     );
   }
 

@@ -1,14 +1,8 @@
-/**
- * @file TDD tests for configuration type definitions
- * Tests the structure of Config, MetaConfig, LangConfig and all nested types
- */
-
 import type { MetaConfig, LangConfig, Config } from '../types.js';
 
-describe('Configuration Type Definitions', () => {
-  describe('MetaConfig Type', () => {
-    test('should have MetaConfig type exported', () => {
-      // This test verifies MetaConfig type exists and can be used
+describe('configuration type definitions', () => {
+  describe('MetaConfig', () => {
+    describe('full structure', () => {
       const metaConfig: MetaConfig = {
         default: null,
         maxIterations: null,
@@ -16,7 +10,7 @@ describe('Configuration Type Definitions', () => {
         index: true,
         range: {
           start: 1,
-          end: 1000
+          end: 1000,
         },
         location: 'line',
         ast: true,
@@ -24,85 +18,115 @@ describe('Configuration Type Definitions', () => {
           type: true,
           instance: true,
           value: true,
-          lookup: false
+          lookup: false,
         },
         references: true,
         debug: {
           configPath: true,
           AranNodeId: true,
-          adviceName: true
+          adviceName: true,
         },
-        timestamps: false
+        timestamps: false,
       };
 
-      // TypeScript will fail at compile time if types don't match
-      expect(metaConfig).toBeDefined();
-      expect(metaConfig.index).toBe(true);
-      expect(metaConfig.range?.start).toBe(1);
-      expect(metaConfig.location).toBe('line');
+      it('is defined', () => {
+        expect(metaConfig).toBeDefined();
+      });
+
+      it('index = true', () => {
+        expect(metaConfig.index).toBe(true);
+      });
+
+      it('range.start = 1', () => {
+        expect(metaConfig.range?.start).toBe(1);
+      });
+
+      it('location = "line"', () => {
+        expect(metaConfig.location).toBe('line');
+      });
     });
 
-    test('should accept location as false', () => {
-      const metaConfig: MetaConfig = {
-        location: false
-      };
-      expect(metaConfig.location).toBe(false);
+    describe('location values', () => {
+      it('accepts false', () => {
+        const metaConfig: MetaConfig = { location: false };
+        expect(metaConfig.location).toBe(false);
+      });
+
+      it('accepts "full"', () => {
+        const metaConfig: MetaConfig = { location: 'full' };
+        expect(metaConfig.location).toBe('full');
+      });
     });
 
-    test('should accept location as "full"', () => {
-      const metaConfig: MetaConfig = {
-        location: 'full'
-      };
-      expect(metaConfig.location).toBe('full');
+    describe('partial structure', () => {
+      it('accepts maxIterations only', () => {
+        const metaConfig: MetaConfig = {
+          maxIterations: 1000,
+          timestamps: true,
+        };
+        expect(metaConfig.maxIterations).toBe(1000);
+      });
+
+      it('accepts timestamps only', () => {
+        const metaConfig: MetaConfig = {
+          maxIterations: 1000,
+          timestamps: true,
+        };
+        expect(metaConfig.timestamps).toBe(true);
+      });
     });
 
-    test('should accept partial MetaConfig with only some fields', () => {
-      const metaConfig: MetaConfig = {
-        maxIterations: 1000,
-        timestamps: true
-      };
-      expect(metaConfig.maxIterations).toBe(1000);
-      expect(metaConfig.timestamps).toBe(true);
-    });
-
-    test('should accept nested data configuration', () => {
+    describe('nested data configuration', () => {
       const metaConfig: MetaConfig = {
         data: {
           type: false,
           instance: false,
           value: true,
-          lookup: true
-        }
+          lookup: true,
+        },
       };
-      expect(metaConfig.data?.value).toBe(true);
-      expect(metaConfig.data?.lookup).toBe(true);
+
+      it('data.value = true', () => {
+        expect(metaConfig.data?.value).toBe(true);
+      });
+
+      it('data.lookup = true', () => {
+        expect(metaConfig.data?.lookup).toBe(true);
+      });
     });
 
-    test('should accept nested debug configuration', () => {
-      const metaConfig: MetaConfig = {
-        debug: {
-          configPath: false,
-          AranNodeId: false,
-          adviceName: true
-        }
-      };
-      expect(metaConfig.debug?.adviceName).toBe(true);
+    describe('nested debug configuration', () => {
+      it('debug.adviceName = true', () => {
+        const metaConfig: MetaConfig = {
+          debug: {
+            configPath: false,
+            AranNodeId: false,
+            adviceName: true,
+          },
+        };
+        expect(metaConfig.debug?.adviceName).toBe(true);
+      });
     });
 
-    test('should accept null values for limits', () => {
+    describe('null values for limits', () => {
       const metaConfig: MetaConfig = {
         maxIterations: null,
         maxCallstack: null,
-        default: null
+        default: null,
       };
-      expect(metaConfig.maxIterations).toBeNull();
-      expect(metaConfig.maxCallstack).toBeNull();
+
+      it('maxIterations is null', () => {
+        expect(metaConfig.maxIterations).toBeNull();
+      });
+
+      it('maxCallstack is null', () => {
+        expect(metaConfig.maxCallstack).toBeNull();
+      });
     });
   });
 
-  describe('LangConfig Type', () => {
-    test('should have LangConfig type exported', () => {
-      // Test that LangConfig type can be imported and used
+  describe('LangConfig', () => {
+    describe('full structure', () => {
       const langConfig: LangConfig = {
         semantics: true,
         bindings: {
@@ -113,11 +137,11 @@ describe('Configuration Type Definitions', () => {
               const: true,
               function: true,
               class: true,
-              import: true
+              import: true,
             },
             explicit: {
               parameters: true,
-              catch: true
+              catch: true,
             },
             implicit: {
               global: true,
@@ -126,9 +150,9 @@ describe('Configuration Type Definitions', () => {
               this: true,
               newTarget: true,
               super: true,
-              importMeta: true
+              importMeta: true,
             },
-            with: true
+            with: true,
           },
           events: {
             declare: true,
@@ -136,21 +160,29 @@ describe('Configuration Type Definitions', () => {
             initialize: true,
             implicit: true,
             assign: true,
-            read: true
+            read: true,
           },
           filter: {
             include: [],
-            exclude: []
-          }
-        }
+            exclude: [],
+          },
+        },
       };
 
-      expect(langConfig).toBeDefined();
-      expect(langConfig.semantics).toBe(true);
-      expect(langConfig.bindings.kind.declarative.var).toBe(true);
+      it('is defined', () => {
+        expect(langConfig).toBeDefined();
+      });
+
+      it('semantics = true', () => {
+        expect(langConfig.semantics).toBe(true);
+      });
+
+      it('bindings.kind.declarative.var = true', () => {
+        expect(langConfig.bindings.kind.declarative.var).toBe(true);
+      });
     });
 
-    test('should accept partial bindings configuration', () => {
+    describe('partial bindings configuration', () => {
       const langConfig: LangConfig = {
         bindings: {
           kind: {
@@ -160,17 +192,22 @@ describe('Configuration Type Definitions', () => {
               const: true,
               function: false,
               class: false,
-              import: false
-            }
-          }
-        }
+              import: false,
+            },
+          },
+        },
       };
 
-      expect(langConfig.bindings?.kind?.declarative?.let).toBe(true);
-      expect(langConfig.bindings?.kind?.declarative?.var).toBe(false);
+      it('bindings.kind.declarative.let = true', () => {
+        expect(langConfig.bindings?.kind?.declarative?.let).toBe(true);
+      });
+
+      it('bindings.kind.declarative.var = false', () => {
+        expect(langConfig.bindings?.kind?.declarative?.var).toBe(false);
+      });
     });
 
-    test('should accept properties configuration', () => {
+    describe('properties configuration', () => {
       const langConfig: LangConfig = {
         properties: {
           create: {
@@ -179,36 +216,44 @@ describe('Configuration Type Definitions', () => {
             method: true,
             accessors: {
               getters: true,
-              setters: true
+              setters: true,
             },
             class: true,
             static: true,
             private: true,
-            fields: true
+            fields: true,
           },
           access: true,
           update: true,
           remove: true,
           optionalChaining: true,
           lookup: true,
-          filter: ['prop1', 'prop2']
-        }
+          filter: ['prop1', 'prop2'],
+        },
       };
 
-      expect(langConfig.properties).toBeDefined();
-      expect(langConfig.properties.create.literal).toBe(true);
-      expect(langConfig.properties.access).toBe(true);
+      it('properties is defined', () => {
+        expect(langConfig.properties).toBeDefined();
+      });
+
+      it('properties.create.literal = true', () => {
+        expect(langConfig.properties.create.literal).toBe(true);
+      });
+
+      it('properties.access = true', () => {
+        expect(langConfig.properties.access).toBe(true);
+      });
     });
   });
 
-  describe('Root Config Type', () => {
-    test('should accept Config with meta and lang sections', () => {
+  describe('Config (root)', () => {
+    describe('full structure with meta and lang', () => {
       const config: Config = {
         presets: 'detailed',
         meta: {
           index: true,
           location: 'line',
-          timestamps: false
+          timestamps: false,
         },
         lang: {
           semantics: true,
@@ -220,29 +265,42 @@ describe('Configuration Type Definitions', () => {
                 const: true,
                 function: true,
                 class: true,
-                import: true
-              }
-            }
-          }
-        }
+                import: true,
+              },
+            },
+          },
+        },
       };
 
-      expect(config).toBeDefined();
-      expect(config.presets).toBe('detailed');
-      expect(config.meta?.index).toBe(true);
-      expect(config.lang?.semantics).toBe(true);
+      it('is defined', () => {
+        expect(config).toBeDefined();
+      });
+
+      it('presets = "detailed"', () => {
+        expect(config.presets).toBe('detailed');
+      });
+
+      it('meta.index = true', () => {
+        expect(config.meta?.index).toBe(true);
+      });
+
+      it('lang.semantics = true', () => {
+        expect(config.lang?.semantics).toBe(true);
+      });
     });
 
-    test('should accept empty Config object', () => {
-      const config: Config = {};
-      expect(config).toBeDefined();
+    describe('empty Config', () => {
+      it('empty object is valid', () => {
+        const config: Config = {};
+        expect(config).toBeDefined();
+      });
     });
 
-    test('should accept Config with only presets', () => {
-      const config: Config = {
-        presets: 'overview'
-      };
-      expect(config.presets).toBe('overview');
+    describe('Config with only presets', () => {
+      it('presets = "overview"', () => {
+        const config: Config = { presets: 'overview' };
+        expect(config.presets).toBe('overview');
+      });
     });
   });
 });

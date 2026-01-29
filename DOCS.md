@@ -215,6 +215,8 @@ const results = codes.map((c) => tracer.trace({ code: c }).steps);
 
 See [embodify API Reference](./src/api/embodify/DOCS.md) for complete documentation of every getter, method, cascade behavior, config resolution, and use case recipe.
 
+For detailed signatures and error reference of the top-level entry points (`embody`, `squint`, `pickles`), see the [API module reference](./src/api/DOCS.md).
+
 ## Configuration
 
 ### Presets
@@ -298,6 +300,8 @@ embody({
 ## Advanced Usage
 
 ### Pipeline Namespace
+
+For detailed signatures of `embody`, `squint`, and `pickles`, see the [API module documentation](./src/api/DOCS.md).
 
 For fine-grained control, internal pipeline functions are exposed:
 
@@ -411,6 +415,12 @@ Each stage:
 
 ## TypeScript Types
 
+Public types are exported from the main package:
+
+```typescript
+import type { Step, TraceResult, UserConfig } from '@study-lenses/embody';
+```
+
 ### Core Types
 
 ```typescript
@@ -468,16 +478,31 @@ const myConfig: Partial<Config> = {
 
 ```typescript
 // Serialize/Deserialize
-type SerializeInput = { readonly steps: readonly Step[] };
+type SerializeInput = { readonly steps: readonly Step[] } | { readonly config: UserConfig };
 type SerializeOutput = string;
-type DeserializeInput = { readonly serializedSteps: string };
-type DeserializeOutput = readonly Step[];
+type DeserializeInput = {
+  readonly steps?: string | readonly Step[];
+  readonly config?: string | UserConfig;
+};
+type DeserializeOutput = {
+  readonly steps: readonly Step[] | undefined;
+  readonly config: UserConfig | undefined;
+};
 
-// Pickles (bidirectional toggle)
-type PicklesInput = { readonly steps: readonly Step[] | string };
+// Pickles (bidirectional toggle for steps and/or config)
+type PicklesInput = {
+  readonly steps?: readonly Step[] | string;
+  readonly config?: UserConfig | string;
+};
 type PicklesOutput =
   | { readonly steps: string }
-  | { readonly steps: readonly Step[] };
+  | { readonly steps: readonly Step[] }
+  | { readonly config: string }
+  | { readonly config: UserConfig }
+  | { readonly steps: string; readonly config: string }
+  | { readonly steps: readonly Step[]; readonly config: UserConfig }
+  | { readonly steps: string; readonly config: UserConfig }
+  | { readonly steps: readonly Step[]; readonly config: string };
 ```
 
 ## Notes

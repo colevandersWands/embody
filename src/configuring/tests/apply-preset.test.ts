@@ -12,7 +12,7 @@ describe('applyPreset with new Config structure', () => {
   describe('preset application', () => {
     test('should apply overview preset', () => {
       const userConfig: Config = {
-        presets: 'overview'  // Note: 'presets' not 'preset'
+        presets: 'overview', // Note: 'presets' not 'preset'
       };
 
       const result = applyPreset(userConfig);
@@ -27,7 +27,7 @@ describe('applyPreset with new Config structure', () => {
 
     test('should apply detailed preset', () => {
       const userConfig: Config = {
-        presets: 'detailed'
+        presets: 'detailed',
       };
 
       const result = applyPreset(userConfig);
@@ -42,7 +42,7 @@ describe('applyPreset with new Config structure', () => {
 
     test('should apply exhaustive preset', () => {
       const userConfig: Config = {
-        presets: 'exhaustive'
+        presets: 'exhaustive',
       };
 
       const result = applyPreset(userConfig);
@@ -64,13 +64,13 @@ describe('applyPreset with new Config structure', () => {
         lang: {
           bindings: {
             events: {
-              read: true  // Override overview's false
-            }
-          }
+              read: true, // Override overview's false
+            },
+          },
         },
         meta: {
-          location: 'full'  // Override overview's 'line'
-        }
+          location: 'full', // Override overview's 'line'
+        },
       };
 
       const result = applyPreset(userConfig);
@@ -91,14 +91,14 @@ describe('applyPreset with new Config structure', () => {
           bindings: {
             kind: {
               implicit: {
-                this: true  // Override detailed's false
-              }
-            }
+                this: true, // Override detailed's false
+              },
+            },
           },
           operators: {
-            coercion: true  // Override detailed's false
-          }
-        }
+            coercion: true, // Override detailed's false
+          },
+        },
       };
 
       const result = applyPreset(userConfig);
@@ -126,11 +126,11 @@ describe('applyPreset with new Config structure', () => {
                 const: false,
                 function: false,
                 class: false,
-                import: false
-              }
-            }
-          }
-        }
+                import: false,
+              },
+            },
+          },
+        },
       };
 
       const result = applyPreset(userConfig);
@@ -153,11 +153,11 @@ describe('applyPreset with new Config structure', () => {
           bindings: {
             kind: {
               declarative: {
-                var: true
-              }
-            }
-          }
-        }
+                var: true,
+              },
+            },
+          },
+        },
       };
 
       const result = applyPreset(userConfig);
@@ -169,8 +169,8 @@ describe('applyPreset with new Config structure', () => {
       const userConfig: Config = {
         presets: undefined,
         lang: {
-          semantics: true
-        }
+          semantics: true,
+        },
       };
 
       const result = applyPreset(userConfig);
@@ -182,8 +182,8 @@ describe('applyPreset with new Config structure', () => {
       const userConfig: Config = {
         presets: 'invalid-preset-name',
         lang: {
-          semantics: true
-        }
+          semantics: true,
+        },
       };
 
       const result = applyPreset(userConfig);
@@ -195,7 +195,7 @@ describe('applyPreset with new Config structure', () => {
 
     test('should handle empty config with preset', () => {
       const userConfig: Config = {
-        presets: 'overview'
+        presets: 'overview',
       };
 
       const result = applyPreset(userConfig);
@@ -210,8 +210,8 @@ describe('applyPreset with new Config structure', () => {
       const userConfig: Config = {
         presets: 'detailed',
         meta: {
-          index: false
-        }
+          index: false,
+        },
       };
 
       const result = applyPreset(userConfig);
@@ -230,8 +230,8 @@ describe('applyPreset with new Config structure', () => {
       const userConfig: Partial<Config> = {
         presets: 'overview',
         meta: {
-          ast: true
-        }
+          ast: true,
+        },
       };
 
       const result = applyPreset(userConfig);
@@ -245,10 +245,10 @@ describe('applyPreset with new Config structure', () => {
       const configs = [
         { presets: 'overview' },
         { presets: 'detailed' },
-        { presets: 'exhaustive' }
+        { presets: 'exhaustive' },
       ] as Config[];
 
-      configs.forEach(config => {
+      configs.forEach((config) => {
         const result = applyPreset(config);
         expect(result.lang).toBeDefined();
         expect(result.meta).toBeDefined();

@@ -26,7 +26,7 @@ Creates a tracker instance with shared state for tracer integration.
 const tracker = factory({
   secret: Symbol('tracer-instance'),
   id: 1000, // Starting ID for this trace
-  record: new WeakMap() // Shared tracking record
+  record: new WeakMap(), // Shared tracking record
 });
 ```
 

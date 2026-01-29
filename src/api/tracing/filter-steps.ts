@@ -34,21 +34,21 @@ import type { Step } from '../../types/api.js';
  *
  * @since 1.0.0
  */
-function filterSteps(
-  { steps, config }: { readonly steps?: readonly Step[]; readonly config?: ExpandedConfig } = {},
-): FilterStepsOutput {
+function filterSteps({
+  steps,
+  config,
+}: { readonly steps?: readonly Step[]; readonly config?: ExpandedConfig } = {}): FilterStepsOutput {
   if (steps !== undefined && !Array.isArray(steps)) {
-    throw new Error(
-      'filterSteps: expected steps to be an array, got ' + typeof steps,
-    );
+    throw new Error(`filterSteps: expected steps to be an array, got ${typeof steps}`);
   }
   if (
     config !== undefined &&
     (typeof config !== 'object' || config === null || Array.isArray(config))
   ) {
     throw new Error(
-      'filterSteps: expected config to be an object, got ' +
-        (Array.isArray(config) ? 'array' : typeof config),
+      `filterSteps: expected config to be an object, got ${
+        Array.isArray(config) ? 'array' : typeof config
+      }`,
     );
   }
 

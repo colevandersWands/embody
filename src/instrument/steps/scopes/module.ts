@@ -1,9 +1,19 @@
-export default function module({ event = null, bindings = null, file = null } = {}) {
+function module({
+  event,
+  bindings,
+  file,
+}: {
+  readonly event?: string;
+  readonly bindings?: any;
+  readonly file?: string;
+} = {}) {
   return {
     category: 'scope',
     kind: 'function',
     event,
     bindings,
-    file
+    file,
   };
 }
+
+export default module;

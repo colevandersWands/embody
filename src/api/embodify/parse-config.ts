@@ -1,6 +1,5 @@
-import deserialize from '../tracing/deserialize.js';
-
 import type { UserConfig } from '../../configuring/types.js';
+import deserialize from '../tracing/deserialize.js';
 
 /**
  * Parses config from JSON string or passes through objects.

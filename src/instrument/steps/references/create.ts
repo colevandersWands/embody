@@ -1,11 +1,16 @@
-export default function create({
-  value = null, // determined by value config - reference entry? copy entry?  details TBD
-  id = null
+function create({
+  value, // determined by value config - reference entry? copy entry?  details TBD
+  id,
+}: {
+  readonly value?: any;
+  readonly id?: any;
 } = {}) {
   return {
     category: 'scope',
     event: 'create',
     value,
-    id
+    id,
   };
 }
+
+export default create;

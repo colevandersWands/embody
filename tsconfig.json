@@ -52,15 +52,8 @@
     // Completeness
     "skipDefaultLibCheck": true
   },
-  "include": ["**/*.ts", "**/*.js", "**/*.mjs", ".plann/environment.ts"],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.test.js",
-    "test.js",
-    ".plann/examples/**/*"
-  ],
+  "include": ["**/*.ts", "**/*.js", "**/*.mjs"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.js", "test.js", ".plann/**/*"],
   "ts-node": {
     "esm": true,
     "experimentalSpecifierResolution": "node"

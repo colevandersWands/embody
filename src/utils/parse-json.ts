@@ -24,9 +24,7 @@ function parseJSON(value: string, errorPrefix: string): unknown {
   try {
     return JSON.parse(value);
   } catch (error) {
-    throw new Error(
-      errorPrefix + ' — ' + (error as Error).message,
-    );
+    throw new Error(`${errorPrefix} — ${(error as Error).message}`);
   }
 }
 

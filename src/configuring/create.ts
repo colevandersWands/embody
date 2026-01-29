@@ -29,7 +29,7 @@ const PRESETS: Record<string, Partial<Config>> = { overview, detailed, exhaustiv
  * @param key - Optional field key for special cases
  * @returns True if types match or are compatible
  */
-function isCompatibleType(value: any, defaultValue: any, key?: string): boolean {
+function isCompatibleType(value: unknown, defaultValue: unknown, key?: string): boolean {
   if (value === null || value === undefined) {
     return false; // Always use defaults for null/undefined
   }
@@ -77,7 +77,7 @@ function isCompatibleType(value: any, defaultValue: any, key?: string): boolean 
  * @param defaultValue - Default value to fall back to
  * @returns Valid enum value or default
  */
-function validateEnumField(key: string, value: any, defaultValue: any): any {
+function validateEnumField(key: string, value: unknown, defaultValue: unknown): unknown {
   // Special enum validations for new Config structure
   if (key === 'location') {
     // location can be 'line', 'full', or false
@@ -111,7 +111,10 @@ function validateEnumField(key: string, value: any, defaultValue: any): any {
  * @param defaults - Default configuration to compare against
  * @returns Sanitized configuration with only valid fields
  */
-function sanitizeConfig(config: any, defaults: any): any {
+function sanitizeConfig(
+  config: unknown,
+  defaults: Record<string, unknown>,
+): Record<string, unknown> {
   if (!config || typeof config !== 'object' || Array.isArray(config)) {
     return defaults;
   }
@@ -120,12 +123,13 @@ function sanitizeConfig(config: any, defaults: any): any {
     return defaults;
   }
 
-  const sanitized: any = {};
+  const configObject = config as Record<string, unknown>;
+  const sanitized: Record<string, unknown> = {};
 
   // Add all fields from defaults first
-  Object.keys(defaults).forEach((key) => {
+  for (const key of Object.keys(defaults)) {
     const defaultValue = defaults[key];
-    const userValue = config[key];
+    const userValue = configObject[key];
 
     if (!isCompatibleType(userValue, defaultValue, key)) {
       // Wrong type or missing - use default
@@ -139,12 +143,13 @@ function sanitizeConfig(config: any, defaults: any): any {
       !Array.isArray(userValue)
     ) {
       // Nested object - recursively sanitize
-      sanitized[key] = sanitizeConfig(userValue, defaultValue);
+      // Type narrowing: we've verified both are non-null, non-array objects
+      sanitized[key] = sanitizeConfig(userValue, defaultValue as Record<string, unknown>);
     } else {
       // Compatible type - validate enum and use value
       sanitized[key] = validateEnumField(key, userValue, defaultValue);
     }
-  });
+  }
 
   return sanitized;
 }
@@ -160,22 +165,39 @@ function createConfig(userConfig: Partial<Config> = {}): ExpandedConfig {
   const cleanUserConfig = { ...userConfig };
 
   // Sanitize presets field specifically
-  if (cleanUserConfig.presets) {
-    if (typeof cleanUserConfig.presets !== 'string') {
-      cleanUserConfig.presets = defaultConfig.presets; // Fix wrong type presets
-    } else if (!PRESETS[cleanUserConfig.presets]) {
-      cleanUserConfig.presets = defaultConfig.presets; // Fix invalid preset name
+  // Supports: string (single preset), string[] (multiple presets), or undefined
+  if (cleanUserConfig.presets !== undefined) {
+    if (typeof cleanUserConfig.presets === 'string') {
+      // Single preset - validate it exists
+      if (!PRESETS[cleanUserConfig.presets]) {
+        delete cleanUserConfig.presets; // Remove invalid preset
+      }
+    } else if (Array.isArray(cleanUserConfig.presets)) {
+      // Array of presets - filter to only valid ones
+      const validPresets = cleanUserConfig.presets.filter(
+        (p) => typeof p === 'string' && PRESETS[p],
+      );
+      if (validPresets.length === 0) {
+        delete cleanUserConfig.presets; // Remove if no valid presets
+      } else {
+        cleanUserConfig.presets = validPresets;
+      }
+    } else {
+      // Invalid type - remove
+      delete cleanUserConfig.presets;
     }
   }
 
   // Apply preset first to the user config (graceful)
+  // Handles both single preset (string) and multiple presets (array)
   let configWithPreset = cleanUserConfig;
-  if (cleanUserConfig.presets && typeof cleanUserConfig.presets === 'string') {
+  if (cleanUserConfig.presets) {
     try {
       configWithPreset = applyPreset(cleanUserConfig);
     } catch {
-      // Gracefully ignore invalid presets - use default presets value and continue
-      configWithPreset = { ...cleanUserConfig, presets: defaultConfig.presets };
+      // Gracefully ignore invalid presets - remove presets and continue
+      const { presets: _, ...configWithoutPresets } = cleanUserConfig;
+      configWithPreset = configWithoutPresets;
     }
   }
 
@@ -187,6 +209,12 @@ function createConfig(userConfig: Partial<Config> = {}): ExpandedConfig {
 
   // Sanitize the final expanded configuration (removes unknown fields, fixes wrong types)
   const sanitizedConfig = sanitizeConfig(expandedConfig, defaultConfig);
+
+  // Preserve presets field if it was valid (not in defaultConfig, so sanitize removes it)
+  // This allows consumers to inspect which preset(s) were applied
+  if (cleanUserConfig.presets) {
+    sanitizedConfig.presets = cleanUserConfig.presets;
+  }
 
   return sanitizedConfig as ExpandedConfig;
 }

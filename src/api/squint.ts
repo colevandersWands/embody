@@ -1,9 +1,9 @@
-import fillConfig from './tracing/fill-config.js';
-import filterSteps from './tracing/filter-steps.js';
-import deserialize from './tracing/deserialize.js';
-
 import type { UserConfig } from '../configuring/types.js';
 import type { Step, FilterResult } from '../types/api.js';
+
+import deserialize from './tracing/deserialize.js';
+import fillConfig from './tracing/fill-config.js';
+import filterSteps from './tracing/filter-steps.js';
 
 /**
  * Post-processing filter for existing trace steps.
@@ -56,7 +56,7 @@ function squint(input: {
   readonly config: UserConfig | string;
 }): FilterResult;
 function squint(input: {
-  readonly config: UserConfig | string;
+  readonly config?: UserConfig | string;
 }): (input: { readonly steps: readonly Step[] | string }) => FilterResult;
 function squint(input: {
   readonly steps: readonly Step[] | string;
@@ -71,24 +71,12 @@ function squint({
   readonly config?: UserConfig | string;
 } = {}) {
   // Type validation for steps
-  if (
-    steps !== undefined &&
-    !Array.isArray(steps) &&
-    typeof steps !== 'string'
-  ) {
-    throw new Error(
-      'squint: expected steps to be an array or string, got ' + typeof steps,
-    );
+  if (steps !== undefined && !Array.isArray(steps) && typeof steps !== 'string') {
+    throw new Error(`squint: expected steps to be an array or string, got ${typeof steps}`);
   }
   // Type validation for config
-  if (
-    config !== undefined &&
-    typeof config !== 'object' &&
-    typeof config !== 'string'
-  ) {
-    throw new Error(
-      'squint: expected config to be an object or string, got ' + typeof config,
-    );
+  if (config !== undefined && typeof config !== 'object' && typeof config !== 'string') {
+    throw new Error(`squint: expected config to be an object or string, got ${typeof config}`);
   }
   if (
     config !== undefined &&
@@ -96,14 +84,14 @@ function squint({
     (config === null || Array.isArray(config))
   ) {
     throw new Error(
-      'squint: expected config to be a plain object, got ' +
-        (Array.isArray(config) ? 'array' : 'null'),
+      `squint: expected config to be a plain object, got ${
+        Array.isArray(config) ? 'array' : 'null'
+      }`,
     );
   }
 
   // Pickle support: deserialize JSON strings, pass parsed values through
-  const { steps: resolvedSteps, config: resolvedConfig } =
-    deserialize({ steps, config });
+  const { steps: resolvedSteps, config: resolvedConfig } = deserialize({ steps, config });
 
   if (resolvedSteps === undefined && resolvedConfig === undefined) {
     throw new Error('squint: expected at least steps or config to be provided');
@@ -116,9 +104,9 @@ function squint({
     }
     // Config-only: curry, cache expanded config
     const { config: cachedConfig } = fillConfig({ config: resolvedConfig });
-    return function squintWithClosedConfig(
-      { steps }: { readonly steps?: readonly Step[] | string } = {},
-    ) {
+    return function squintWithClosedConfig({
+      steps,
+    }: { readonly steps?: readonly Step[] | string } = {}) {
       if (steps === undefined) {
         throw new Error('squint: curried with config, but no steps were provided');
       }

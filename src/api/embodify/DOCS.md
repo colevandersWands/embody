@@ -37,7 +37,7 @@ function embodify(options?: {
   config?: UserConfig | string;
   steps?: Step[] | string;
   instrumented?: string;
-}): ChainLink
+}): ChainLink;
 ```
 
 Creates a chainable pipeline wrapper. All parameters are optional. String values for `config` and `steps` are auto-parsed as JSON.
@@ -68,15 +68,15 @@ import { embodify } from '@study-lenses/embody';
 
 // 1. Empty — all defaults
 const e = embodify();
-e.code;   // ''
-e.steps;  // []
+e.code; // ''
+e.steps; // []
 e.config; // default ExpandedConfig
 
 // 2. With code — cascade computes instrumented and steps on demand
 const e = embodify({ code: 'let x = 5;' });
-e.code;          // 'let x = 5;'
-e.instrumented;  // cascaded via instrument()
-e.steps;         // cascaded via instrument() + record()
+e.code; // 'let x = 5;'
+e.instrumented; // cascaded via instrument()
+e.steps; // cascaded via instrument() + record()
 
 // 3. With config — preset applied and expanded
 const e = embodify({ config: { presets: 'overview' } });
@@ -92,7 +92,7 @@ const e = embodify({
   steps: '[{},{}]',
 });
 e.config; // expanded overview config
-e.steps;  // [{}, {}]
+e.steps; // [{}, {}]
 ```
 
 ## Chain Link Getters
@@ -107,8 +107,8 @@ All getters are pure — they compute fresh on each access with no caching or si
 Returns the source code stored in this chain link.
 
 ```javascript
-embodify({ code: 'abc' }).code;  // 'abc'
-embodify().code;                 // ''
+embodify({ code: 'abc' }).code; // 'abc'
+embodify().code; // ''
 ```
 
 ### `.config`
@@ -119,7 +119,7 @@ embodify().code;                 // ''
 Always has a value. When a config is provided at construction or via methods, it is expanded through `createConfig()`. Always contains `lang` and `meta` sections.
 
 ```javascript
-embodify().config;                              // default ExpandedConfig
+embodify().config; // default ExpandedConfig
 embodify({ config: { presets: 'overview' } }).config; // overview ExpandedConfig
 ```
 
@@ -132,9 +132,9 @@ embodify({ config: { presets: 'overview' } }).config; // overview ExpandedConfig
 If `_instrumented` was explicitly set (via construction or `.set()`), returns that value. Otherwise, if `code` is available, cascades by calling `instrument({ code, config })`. Returns `''` if neither is set.
 
 ```javascript
-embodify({ code: 'abc' }).instrumented;       // cascaded from code
+embodify({ code: 'abc' }).instrumented; // cascaded from code
 embodify({ instrumented: 'a b c' }).instrumented; // 'a b c' (stored directly)
-embodify().instrumented;                      // ''
+embodify().instrumented; // ''
 ```
 
 ### `.steps`
@@ -144,16 +144,17 @@ embodify().instrumented;                      // ''
 - **Cascades from**: `.instrumented` via `record()`, or `.code` via `instrumentRecord()`
 
 Cascade priority:
+
 1. If `_steps` was explicitly set, returns that value
 2. If `_instrumented` is set (but not `_steps`), calls `record({ instrumented, config })`
 3. If only `_code` is set, calls `instrumentRecord({ code, config })` (full pipeline)
 4. If nothing is set, returns `[]`
 
 ```javascript
-embodify({ code: 'abc' }).steps;         // cascaded via full pipeline
+embodify({ code: 'abc' }).steps; // cascaded via full pipeline
 embodify({ instrumented: 'a b c' }).steps; // cascaded via record()
-embodify({ steps: [{}, {}] }).steps;     // [{}, {}] (stored directly)
-embodify().steps;                        // []
+embodify({ steps: [{}, {}] }).steps; // [{}, {}] (stored directly)
+embodify().steps; // []
 ```
 
 ### `.pickledSteps`
@@ -165,7 +166,7 @@ JSON-serialized version of `.steps`. Triggers the full cascade if steps aren't a
 
 ```javascript
 embodify({ steps: [{}, {}] }).pickledSteps; // '[{},{}]'
-embodify().pickledSteps;                   // '[]'
+embodify().pickledSteps; // '[]'
 ```
 
 ### `.pickledConfig`
@@ -201,12 +202,12 @@ Sets exactly one property at a time. Multiple properties throw. Empty or no-arg 
 
 When a property is set, its dependents are reset (cleared to null, triggering lazy cascade on next access):
 
-| Property Set   | Preserves | Resets (lazy cascade)          |
-| -------------- | --------- | ------------------------------ |
-| `code`         | `config`  | `instrumented`, `steps`        |
-| `instrumented` | `config`  | `code` (→ `''`), `steps`      |
+| Property Set   | Preserves | Resets (lazy cascade)                    |
+| -------------- | --------- | ---------------------------------------- |
+| `code`         | `config`  | `instrumented`, `steps`                  |
+| `instrumented` | `config`  | `code` (→ `''`), `steps`                 |
 | `steps`        | `config`  | `code` (→ `''`), `instrumented` (→ `''`) |
-| `config`       | `code`    | `instrumented`, `steps`        |
+| `config`       | `code`    | `instrumented`, `steps`                  |
 
 #### Throws
 
@@ -220,26 +221,26 @@ const base = embodify({ code: 'abc', config: {} }).trace();
 
 // Set new code — instrumented and steps recompute lazily
 const e2 = base.set({ code: 'xy' });
-e2.code;          // 'xy'
-e2.instrumented;  // recomputed from 'xy'
-e2.steps;         // recomputed from 'xy'
-e2.config;        // preserved from base
+e2.code; // 'xy'
+e2.instrumented; // recomputed from 'xy'
+e2.steps; // recomputed from 'xy'
+e2.config; // preserved from base
 
 // Set new config — code preserved, instrumented/steps recompute
 const e3 = base.set({ config: { presets: 'overview' } });
-e3.code;   // 'abc' (preserved)
+e3.code; // 'abc' (preserved)
 e3.config; // overview config
 
 // Set instrumented — code becomes '', steps recompute
 const e4 = base.set({ instrumented: 'x y' });
-e4.code;          // '' (reset)
-e4.instrumented;  // 'x y'
-e4.steps;         // recomputed from 'x y'
+e4.code; // '' (reset)
+e4.instrumented; // 'x y'
+e4.steps; // recomputed from 'x y'
 
 // Set steps — code and instrumented become ''
 const e5 = base.set({ steps: [{}, {}, {}, {}] });
 e5.steps; // [{}, {}, {}, {}]
-e5.code;  // '' (reset)
+e5.code; // '' (reset)
 
 // JSON string steps auto-parsed
 const e6 = base.set({ steps: '[{},{}]' });
@@ -273,7 +274,7 @@ const base = embodify({ code: 'abc', config: {} });
 const e2 = base.mergeConfig({
   config: { lang: { bindings: { events: { read: false } } } },
 });
-e2.config.lang.bindings.events.read;   // false (overridden)
+e2.config.lang.bindings.events.read; // false (overridden)
 e2.config.lang.bindings.events.assign; // true (preserved from base)
 
 // Preset merge — replaces entire config
@@ -285,9 +286,9 @@ const traced = base.trace();
 const e4 = traced.mergeConfig({
   config: { lang: { bindings: { events: { read: false } } } },
 });
-e4.code;          // 'abc' (preserved)
-e4.instrumented;  // recomputed
-e4.steps;         // recomputed
+e4.code; // 'abc' (preserved)
+e4.instrumented; // recomputed
+e4.steps; // recomputed
 ```
 
 ### `.instrument()`
@@ -308,19 +309,19 @@ Preserves `code`. Resets `steps` (new instrumented code means steps must recompu
 // Instrument code
 const e = embodify({ code: 'abc' }).instrument();
 e.instrumented; // instrumented version of 'abc'
-e.code;         // 'abc' (preserved)
+e.code; // 'abc' (preserved)
 
 // With config override
 const e2 = embodify({ code: 'abc', config: {} }).instrument({
   config: { lang: { bindings: { events: { read: false } } } },
 });
-e2.config.lang.bindings.events.read;   // false (from override)
+e2.config.lang.bindings.events.read; // false (from override)
 e2.config.lang.bindings.events.assign; // true (from chain)
 
 // No code available — instruments empty string
 const e3 = embodify({}).instrument();
 e3.instrumented; // ''
-e3.code;         // ''
+e3.code; // ''
 ```
 
 ### `.trace()`
@@ -350,21 +351,21 @@ Config override is narrowly merged on top of chain config.
 ```javascript
 // From code
 const e = embodify({ code: 'abc' }).trace();
-e.steps;        // trace events
+e.steps; // trace events
 e.instrumented; // instrumented version of 'abc'
-e.code;         // 'abc' (preserved)
+e.code; // 'abc' (preserved)
 
 // From pre-set instrumented
 const e2 = embodify({ instrumented: 'a b c' }).trace();
-e2.steps;        // trace events from 'a b c'
+e2.steps; // trace events from 'a b c'
 e2.instrumented; // 'a b c'
-e2.code;         // '' (no source code available)
+e2.code; // '' (no source code available)
 
 // Reuses instrumented from prior .instrument()
 const e3 = embodify({ code: 'abc' }).instrument().trace();
-e3.steps;        // trace events (reused instrumented from .instrument())
+e3.steps; // trace events (reused instrumented from .instrument())
 e3.instrumented; // same instrumented code
-e3.code;         // 'abc'
+e3.code; // 'abc'
 
 // With code override
 const e4 = embodify({ code: 'abc' }).trace({ code: 'xy' });
@@ -372,20 +373,20 @@ e4.steps; // trace events for 'xy'
 
 // With instrumented override (skips instrumentation)
 const e5 = embodify({ code: 'abc' }).trace({ instrumented: 'x y' });
-e5.steps;        // trace events from 'x y'
+e5.steps; // trace events from 'x y'
 e5.instrumented; // 'x y'
-e5.code;         // '' (instrumented override clears code)
+e5.code; // '' (instrumented override clears code)
 
 // With config override (narrowly merged)
 const e6 = embodify({ code: 'abc', config: {} }).trace({
   config: { lang: { bindings: { events: { read: false } } } },
 });
-e6.config.lang.bindings.events.read;   // false
+e6.config.lang.bindings.events.read; // false
 e6.config.lang.bindings.events.assign; // true
 
 // Empty — traces empty string
 const e7 = embodify({}).trace();
-e7.steps;        // []
+e7.steps; // []
 e7.instrumented; // ''
 ```
 
@@ -411,8 +412,8 @@ e.steps; // filtered result (pass-through in current stub)
 
 // After tracing — preserves code and instrumented
 const e2 = embodify({ code: 'abc' }).trace().filterSteps();
-e2.steps;        // filtered steps
-e2.code;         // 'abc' (preserved)
+e2.steps; // filtered steps
+e2.code; // 'abc' (preserved)
 e2.instrumented; // preserved
 
 // Override steps
@@ -463,12 +464,12 @@ The cascade is the core mechanism that makes `embodify` work. When a getter is a
 // Only code set → full cascade
 const e = embodify({ code: 'abc' });
 e.instrumented; // cascades: instrument({ code: 'abc', config })
-e.steps;        // cascades: instrumentRecord({ code: 'abc', config })
+e.steps; // cascades: instrumentRecord({ code: 'abc', config })
 
 // Instrumented set → partial cascade
 const e = embodify({ instrumented: 'a b c' });
 e.instrumented; // 'a b c' (stored directly — no cascade)
-e.steps;        // cascades: record({ instrumented: 'a b c', config })
+e.steps; // cascades: record({ instrumented: 'a b c', config })
 
 // Steps set → no cascade
 const e = embodify({ steps: [{}, {}] });
@@ -480,11 +481,11 @@ e.steps; // [{}, {}] (stored directly)
 Methods that accept a config override (`.instrument()`, `.trace()`, `.filterSteps()`) use `resolveMethodConfig()` to determine the effective config:
 
 | Chain Config | Method Override | Result                                          |
-| ------------ | -------------- | ------------------------------------------------ |
-| Present      | Present        | Override narrowly merged on top of chain config  |
-| Present      | Absent         | Chain config as-is                               |
-| Default      | Present        | Override narrowly merged on top of defaults      |
-| Default      | Absent         | Defaults as-is                                   |
+| ------------ | --------------- | ----------------------------------------------- |
+| Present      | Present         | Override narrowly merged on top of chain config |
+| Present      | Absent          | Chain config as-is                              |
+| Default      | Present         | Override narrowly merged on top of defaults     |
+| Default      | Absent          | Defaults as-is                                  |
 
 ### Narrow expansion
 
@@ -497,7 +498,7 @@ const base = embodify({ code: 'abc', config: {} });
 const e = base.trace({
   config: { lang: { bindings: { events: { read: false } } } },
 });
-e.config.lang.bindings.events.read;   // false (from override)
+e.config.lang.bindings.events.read; // false (from override)
 e.config.lang.bindings.events.assign; // true (preserved from chain)
 ```
 
@@ -523,7 +524,7 @@ const base = embodify({ code: 'abc', config: {} }).trace();
 
 // .set() does not mutate original
 base.set({ config: { presets: 'overview' } });
-base.code;  // still 'abc'
+base.code; // still 'abc'
 base.steps; // still original steps
 
 // .set({ code }) does not mutate original
@@ -568,8 +569,7 @@ e.steps; // filtered steps with deferred configs
 Start from pre-existing steps (e.g., loaded from storage).
 
 ```javascript
-const e = embodify({ steps: existingSteps })
-  .filterSteps({ config: {} });
+const e = embodify({ steps: existingSteps }).filterSteps({ config: {} });
 e.steps; // filtered version of existing steps
 ```
 
@@ -578,9 +578,7 @@ e.steps; // filtered version of existing steps
 Load pickled steps, filter, serialize back.
 
 ```javascript
-const pickled = embodify({ steps: '[{},{},{}]', config: {} })
-  .filterSteps()
-  .pickledSteps;
+const pickled = embodify({ steps: '[{},{},{}]', config: {} }).filterSteps().pickledSteps;
 // pickled is a JSON string ready for storage/transport
 ```
 
@@ -611,9 +609,9 @@ const v2 = base.filterSteps({
 });
 
 // v1 and v2 are independent — base is unchanged
-v1.config.lang.bindings.events.read;       // false
-v2.config.lang.bindings.events.assign;     // false
-base.config.lang.bindings.events.read;     // true (unchanged)
+v1.config.lang.bindings.events.read; // false
+v2.config.lang.bindings.events.assign; // false
+base.config.lang.bindings.events.read; // true (unchanged)
 ```
 
 ### G. Batch Processing
@@ -651,14 +649,14 @@ e.config.lang.bindings.events.read; // false
 
 ## Error Reference
 
-| Error Message | Trigger |
-| --- | --- |
-| `'provide code or instrumented, not both'` | Both `code` and `instrumented` given to `embodify()` or `.trace()` |
-| `'code must be a string'` | `code` value is not a string (in constructor or `.set()`) |
-| `'instrumented must be a string'` | `instrumented` value is not a string (in constructor or `.set()`) |
-| `'config must be a plain object or JSON string'` | `config` is not an object, not a string, is null, or is an array |
-| `'steps must be an array or JSON string'` | `steps` is not an array and not a string |
-| `'set() accepts exactly one of: code, instrumented, steps, config'` | Multiple properties passed to `.set()` |
+| Error Message                                                       | Trigger                                                            |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `'provide code or instrumented, not both'`                          | Both `code` and `instrumented` given to `embodify()` or `.trace()` |
+| `'code must be a string'`                                           | `code` value is not a string (in constructor or `.set()`)          |
+| `'instrumented must be a string'`                                   | `instrumented` value is not a string (in constructor or `.set()`)  |
+| `'config must be a plain object or JSON string'`                    | `config` is not an object, not a string, is null, or is an array   |
+| `'steps must be an array or JSON string'`                           | `steps` is not an array and not a string                           |
+| `'set() accepts exactly one of: code, instrumented, steps, config'` | Multiple properties passed to `.set()`                             |
 
 All validation happens eagerly at the boundary (constructor and `.set()`). Internal chain operations do not throw for type issues.
 
@@ -700,13 +698,9 @@ type ChainLink = {
     config?: UserConfig | string;
   }): ChainLink;
 
-  mergeConfig(options?: {
-    config?: UserConfig | string;
-  }): ChainLink;
+  mergeConfig(options?: { config?: UserConfig | string }): ChainLink;
 
-  instrument(options?: {
-    config?: UserConfig | string;
-  }): ChainLink;
+  instrument(options?: { config?: UserConfig | string }): ChainLink;
 
   trace(options?: {
     code?: string;
@@ -714,10 +708,7 @@ type ChainLink = {
     config?: UserConfig | string;
   }): ChainLink;
 
-  filterSteps(options?: {
-    steps?: Step[] | string;
-    config?: UserConfig | string;
-  }): ChainLink;
+  filterSteps(options?: { steps?: Step[] | string; config?: UserConfig | string }): ChainLink;
 };
 ```
 
@@ -737,22 +728,22 @@ Real usage produces actual trace events — the stub patterns (`'abc' → 'a b c
 
 ### Test Phases
 
-| Phase | Increments | Focus |
-| ----- | ---------- | ----- |
-| 1. Construction & Getters | 1–5 | Empty construction, values, exclusive pair, JSON parsing, pickle serialization |
-| 2. Setter Methods | 6–12 | `.set()` for each property, `.mergeConfig()`, edge cases, validation |
-| 3. Pipeline Methods | 14–24 | `.instrument()`, `.trace()`, `.filterSteps()` with overrides and edge cases |
-| 4. Config Resolution | 25–26 | Four-case config matrix, JSON string configs in methods |
-| 5. Integration & Edge Cases | 27–30 | Lazy recomputation, immutability, full use cases A-I, edge cases |
+| Phase                       | Increments | Focus                                                                          |
+| --------------------------- | ---------- | ------------------------------------------------------------------------------ |
+| 1. Construction & Getters   | 1–5        | Empty construction, values, exclusive pair, JSON parsing, pickle serialization |
+| 2. Setter Methods           | 6–12       | `.set()` for each property, `.mergeConfig()`, edge cases, validation           |
+| 3. Pipeline Methods         | 14–24      | `.instrument()`, `.trace()`, `.filterSteps()` with overrides and edge cases    |
+| 4. Config Resolution        | 25–26      | Four-case config matrix, JSON string configs in methods                        |
+| 5. Integration & Edge Cases | 27–30      | Lazy recomputation, immutability, full use cases A-I, edge cases               |
 
 ### Test Files
 
-| File | Tests | Covers |
-| ---- | ----- | ------ |
-| `embodify.test.ts` | ~80 | Full API surface (30 increments) |
-| `parse-config.test.ts` | 5 | JSON parsing, invalid JSON, null/undefined |
-| `parse-steps.test.ts` | 3 | Array pass-through, JSON deserialization |
-| `resolve-method-config.test.ts` | 10 | Override merging, JSON parsing, preset handling |
-| `validate-field.test.ts` | 18 | Type validation for all field types |
+| File                            | Tests | Covers                                          |
+| ------------------------------- | ----- | ----------------------------------------------- |
+| `embodify.test.ts`              | ~80   | Full API surface (30 increments)                |
+| `parse-config.test.ts`          | 5     | JSON parsing, invalid JSON, null/undefined      |
+| `parse-steps.test.ts`           | 3     | Array pass-through, JSON deserialization        |
+| `resolve-method-config.test.ts` | 10    | Override merging, JSON parsing, preset handling |
+| `validate-field.test.ts`        | 18    | Type validation for all field types             |
 
 Config tests use real configs (the config module is fully functional, not stubbed).

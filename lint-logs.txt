@@ -1,0 +1,505 @@
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://tseslint.com/none-of-those-tsconfigs-include-this-file
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/configuring/tests/types.test.ts
+  0:0  error  Parsing error: ESLint was configured to run on `<tsconfigRootDir>/src/configuring/tests/types.test.ts` using `parserOptions.project`: <tsconfigRootDir>/tsconfig.json
+However, that TSConfig does not include this file. Either:
+- Change ESLint's list of included files to not include this file
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://tseslint.com/none-of-those-tsconfigs-include-this-file
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/configuring/types.ts
+   25:1   error  This line has a length of 108. Maximum allowed is 100                       max-len
+   27:1   error  This line has a length of 102. Maximum allowed is 100                       max-len
+   57:1   error  This line has a length of 113. Maximum allowed is 100                       max-len
+  100:48  error  Remove this commented out code                                              sonarjs/no-commented-code
+  252:48  error  Remove this commented out code                                              sonarjs/no-commented-code
+  291:13  error  Remove this redundant type alias and replace its occurrences with "Config"  sonarjs/redundant-type-aliases
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/configuring/utils/create-disabled-version.ts
+  13:40  warning  Unexpected any. Specify a different type                            @typescript-eslint/no-explicit-any
+  13:46  warning  Unexpected any. Specify a different type                            @typescript-eslint/no-explicit-any
+  19:21  warning  Unexpected any. Specify a different type                            @typescript-eslint/no-explicit-any
+  20:35  error    Unsafe argument of type `any` assigned to a parameter of type `{}`  @typescript-eslint/no-unsafe-argument
+  21:7   warning  Modifying an existing object/array is not allowed                   functional/immutable-data
+  21:7   warning  Unsafe assignment of an `any` value                                 @typescript-eslint/no-unsafe-assignment
+  21:16  warning  Unsafe member access [key] on an `any` value                        @typescript-eslint/no-unsafe-member-access
+  21:52  warning  Unsafe member access [key] on an `any` value                        @typescript-eslint/no-unsafe-member-access
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/configuring/utils/expand-partial.ts
+  21:33  warning  Unexpected any. Specify a different type                                                                                                         @typescript-eslint/no-explicit-any
+  21:48  warning  Unexpected any. Specify a different type                                                                                                         @typescript-eslint/no-explicit-any
+  21:54  warning  Unexpected any. Specify a different type                                                                                                         @typescript-eslint/no-explicit-any
+  30:9   warning  Unsafe assignment of an `any` value                                                                                                              @typescript-eslint/no-unsafe-assignment
+  32:33  error    Unsafe argument of type `any` assigned to a parameter of type `{}`                                                                               @typescript-eslint/no-unsafe-argument
+  33:11  warning  Unsafe assignment of an `any` value                                                                                                              @typescript-eslint/no-unsafe-assignment
+  33:27  warning  Unsafe member access [key] on an `any` value                                                                                                     @typescript-eslint/no-unsafe-member-access
+  34:11  warning  Unsafe assignment of an `any` value                                                                                                              @typescript-eslint/no-unsafe-assignment
+  34:11  error    Please rename the variable `def`. Suggested names are: `defer`, `deferred`, `define`, ... (1 more omitted). A more descriptive name will do too  unicorn/prevent-abbreviations
+  34:26  warning  Unsafe member access [key] on an `any` value                                                                                                     @typescript-eslint/no-unsafe-member-access
+  39:7   warning  Modifying an existing object/array is not allowed                                                                                                functional/immutable-data
+  39:7   warning  Unsafe assignment of an `any` value                                                                                                              @typescript-eslint/no-unsafe-assignment
+  39:14  warning  Unsafe member access [key] on an `any` value                                                                                                     @typescript-eslint/no-unsafe-member-access
+  45:7   warning  Modifying an existing object/array is not allowed                                                                                                functional/immutable-data
+  45:7   warning  Unsafe assignment of an `any` value                                                                                                              @typescript-eslint/no-unsafe-assignment
+  45:14  warning  Unsafe member access [key] on an `any` value                                                                                                     @typescript-eslint/no-unsafe-member-access
+  46:7   error    Add the missing "else" clause                                                                                                                    sonarjs/elseif-without-else
+  50:7   warning  Modifying an existing object/array is not allowed                                                                                                functional/immutable-data
+  50:7   warning  Unsafe assignment of an `any` value                                                                                                              @typescript-eslint/no-unsafe-assignment
+  50:14  warning  Unsafe member access [key] on an `any` value                                                                                                     @typescript-eslint/no-unsafe-member-access
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/configuring/utils/is-expandable-object.ts
+  10:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/reference-tracker/factory.ts
+  2:38  error  'FactoryFunction' is defined but never used     @typescript-eslint/no-unused-vars
+  2:38  error  Remove this unused import of 'FactoryFunction'  sonarjs/unused-import
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/reference-tracker/is-wrapper.ts
+  40:28  warning  Unexpected any. Specify a different type                                                   @typescript-eslint/no-explicit-any
+  42:5   error    Reduce the number of conditional operators (6) used in the expression (maximum allowed 3)  sonarjs/expression-complexity
+  44:20  warning  Unsafe member access .id on an `any` value                                                 @typescript-eslint/no-unsafe-member-access
+  44:46  warning  Unsafe member access .id on an `any` value                                                 @typescript-eslint/no-unsafe-member-access
+  45:19  warning  Unsafe member access .type on an `any` value                                               @typescript-eslint/no-unsafe-member-access
+  47:19  warning  Unsafe member access .secret on an `any` value                                             @typescript-eslint/no-unsafe-member-access
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/reference-tracker/shadow.ts
+   1:30  error    'ShadowFunction' is defined but never used         @typescript-eslint/no-unused-vars
+   1:30  error    Remove this unused import of 'ShadowFunction'      sonarjs/unused-import
+  49:79  warning  Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  49:87  warning  Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  72:7   warning  Modifying an existing object/array is not allowed  functional/immutable-data
+  72:20  warning  Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  72:25  warning  Unsafe member access .value on an `any` value      @typescript-eslint/no-unsafe-member-access
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/reference-tracker/tests/factory.test.ts
+  0:0  error  Parsing error: ESLint was configured to run on `<tsconfigRootDir>/src/instrument/reference-tracker/tests/factory.test.ts` using `parserOptions.project`: <tsconfigRootDir>/tsconfig.json
+However, that TSConfig does not include this file. Either:
+- Change ESLint's list of included files to not include this file
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://tseslint.com/none-of-those-tsconfigs-include-this-file
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/reference-tracker/tests/integration.test.ts
+  0:0  error  Parsing error: ESLint was configured to run on `<tsconfigRootDir>/src/instrument/reference-tracker/tests/integration.test.ts` using `parserOptions.project`: <tsconfigRootDir>/tsconfig.json
+However, that TSConfig does not include this file. Either:
+- Change ESLint's list of included files to not include this file
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://tseslint.com/none-of-those-tsconfigs-include-this-file
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/reference-tracker/tests/is-wrapper.test.ts
+  0:0  error  Parsing error: ESLint was configured to run on `<tsconfigRootDir>/src/instrument/reference-tracker/tests/is-wrapper.test.ts` using `parserOptions.project`: <tsconfigRootDir>/tsconfig.json
+However, that TSConfig does not include this file. Either:
+- Change ESLint's list of included files to not include this file
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://tseslint.com/none-of-those-tsconfigs-include-this-file
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/reference-tracker/types.ts
+   50:5    error    The `Function` type accepts any function-like value.
+Prefer explicitly defining any function parameters and return type  @typescript-eslint/no-unsafe-function-type
+   77:5    error    "Object" is overridden by string in this union type                                                                      @typescript-eslint/no-redundant-type-constituents
+   78:5    error    "Array" is overridden by string in this union type                                                                       @typescript-eslint/no-redundant-type-constituents
+   79:5    error    "Function" is overridden by string in this union type                                                                    @typescript-eslint/no-redundant-type-constituents
+   80:5    error    "Map" is overridden by string in this union type                                                                         @typescript-eslint/no-redundant-type-constituents
+   81:5    error    "Set" is overridden by string in this union type                                                                         @typescript-eslint/no-redundant-type-constituents
+   82:5    error    "WeakMap" is overridden by string in this union type                                                                     @typescript-eslint/no-redundant-type-constituents
+   83:5    error    "WeakSet" is overridden by string in this union type                                                                     @typescript-eslint/no-redundant-type-constituents
+   84:5    error    "Date" is overridden by string in this union type                                                                        @typescript-eslint/no-redundant-type-constituents
+   85:5    error    "RegExp" is overridden by string in this union type                                                                      @typescript-eslint/no-redundant-type-constituents
+   86:5    error    "Error" is overridden by string in this union type                                                                       @typescript-eslint/no-redundant-type-constituents
+   87:5    error    "Promise" is overridden by string in this union type                                                                     @typescript-eslint/no-redundant-type-constituents
+   88:5    error    "Proxy" is overridden by string in this union type                                                                       @typescript-eslint/no-redundant-type-constituents
+  135:31   warning  Unexpected any. Specify a different type                                                                                 @typescript-eslint/no-explicit-any
+  141:1    error    This line has a length of 112. Maximum allowed is 100                                                                    max-len
+  141:93   warning  Unexpected any. Specify a different type                                                                                 @typescript-eslint/no-explicit-any
+  141:101  warning  Unexpected any. Specify a different type                                                                                 @typescript-eslint/no-explicit-any
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/reference-tracker/unwrap.ts
+    2:30  error    'UnwrapFunction' is defined but never used                                           @typescript-eslint/no-unused-vars
+    2:30  error    Remove this unused import of 'UnwrapFunction'                                        sonarjs/unused-import
+   34:17  error    'UnwrapFunction' is defined but never used                                           @typescript-eslint/no-unused-vars
+   34:17  error    'UnwrapFunction' is already declared in the upper scope on line 2 column 30          @typescript-eslint/no-shadow
+   43:10  warning  Refactor this function to reduce its Cognitive Complexity from 57 to the 15 allowed  sonarjs/cognitive-complexity
+   86:38  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+   91:9   warning  Modifying an existing object/array is not allowed                                    functional/immutable-data
+   91:9   warning  Unsafe assignment of an `any` value                                                  @typescript-eslint/no-unsafe-assignment
+  123:12  error    Complete the task associated to this "TODO" comment                                  sonarjs/todo-tag
+  124:9   warning  Modifying a map is not allowed                                                       functional/immutable-data
+  155:9   warning  Modifying a set is not allowed                                                       functional/immutable-data
+  161:19  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+  161:24  warning  Unsafe member access .constructor on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+  161:61  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+  161:66  warning  Unsafe member access .constructor on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+  169:66  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+  181:45  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+  184:74  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+  185:9   warning  Modifying an existing object/array is not allowed                                    functional/immutable-data
+  185:9   warning  Unsafe assignment of an `any` value                                                  @typescript-eslint/no-unsafe-assignment
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/reference-tracker/wrap.ts
+    2:30  error    'WrapFunction' is defined but never used                                             @typescript-eslint/no-unused-vars
+    2:30  error    Remove this unused import of 'WrapFunction'                                          sonarjs/unused-import
+   27:1   error    This line has a comment length of 112. Maximum allowed is 100                        max-len
+   33:15  error    'WrapFunction' is defined but never used                                             @typescript-eslint/no-unused-vars
+   33:15  error    'WrapFunction' is already declared in the upper scope on line 2 column 30            @typescript-eslint/no-shadow
+   44:10  warning  Refactor this function to reduce its Cognitive Complexity from 16 to the 15 allowed  sonarjs/cognitive-complexity
+   69:7   warning  Unsafe assignment of an `any` value                                                  @typescript-eslint/no-unsafe-assignment
+   69:22  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+   72:7   warning  Unsafe assignment of an `any` value                                                  @typescript-eslint/no-unsafe-assignment
+   72:28  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+   72:33  warning  Unsafe member access .constructor on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+   79:23  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+   85:39  error    Complete the task associated to this "TODO" comment                                  sonarjs/todo-tag
+   88:9   warning  Unsafe call of an `any` typed value                                                  @typescript-eslint/no-unsafe-call
+   88:22  warning  Unsafe member access .set on an `any` value                                          @typescript-eslint/no-unsafe-member-access
+   94:9   warning  Unsafe call of an `any` typed value                                                  @typescript-eslint/no-unsafe-call
+   94:22  warning  Unsafe member access .add on an `any` value                                          @typescript-eslint/no-unsafe-member-access
+   99:31  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+   99:36  warning  Unsafe member access .constructor on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+   99:78  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+   99:83  warning  Unsafe member access .constructor on an `any` value                                  @typescript-eslint/no-unsafe-member-access
+  102:78  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+  103:9   warning  Modifying an existing object/array is not allowed                                    functional/immutable-data
+  103:22  warning  Unsafe member access [key] on an `any` value                                         @typescript-eslint/no-unsafe-member-access
+  111:5   warning  Modifying an existing object/array is not allowed                                    functional/immutable-data
+  111:5   warning  Unsafe assignment of an `any` value                                                  @typescript-eslint/no-unsafe-assignment
+  111:17  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+  111:22  warning  Unsafe member access .value on an `any` value                                        @typescript-eslint/no-unsafe-member-access
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/state.ts
+  1:1  error  Named exports are not allowed  import/no-named-export
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/operators/comma.ts
+   7:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   8:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  15:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  28:38  warning  Unsafe return of a value of type `any`    @typescript-eslint/no-unsafe-return
+  29:7   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/operators/mutating.ts
+   6:23  warning  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+   7:22  warning  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+   8:22  warning  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+  36:5   warning  Unsafe object destructuring of a property with an `any` value  @typescript-eslint/no-unsafe-assignment
+  37:5   warning  Unsafe object destructuring of a property with an `any` value  @typescript-eslint/no-unsafe-assignment
+  38:5   warning  Unsafe object destructuring of a property with an `any` value  @typescript-eslint/no-unsafe-assignment
+  51:5   warning  Unsafe assignment of an `any` value                            @typescript-eslint/no-unsafe-assignment
+  52:37  warning  Unsafe assignment of an `any` value                            @typescript-eslint/no-unsafe-assignment
+  53:36  warning  Unsafe assignment of an `any` value                            @typescript-eslint/no-unsafe-assignment
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/operators/pure.ts
+   8:32  warning  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+   9:21  warning  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+  10:32  warning  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+  15:1   error    This line has a comment length of 106. Maximum allowed is 100  max-len
+  24:5   warning  Unsafe object destructuring of a property with an `any` value  @typescript-eslint/no-unsafe-assignment
+  28:22  warning  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+  29:34  warning  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+  32:22  warning  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+  33:34  warning  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+  51:38  warning  Unsafe return of a value of type `any`                         @typescript-eslint/no-unsafe-return
+  52:7   warning  Unsafe assignment of an `any` value                            @typescript-eslint/no-unsafe-assignment
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/operators/short-circuiting.ts
+   5:18  warning  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+   6:20  warning  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+   7:20  warning  Unexpected any. Specify a different type                       @typescript-eslint/no-explicit-any
+  36:5   warning  Unsafe object destructuring of a property with an `any` value  @typescript-eslint/no-unsafe-assignment
+  37:5   warning  Unsafe object destructuring of a property with an `any` value  @typescript-eslint/no-unsafe-assignment
+  38:5   warning  Unsafe object destructuring of a property with an `any` value  @typescript-eslint/no-unsafe-assignment
+  51:5   warning  Unsafe assignment of an `any` value                            @typescript-eslint/no-unsafe-assignment
+  52:5   warning  Unsafe assignment of an `any` value                            @typescript-eslint/no-unsafe-assignment
+  54:29  warning  Unsafe assignment of an `any` value                            @typescript-eslint/no-unsafe-assignment
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/parenthesis/enter.ts
+  1:1   error  This line has a comment length of 110. Maximum allowed is 100  max-len
+  7:21  error  Complete the task associated to this "TODO" comment            sonarjs/todo-tag
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/parenthesis/leave.ts
+  1:1   error  This line has a comment length of 110. Maximum allowed is 100  max-len
+  7:21  error  Complete the task associated to this "TODO" comment            sonarjs/todo-tag
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/references/access.ts
+   5:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   6:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  11:5   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+  12:5   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/references/create.ts
+   5:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   6:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  11:5   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+  12:5   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/references/mutate.ts
+   6:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   7:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   8:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  13:5   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+  14:5   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+  15:5   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/scopes/block.ts
+   8:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  16:5   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/scopes/closure.ts
+   8:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  10:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  16:5   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+  18:5   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/scopes/function.ts
+   8:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  15:5   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/scopes/module.ts
+   7:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  14:5   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/scopes/script.ts
+   8:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  15:5   warning  Unsafe assignment of an `any` value       @typescript-eslint/no-unsafe-assignment
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/symbols/access.ts
+  5:18  error  Complete the task associated to this "TODO" comment  sonarjs/todo-tag
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/symbols/create.ts
+  5:18  error  Complete the task associated to this "TODO" comment  sonarjs/todo-tag
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/tests/fixtures/test-values.ts
+   7:8   error    Unexpected class, use functions not classes                                                               functional/no-classes
+   9:8   error    Unexpected class, use functions not classes                                                               functional/no-classes
+  12:5   error    Unexpected this, use functions not classes                                                                functional/no-this-expressions
+  16:8   error    Unexpected class, use functions not classes                                                               functional/no-classes
+  19:5   error    Unexpected this, use functions not classes                                                                functional/no-this-expressions
+  46:32  warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  46:40  warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  46:47  warning  Unsafe return of a value of type `any`                                                                    @typescript-eslint/no-unsafe-return
+  47:16  warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  47:24  warning  Unsafe return of a value of type `any`                                                                    @typescript-eslint/no-unsafe-return
+  53:19  warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  54:19  warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  55:19  warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  57:7   warning  Unsafe return of a value of type `any`                                                                    @typescript-eslint/no-unsafe-return
+  63:5   warning  Unsafe assignment of an `any` value                                                                       @typescript-eslint/no-unsafe-assignment
+  64:5   warning  Unsafe assignment of an `any` value                                                                       @typescript-eslint/no-unsafe-assignment
+  64:22  error    Unexpected block statement surrounding arrow body                                                         arrow-body-style
+  65:21  warning  Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  66:7   warning  Unsafe assignment of an `any` value                                                                       @typescript-eslint/no-unsafe-assignment
+  66:14  warning  Unsafe member access .self on an `any` value                                                              @typescript-eslint/no-unsafe-member-access
+  67:7   warning  Unsafe return of a value of type `any`                                                                    @typescript-eslint/no-unsafe-return
+  87:44  error    Unexpected block statement surrounding arrow body; put a value of `undefined` immediately after the `=>`  arrow-body-style
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/tests/operators/pure.test.ts
+  0:0  error  Parsing error: ESLint was configured to run on `<tsconfigRootDir>/src/instrument/steps/tests/operators/pure.test.ts` using `parserOptions.project`: <tsconfigRootDir>/tsconfig.json
+However, that TSConfig does not include this file. Either:
+- Change ESLint's list of included files to not include this file
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://tseslint.com/none-of-those-tsconfigs-include-this-file
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/tests/utils/represent-coercion.test.ts
+  0:0  error  Parsing error: ESLint was configured to run on `<tsconfigRootDir>/src/instrument/steps/tests/utils/represent-coercion.test.ts` using `parserOptions.project`: <tsconfigRootDir>/tsconfig.json
+However, that TSConfig does not include this file. Either:
+- Change ESLint's list of included files to not include this file
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://tseslint.com/none-of-those-tsconfigs-include-this-file
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/tests/utils/represent-value.test.ts
+  0:0  error  Parsing error: ESLint was configured to run on `<tsconfigRootDir>/src/instrument/steps/tests/utils/represent-value.test.ts` using `parserOptions.project`: <tsconfigRootDir>/tsconfig.json
+However, that TSConfig does not include this file. Either:
+- Change ESLint's list of included files to not include this file
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://tseslint.com/none-of-those-tsconfigs-include-this-file
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/utils/represent-coercion.ts
+   12:25  warning  Refactor this function to reduce its Cognitive Complexity from 61 to the 15 allowed  sonarjs/cognitive-complexity
+   14:22  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+   16:13  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
+   22:7   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+   25:5   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+   30:11  warning  Unsafe array destructuring of an `any` array value                                   @typescript-eslint/no-unsafe-assignment
+   47:1   error    This line has a comment length of 118. Maximum allowed is 100                        max-len
+   51:7   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+   58:9   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+   61:7   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+   66:7   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+   73:9   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+   76:7   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+   83:9   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+   88:9   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+   91:9   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+   96:9   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+   99:9   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+  105:15  warning  Unsafe assignment of an `any` value                                                  @typescript-eslint/no-unsafe-assignment
+  106:16  warning  Unsafe member access .valueOf on an `any` value                                      @typescript-eslint/no-unsafe-member-access
+  106:55  warning  Unsafe call of an `any` typed value                                                  @typescript-eslint/no-unsafe-call
+  106:60  warning  Unsafe member access .toString on an `any` value                                     @typescript-eslint/no-unsafe-member-access
+  106:73  warning  Unsafe call of an `any` typed value                                                  @typescript-eslint/no-unsafe-call
+  106:78  warning  Unsafe member access .valueOf on an `any` value                                      @typescript-eslint/no-unsafe-member-access
+  107:9   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+  110:15  warning  Unsafe assignment of an `any` value                                                  @typescript-eslint/no-unsafe-assignment
+  111:17  warning  Unsafe member access .valueOf on an `any` value                                      @typescript-eslint/no-unsafe-member-access
+  111:56  warning  Unsafe call of an `any` typed value                                                  @typescript-eslint/no-unsafe-call
+  111:62  warning  Unsafe member access .toString on an `any` value                                     @typescript-eslint/no-unsafe-member-access
+  111:75  warning  Unsafe call of an `any` typed value                                                  @typescript-eslint/no-unsafe-call
+  111:81  warning  Unsafe member access .valueOf on an `any` value                                      @typescript-eslint/no-unsafe-member-access
+  112:9   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+  116:7   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+  123:7   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+  128:7   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+  132:5   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+  136:3   warning  Unsafe return of a value of type `any[]`                                             @typescript-eslint/no-unsafe-return
+  136:29  warning  Unsafe return of a value of type `any`                                               @typescript-eslint/no-unsafe-return
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/instrument/steps/utils/represent-value.ts
+    8:36  warning  Unexpected any. Specify a different type                                                   @typescript-eslint/no-explicit-any
+   23:9   warning  Unsafe assignment of an `any` value                                                        @typescript-eslint/no-unsafe-assignment
+   26:13  warning  Unsafe assignment of an `any` value                                                        @typescript-eslint/no-unsafe-assignment
+   26:37  warning  Unsafe member access .constructor on an `any` value                                        @typescript-eslint/no-unsafe-member-access
+   28:9   warning  Unsafe call of a type that could not be resolved                                           @typescript-eslint/no-unsafe-call
+   30:7   warning  Unsafe assignment of an `any` value                                                        @typescript-eslint/no-unsafe-assignment
+   33:28  warning  Unsafe call of a type that could not be resolved                                           @typescript-eslint/no-unsafe-call
+   44:29  warning  Unexpected any. Specify a different type                                                   @typescript-eslint/no-explicit-any
+   52:9   warning  Unsafe assignment of an `any` value                                                        @typescript-eslint/no-unsafe-assignment
+   52:22  warning  Unsafe member access .constructor on an `any` value                                        @typescript-eslint/no-unsafe-member-access
+   53:3   warning  Unsafe return of a value of type `any`                                                     @typescript-eslint/no-unsafe-return
+   53:22  warning  Unsafe member access .name on an `any` value                                               @typescript-eslint/no-unsafe-member-access
+   76:25  error    Refactor this function to use "return" consistently                                        sonarjs/no-inconsistent-returns
+   77:10  warning  Unexpected any. Specify a different type                                                   @typescript-eslint/no-explicit-any
+   98:5   error    Reduce the number of conditional operators (5) used in the expression (maximum allowed 3)  sonarjs/expression-complexity
+  105:5   warning  Unsafe assignment of an `any` value                                                        @typescript-eslint/no-unsafe-assignment
+  109:5   warning  Unsafe assignment of an `any` value                                                        @typescript-eslint/no-unsafe-assignment
+  109:27  warning  Unsafe call of an `any` typed value                                                        @typescript-eslint/no-unsafe-call
+  109:33  warning  Unsafe member access .toString on an `any` value                                           @typescript-eslint/no-unsafe-member-access
+  112:11  warning  Unsafe assignment of an `any` value                                                        @typescript-eslint/no-unsafe-assignment
+  112:23  warning  Unsafe call of an `any` typed value                                                        @typescript-eslint/no-unsafe-call
+  112:23  warning  Unsafe call of an `any` typed value                                                        @typescript-eslint/no-unsafe-call
+  112:29  warning  Unsafe member access .toString on an `any` value                                           @typescript-eslint/no-unsafe-member-access
+  112:40  warning  Unsafe member access .split on an `any` value                                              @typescript-eslint/no-unsafe-member-access
+  112:52  warning  Unsafe member access [0] on an `any` value                                                 @typescript-eslint/no-unsafe-member-access
+  114:7   warning  Unsafe assignment of an `any` value                                                        @typescript-eslint/no-unsafe-assignment
+  114:19  warning  Unsafe member access .name on an `any` value                                               @typescript-eslint/no-unsafe-member-access
+  115:7   warning  Unsafe assignment of an `any` value                                                        @typescript-eslint/no-unsafe-assignment
+  115:21  warning  Unsafe member access .length on an `any` value                                             @typescript-eslint/no-unsafe-member-access
+  116:7   warning  Unsafe assignment of an `any` value                                                        @typescript-eslint/no-unsafe-assignment
+  120:5   warning  Unsafe assignment of an `any` value                                                        @typescript-eslint/no-unsafe-assignment
+  125:20  warning  Unsafe assignment of an `any` value                                                        @typescript-eslint/no-unsafe-assignment
+  130:14  warning  Unsafe assignment of an `any` value                                                        @typescript-eslint/no-unsafe-assignment
+  135:5   warning  Unsafe return of a value of type `any`                                                     @typescript-eslint/no-unsafe-return
+  138:51  warning  Invalid type "never" of template literal expression                                        @typescript-eslint/restrict-template-expressions
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/record/sandbox/index.ts
+  16:8   warning  Unsafe call of an `any` typed value                                      @typescript-eslint/no-unsafe-call
+  16:14  warning  Unsafe member access .trim on an `any` value                             @typescript-eslint/no-unsafe-member-access
+  23:5   warning  Unsafe call of a type that could not be resolved                         @typescript-eslint/no-unsafe-call
+  23:26  warning  Unsafe member access .remove on a type that cannot be resolved           @typescript-eslint/no-unsafe-member-access
+  40:9   warning  Unsafe assignment of an `any` value                                      @typescript-eslint/no-unsafe-assignment
+  43:7   warning  Unsafe assignment of an error typed value                                @typescript-eslint/no-unsafe-assignment
+  43:19  warning  Unsafe call of a type that could not be resolved                         @typescript-eslint/no-unsafe-call
+  47:1   error    This line has a length of 141. Maximum allowed is 100                    max-len
+  47:7   error    'finalCode' is assigned a value but never used                           @typescript-eslint/no-unused-vars
+  47:7   error    Remove this useless assignment to variable "finalCode"                   sonarjs/no-dead-store
+  52:5   warning  Modifying an existing object/array is not allowed                        functional/immutable-data
+  62:5   warning  Unsafe call of a type that could not be resolved                         @typescript-eslint/no-unsafe-call
+  72:9   warning  Unsafe assignment of an error typed value                                @typescript-eslint/no-unsafe-assignment
+  72:31  warning  Unsafe member access .contentWindow on a type that cannot be resolved    @typescript-eslint/no-unsafe-member-access
+  73:9   warning  Unsafe assignment of an error typed value                                @typescript-eslint/no-unsafe-assignment
+  73:33  warning  Unsafe member access .contentDocument on a type that cannot be resolved  @typescript-eslint/no-unsafe-member-access
+  80:3   warning  Modifying properties of existing object not allowed                      functional/immutable-data
+  80:43  warning  Unsafe member access .globals on a type that cannot be resolved          @typescript-eslint/no-unsafe-member-access
+  84:3   warning  Modifying an existing object/array is not allowed                        functional/immutable-data
+  84:3   warning  Unsafe assignment of an error typed value                                @typescript-eslint/no-unsafe-assignment
+  86:19  warning  Unsafe member access .type on a type that cannot be resolved             @typescript-eslint/no-unsafe-member-access
+  87:5   warning  Modifying an existing object/array is not allowed                        functional/immutable-data
+  91:3   warning  Unsafe call of a type that could not be resolved                         @typescript-eslint/no-unsafe-call
+  91:18  warning  Unsafe member access .body on a type that cannot be resolved             @typescript-eslint/no-unsafe-member-access
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/steps/resolve-steps.ts
+   3:15  error  'Step' is defined but never used                               @typescript-eslint/no-unused-vars
+  18:1   error  This line has a comment length of 131. Maximum allowed is 100  max-len
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/steps/tests/resolve-steps.test.ts
+  0:0  error  Parsing error: ESLint was configured to run on `<tsconfigRootDir>/src/steps/tests/resolve-steps.test.ts` using `parserOptions.project`: <tsconfigRootDir>/tsconfig.json
+However, that TSConfig does not include this file. Either:
+- Change ESLint's list of included files to not include this file
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://tseslint.com/none-of-those-tsconfigs-include-this-file
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/steps/tests/validate-steps.test.ts
+  0:0  error  Parsing error: ESLint was configured to run on `<tsconfigRootDir>/src/steps/tests/validate-steps.test.ts` using `parserOptions.project`: <tsconfigRootDir>/tsconfig.json
+However, that TSConfig does not include this file. Either:
+- Change ESLint's list of included files to not include this file
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://tseslint.com/none-of-those-tsconfigs-include-this-file
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/steps/validate-steps.ts
+  16:1  error  This line has a comment length of 128. Maximum allowed is 100  max-len
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/tests/trace.test.ts
+  0:0  error  Parsing error: ESLint was configured to run on `<tsconfigRootDir>/src/tests/trace.test.ts` using `parserOptions.project`: <tsconfigRootDir>/tsconfig.json
+However, that TSConfig does not include this file. Either:
+- Change ESLint's list of included files to not include this file
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://tseslint.com/none-of-those-tsconfigs-include-this-file
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/trace.ts
+  50:13  error  Remove this "===" check; it will always be false. Did you mean to use "=="?  sonarjs/different-types-comparison
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/types/api.ts
+   39:33  error  The `{}` ("empty object") type allows any non-nullish value, including literals like `0` and `""`.
+- If that's what you want, disable this lint rule with an inline comment or configure the 'allowObjectTypes' rule option.
+- If you want a type meaning "any object", you probably want `object` instead.
+- If you want a type meaning "any value", you probably want `unknown` instead  @typescript-eslint/no-empty-object-type
+   64:13  error  The variable `EmbodyBothParams` should be named `EmbodyBothParameters`. A more descriptive name will do too                                                                                                                                                                                                                                                                                unicorn/prevent-abbreviations
+  103:13  error  The variable `SquintBothParams` should be named `SquintBothParameters`. A more descriptive name will do too                                                                                                                                                                                                                                                                                unicorn/prevent-abbreviations
+  141:31  error  Remove this type without members or change this type intersection                                                                                                                                                                                                                                                                                                                          sonarjs/no-useless-intersection
+  145:32  error  Remove this type without members or change this type intersection                                                                                                                                                                                                                                                                                                                          sonarjs/no-useless-intersection
+  154:27  error  Remove this type without members or change this type intersection                                                                                                                                                                                                                                                                                                                          sonarjs/no-useless-intersection
+  158:28  error  Remove this type without members or change this type intersection                                                                                                                                                                                                                                                                                                                          sonarjs/no-useless-intersection
+  167:26  error  Remove this type without members or change this type intersection                                                                                                                                                                                                                                                                                                                          sonarjs/no-useless-intersection
+  179:32  error  Remove this type without members or change this type intersection                                                                                                                                                                                                                                                                                                                          sonarjs/no-useless-intersection
+  194:13  error  Remove this redundant type alias and replace its occurrences with "string"                                                                                                                                                                                                                                                                                                                 sonarjs/redundant-type-aliases
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/utils/deep-clone.ts
+   9:10  warning  Refactor this function to reduce its Cognitive Complexity from 19 to the 15 allowed  sonarjs/cognitive-complexity
+  49:32  warning  Unsafe return of a value of type `any`                                               @typescript-eslint/no-unsafe-return
+  56:7   warning  Modifying a set is not allowed                                                       functional/immutable-data
+  65:7   warning  Modifying a map is not allowed                                                       functional/immutable-data
+  75:7   warning  Modifying an existing object/array is not allowed                                    functional/immutable-data
+  83:5   warning  Modifying an existing object/array is not allowed                                    functional/immutable-data
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/utils/deep-merge.ts
+   50:33  error    Remove this "===" check; it will always be false. Did you mean to use "=="?  sonarjs/different-types-comparison
+   56:13  warning  Unsafe spread of an `any` value in an array                                  @typescript-eslint/no-unsafe-assignment
+   78:9   warning  Modifying an existing object/array is not allowed                            functional/immutable-data
+   81:9   warning  Modifying an existing object/array is not allowed                            functional/immutable-data
+  100:1   error    This line has a comment length of 336. Maximum allowed is 100                max-len
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/utils/tests/deep-merge.test.ts
+  0:0  error  Parsing error: ESLint was configured to run on `<tsconfigRootDir>/src/utils/tests/deep-merge.test.ts` using `parserOptions.project`: <tsconfigRootDir>/tsconfig.json
+However, that TSConfig does not include this file. Either:
+- Change ESLint's list of included files to not include this file
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://tseslint.com/none-of-those-tsconfigs-include-this-file
+
+/Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody/src/utils/tests/parse-json.test.ts
+  0:0  error  Parsing error: ESLint was configured to run on `<tsconfigRootDir>/src/utils/tests/parse-json.test.ts` using `parserOptions.project`: <tsconfigRootDir>/tsconfig.json
+However, that TSConfig does not include this file. Either:
+- Change ESLint's list of included files to not include this file
+- Change that TSConfig to include this file
+- Create a new TSConfig that includes this file and include it in your parserOptions.project
+See the typescript-eslint docs for more info: https://tseslint.com/none-of-those-tsconfigs-include-this-file
+
+✖ 577 problems (183 errors, 394 warnings)

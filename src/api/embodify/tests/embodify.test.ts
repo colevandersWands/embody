@@ -1,21 +1,5 @@
-/**
- * @file Tests for embodify — chainable pipeline wrapper
- *
- * Follows TDD increments from the plan. Each describe block
- * corresponds to one increment. Tests use the stubbing convention:
- *
- *   code 'abc' → instrumented 'a b c' → steps [{},{},{}]
- *   pickledSteps '[{},{},{}]' (JSON.stringify of steps)
- *
- * Config tests use real configs (the config module is functional).
- */
-
 import embodify from '../embodify.js';
 import createConfig from '../../../configuring/create.js';
-
-// ============================================================================
-// Phase 1: Construction & Getters
-// ============================================================================
 
 describe('Increment 1 — Empty construction', () => {
   it('returns an object', () => {
@@ -76,7 +60,6 @@ describe('Increment 2 — Construction with values', () => {
   it('expands config object to full ExpandedConfig', () => {
     const e = embodify({ config: {} });
     expect(e.config).not.toBeNull();
-    // Should have the standard config structure
     expect(e.config).toHaveProperty('lang');
     expect(e.config).toHaveProperty('meta');
   });
@@ -84,8 +67,6 @@ describe('Increment 2 — Construction with values', () => {
   it('applies preset in config', () => {
     const overview = embodify({ config: { presets: 'overview' } });
     const detailed = embodify({ config: { presets: 'detailed' } });
-
-    // Different presets should produce different configs
     expect(overview.config).not.toEqual(detailed.config);
   });
 });
@@ -153,7 +134,6 @@ describe('Increment 4 — String auto-detection (steps)', () => {
     const e = embodify({ config: {} });
     const pickled = e.pickledConfig;
     expect(typeof pickled).toBe('string');
-    // Should be valid JSON that parses back to an object
     const parsed = JSON.parse(pickled!);
     expect(parsed).toHaveProperty('lang');
     expect(parsed).toHaveProperty('meta');
@@ -172,9 +152,7 @@ describe('Increment 5 — Config from JSON string', () => {
   });
 
   it('throws on invalid JSON config', () => {
-    expect(() => embodify({ config: '{invalid json' })).toThrow(
-      'deserialize',
-    );
+    expect(() => embodify({ config: '{invalid json' })).toThrow('deserialize');
   });
 
   it('parses empty JSON object to default config', () => {
@@ -183,10 +161,6 @@ describe('Increment 5 — Config from JSON string', () => {
     expect(fromString.config).toEqual(fromObject.config);
   });
 });
-
-// ============================================================================
-// Phase 2: Setter Methods
-// ============================================================================
 
 describe('Increment 6 — .set({ config })', () => {
   const cfg1 = { presets: 'overview' as const };
@@ -245,9 +219,7 @@ describe('Increment 8 — mergeConfig', () => {
     const e2 = e.mergeConfig({
       config: { lang: { bindings: { events: { read: false } } } },
     });
-
     expect(e2.config.lang.bindings.events.read).toBe(false);
-    // Other binding event fields preserved from original
     expect(e2.config.lang.bindings.events.assign).toBe(e.config.lang.bindings.events.assign);
   });
 
@@ -385,10 +357,6 @@ describe('Increment 12 — .set({ steps })', () => {
   });
 });
 
-// ============================================================================
-// Phase 3: Pipeline Methods
-// ============================================================================
-
 describe('Increment 14 — instrument()', () => {
   it('produces instrumented code from code', () => {
     const e = embodify({ code: 'abc' }).instrument();
@@ -414,7 +382,6 @@ describe('Increment 15 — instrument() with config', () => {
       config: { lang: { bindings: { events: { read: false } } } },
     });
     expect(e.config.lang.bindings.events.read).toBe(false);
-    // Other fields preserved from chain config
     expect(e.config.lang.bindings.events.assign).toBe(true);
   });
 
@@ -573,17 +540,12 @@ describe('Increment 24 — filterSteps() with no steps', () => {
   });
 });
 
-// ============================================================================
-// Phase 4: Config Resolution
-// ============================================================================
-
 describe('Increment 25 — methodConfig helper behavior', () => {
   it('chain config + method override → merged', () => {
     const e = embodify({ code: 'abc', config: {} }).trace({
       config: { lang: { bindings: { events: { read: false } } } },
     });
     expect(e.config.lang.bindings.events.read).toBe(false);
-    // Chain defaults preserved
     expect(e.config.lang.bindings.events.assign).toBe(true);
   });
 
@@ -614,9 +576,9 @@ describe('Increment 26 — JSON.parse in methods', () => {
   });
 
   it('instrument throws on invalid JSON config', () => {
-    expect(() =>
-      embodify({ code: 'abc' }).instrument({ config: '{bad json' }),
-    ).toThrow('deserialize');
+    expect(() => embodify({ code: 'abc' }).instrument({ config: '{bad json' })).toThrow(
+      'deserialize',
+    );
   });
 
   it('filterSteps accepts JSON string config for merge', () => {
@@ -627,10 +589,6 @@ describe('Increment 26 — JSON.parse in methods', () => {
     expect(e2.config.lang.bindings.events.read).toBe(false);
   });
 });
-
-// ============================================================================
-// Phase 5: Integration & Edge Cases
-// ============================================================================
 
 describe('Increment 27 — Lazy recomputation verification', () => {
   it('.set({ code }) → lazy recomputes instrumented and steps', () => {
@@ -769,13 +727,10 @@ describe('Increment 29 — Full use cases A-I', () => {
     const v2 = base.filterSteps({
       config: { lang: { bindings: { events: { assign: false } } } },
     });
-    // Both filter from same base steps
     expect(v1.steps).toEqual([{}, {}, {}]);
     expect(v2.steps).toEqual([{}, {}, {}]);
-    // But have different configs
     expect(v1.config.lang.bindings.events.read).toBe(false);
     expect(v2.config.lang.bindings.events.assign).toBe(false);
-    // Original unmodified
     expect(base.config.lang.bindings.events.read).toBe(true);
   });
 
