@@ -1,3 +1,5 @@
+import type { BindingsRecord } from '../types.js';
+
 function closure({
   event,
   bindings,
@@ -5,9 +7,9 @@ function closure({
   parentCall, // ID reference to the enclosing function call entry
 }: {
   readonly event?: string;
-  readonly bindings?: any;
+  readonly bindings?: BindingsRecord;
   readonly parentName?: string;
-  readonly parentCall?: any;
+  readonly parentCall?: number;
 } = {}) {
   return {
     category: 'scope',

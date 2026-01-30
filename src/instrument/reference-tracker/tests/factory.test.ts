@@ -60,7 +60,7 @@ describe('Shadow Function (Public Interface)', () => {
     expect(trackedNull.id).toBeNull();
     expect(trackedNull.type).toBe('object'); // typeof null === 'object'
 
-    const trackedUndefined = tracker.shadow(undefined);
+    const trackedUndefined = tracker.shadow();
     expect(trackedUndefined.value).toBe(undefined);
     expect(trackedUndefined.id).toBeNull();
     expect(trackedUndefined.type).toBe('undefined');
@@ -70,55 +70,55 @@ describe('Shadow Function (Public Interface)', () => {
     expect(trackedSymbol.id).toBeNull();
     expect(trackedSymbol.type).toBe('symbol');
 
-    const trackedBigInt = tracker.shadow(BigInt(123));
-    expect(trackedBigInt.value).toBe(BigInt(123));
+    const trackedBigInt = tracker.shadow(123n);
+    expect(trackedBigInt.value).toBe(123n);
     expect(trackedBigInt.id).toBeNull();
     expect(trackedBigInt.type).toBe('bigint');
   });
 
   it('should wrap objects with tracking information', () => {
-    const obj = { name: 'test', count: 42 };
-    const tracked = tracker.shadow(obj);
+    const object = { name: 'test', count: 42 };
+    const tracked = tracker.shadow(object);
 
     expect(tracked).toBeTruthy();
-    expect(typeof tracked!.id).toBe('number');
-    expect(typeof tracked!.secret).toBe('symbol');
-    expect(tracked!.type).toBe('Object');
+    expect(typeof tracked.id).toBe('number');
+    expect(typeof tracked.secret).toBe('symbol');
+    expect(tracked.type).toBe('Object');
 
-    expect(tracked!.value.name.value).toBe('test');
-    expect(tracked!.value.name.id).toBeNull();
-    expect(tracked!.value.name.type).toBe('string');
-    expect(tracked!.value.count.value).toBe(42);
-    expect(tracked!.value.count.id).toBeNull();
-    expect(tracked!.value.count.type).toBe('number');
+    expect(tracked.value.name.value).toBe('test');
+    expect(tracked.value.name.id).toBeNull();
+    expect(tracked.value.name.type).toBe('string');
+    expect(tracked.value.count.value).toBe(42);
+    expect(tracked.value.count.id).toBeNull();
+    expect(tracked.value.count.type).toBe('number');
   });
 
   it('should wrap different object types correctly', () => {
-    expect(tracker.shadow({})!.type).toBe('Object');
-    expect(tracker.shadow([])!.type).toBe('Array');
-    expect(tracker.shadow(new Map())!.type).toBe('Map');
-    expect(tracker.shadow(new Set())!.type).toBe('Set');
-    expect(tracker.shadow(() => {})!.type).toBe('Function');
-    expect(tracker.shadow(new Date())!.type).toBe('Date');
-    expect(tracker.shadow(/test/)!.type).toBe('RegExp');
+    expect(tracker.shadow({}).type).toBe('Object');
+    expect(tracker.shadow([]).type).toBe('Array');
+    expect(tracker.shadow(new Map()).type).toBe('Map');
+    expect(tracker.shadow(new Set()).type).toBe('Set');
+    expect(tracker.shadow(() => {}).type).toBe('Function');
+    expect(tracker.shadow(new Date()).type).toBe('Date');
+    expect(tracker.shadow(/test/).type).toBe('RegExp');
   });
 
   it('should reuse wrappers for the same object', () => {
-    const obj = { reuse: true };
-    const tracked1 = tracker.shadow(obj);
-    const tracked2 = tracker.shadow(obj);
+    const object = { reuse: true };
+    const tracked1 = tracker.shadow(object);
+    const tracked2 = tracker.shadow(object);
 
     expect(tracked2).toBe(tracked1);
   });
 
   it('should assign unique incremental IDs to objects only', () => {
-    const obj1 = { a: 1 };
-    const obj2 = { b: 2 };
+    const object1 = { a: 1 };
+    const object2 = { b: 2 };
 
-    const tracked1 = tracker.shadow(obj1);
-    const tracked2 = tracker.shadow(obj2);
+    const tracked1 = tracker.shadow(object1);
+    const tracked2 = tracker.shadow(object2);
 
-    expect(tracked2!.id).toBe(tracked1!.id + 1);
+    expect(tracked2.id).toBe(tracked1.id + 1);
   });
 
   it('should not reuse wrappers for primitive values', () => {
@@ -148,11 +148,11 @@ describe('Deep Nested Structures', () => {
 
     const tracked = tracker.shadow(complex);
     expect(tracked).toBeTruthy();
-    const nestedTracked = tracked!.value.nested;
+    const nestedTracked = tracked.value.nested;
     expect(nestedTracked).toBeTruthy();
     expect(typeof nestedTracked.id).toBe('number');
     expect(nestedTracked.type).toBe('Object');
-    const arrayItemTracked = tracked!.value.array.value[1];
+    const arrayItemTracked = tracked.value.array.value[1];
     expect(arrayItemTracked).toBeTruthy();
     expect(typeof arrayItemTracked.id).toBe('number');
     expect(arrayItemTracked.type).toBe('Object');
@@ -162,8 +162,8 @@ describe('Deep Nested Structures', () => {
     const map = new Map([['key', { value: 'test' }]]);
     const tracked = tracker.shadow(map);
 
-    expect(tracked!.type).toBe('Map');
-    const mapValue = tracked!.value.get('key');
+    expect(tracked.type).toBe('Map');
+    const mapValue = tracked.value.get('key');
     expect(mapValue).toBeTruthy();
     expect(typeof mapValue.id).toBe('number');
     expect(mapValue.type).toBe('Object');
@@ -173,8 +173,8 @@ describe('Deep Nested Structures', () => {
     const set = new Set([{ item: 'test' }]);
     const tracked = tracker.shadow(set);
 
-    expect(tracked!.type).toBe('Set');
-    const setValue = Array.from(tracked!.value)[0];
+    expect(tracked.type).toBe('Set');
+    const setValue = [...tracked.value][0];
     expect(setValue).toBeTruthy();
     expect(typeof setValue.id).toBe('number');
     expect(setValue.type).toBe('Object');
@@ -189,11 +189,11 @@ describe('Unwrap Function', () => {
   });
 
   it('should restore simple objects', () => {
-    const obj = { name: 'test', count: 42 };
-    const tracked = tracker.shadow(obj);
-    const unwrapped = tracker.unwrap(tracked!);
+    const object = { name: 'test', count: 42 };
+    const tracked = tracker.shadow(object);
+    const unwrapped = tracker.unwrap(tracked);
 
-    expect(unwrapped).toEqual(obj);
+    expect(unwrapped).toEqual(object);
   });
 
   it('should restore complex nested structures', () => {
@@ -204,7 +204,7 @@ describe('Unwrap Function', () => {
     };
 
     const tracked = tracker.shadow(complex);
-    const unwrapped = tracker.unwrap(tracked!);
+    const unwrapped = tracker.unwrap(tracked);
 
     expect(unwrapped).toEqual(complex);
   });
@@ -212,17 +212,17 @@ describe('Unwrap Function', () => {
   it('should restore Map and Set structures', () => {
     const map = new Map([['key', { value: 'test' }]]);
     const trackedMap = tracker.shadow(map);
-    const unwrappedMap = tracker.unwrap(trackedMap!);
+    const unwrappedMap = tracker.unwrap(trackedMap);
 
     expect(unwrappedMap).toBeInstanceOf(Map);
     expect((unwrappedMap as Map<string, any>).get('key')).toEqual({ value: 'test' });
 
     const set = new Set([{ item: 'test' }]);
     const trackedSet = tracker.shadow(set);
-    const unwrappedSet = tracker.unwrap(trackedSet!);
+    const unwrappedSet = tracker.unwrap(trackedSet);
 
     expect(unwrappedSet).toBeInstanceOf(Set);
-    expect(Array.from(unwrappedSet as Set<any>)[0]).toEqual({ item: 'test' });
+    expect([...unwrappedSet as Set<any>][0]).toEqual({ item: 'test' });
   });
 
   it('should unwrap tracked primitives back to original values', () => {
@@ -238,7 +238,7 @@ describe('Unwrap Function', () => {
     const trackedNull = tracker.shadow(null);
     expect(tracker.unwrap(trackedNull)).toBe(null);
 
-    const trackedUndefined = tracker.shadow(undefined);
+    const trackedUndefined = tracker.shadow();
     expect(tracker.unwrap(trackedUndefined)).toBe(undefined);
   });
 
@@ -247,12 +247,12 @@ describe('Unwrap Function', () => {
     expect(tracker.unwrap('test')).toBe('test');
     expect(tracker.unwrap(true)).toBe(true);
     expect(tracker.unwrap(null)).toBe(null);
-    expect(tracker.unwrap(undefined)).toBe(undefined);
+    expect(tracker.unwrap()).toBe(undefined);
   });
 
   it('should return non-tracked objects unchanged', () => {
-    const obj = { regular: 'object' };
-    expect(tracker.unwrap(obj)).toBe(obj);
+    const object = { regular: 'object' };
+    expect(tracker.unwrap(object)).toBe(object);
   });
 });
 
@@ -264,24 +264,24 @@ describe('Circular References', () => {
   });
 
   it('should handle circular references in objects', () => {
-    const obj: any = { name: 'circular' };
-    obj.self = obj;
+    const object: any = { name: 'circular' };
+    object.self = object;
 
-    const tracked = tracker.shadow(obj);
+    const tracked = tracker.shadow(object);
     expect(tracked).toBeTruthy();
 
-    const unwrapped = tracker.unwrap(tracked!) as any;
+    const unwrapped = tracker.unwrap(tracked);
     expect(unwrapped.self).toBe(unwrapped);
   });
 
   it('should handle circular references in arrays', () => {
-    const arr: any[] = [1, 2];
-    arr.push(arr);
+    const array: any[] = [1, 2];
+    array.push(array);
 
-    const tracked = tracker.shadow(arr);
+    const tracked = tracker.shadow(array);
     expect(tracked).toBeTruthy();
 
-    const unwrapped = tracker.unwrap(tracked!) as any[];
+    const unwrapped = tracker.unwrap(tracked);
     expect(unwrapped[2]).toBe(unwrapped);
   });
 });
@@ -291,30 +291,30 @@ describe('Multiple Tracker Instances', () => {
     const tracker1 = factory({ secret: Symbol('tracker1') });
     const tracker2 = factory({ secret: Symbol('tracker2') });
 
-    const obj = { shared: true };
-    const tracked1 = tracker1.shadow(obj);
-    const tracked2 = tracker2.shadow(obj);
+    const object = { shared: true };
+    const tracked1 = tracker1.shadow(object);
+    const tracked2 = tracker2.shadow(object);
 
-    expect(tracked1!.secret).not.toBe(tracked2!.secret);
+    expect(tracked1.secret).not.toBe(tracked2.secret);
   });
 
   it('should not unwrap objects from different trackers', () => {
     const tracker1 = factory({ secret: Symbol('tracker1') });
     const tracker2 = factory({ secret: Symbol('tracker2') });
 
-    const obj = { test: true };
-    const tracked1 = tracker1.shadow(obj);
+    const object = { test: true };
+    const tracked1 = tracker1.shadow(object);
 
-    const result = tracker2.unwrap(tracked1!);
+    const result = tracker2.unwrap(tracked1);
     expect(result).toBe(tracked1);
   });
 
   it('should use custom starting IDs', () => {
     const tracker = factory({ id: 500 });
-    const obj = { test: true };
-    const tracked = tracker.shadow(obj);
+    const object = { test: true };
+    const tracked = tracker.shadow(object);
 
-    expect(tracked!.id).toBe(501); // 500 + 1
+    expect(tracked.id).toBe(501); // 500 + 1
   });
 });
 
@@ -338,10 +338,10 @@ describe('Integration Tests', () => {
     const tracked = tracker.shadow(complex);
     expect(tracked).toBeTruthy();
 
-    const unwrapped = tracker.unwrap(tracked!) as any;
+    const unwrapped = tracker.unwrap(tracked) as any;
     expect(unwrapped.user.name).toBe('John');
     expect(unwrapped.posts[0].title).toBe('Post 1');
     expect(unwrapped.metadata.get('config').theme).toBe('dark');
-    expect(Array.from(unwrapped.permissions)).toContain('read');
+    expect([...unwrapped.permissions]).toContain('read');
   });
 });

@@ -1,24 +1,17 @@
+import type { DataMode, CommaOperatorEntry } from '../types.js';
 import representValue from '../utils/represent-value.js';
 
-type CommaOperatorEntry = {
-  readonly category: 'operator';
-  readonly kind: 'comma';
-  readonly operator: ',';
-  readonly operands?: readonly any[];
-  readonly result?: any;
-};
-
-function createPureOperationEntry(
+function createCommaOperationEntry(
   {
     operands = [],
   }: {
-    readonly operands?: readonly any[];
+    readonly operands?: readonly unknown[];
   } = {},
   {
     data,
   }: {
-    readonly data: 'full' | 'types' | 'values' | 'raw' | false;
-  } = {} as { readonly data: 'full' | 'types' | 'values' | 'raw' | false },
+    readonly data: DataMode;
+  } = {} as { readonly data: DataMode },
 ): CommaOperatorEntry {
   return {
     category: 'operator',
@@ -31,4 +24,4 @@ function createPureOperationEntry(
   };
 }
 
-export default createPureOperationEntry;
+export default createCommaOperationEntry;

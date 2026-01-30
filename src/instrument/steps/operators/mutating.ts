@@ -1,21 +1,12 @@
+import type { DataMode, MutatingOperatorEntry } from '../types.js';
 import representValue from '../utils/represent-value.js';
 
 type MutatingOperatorParameters = {
   readonly operator?: string;
   readonly target: string; // Variable name or property path
-  readonly oldValue?: any;
-  readonly newValue: any;
-  readonly operand?: any; // For compound assignments (+=, -=, etc.)
-};
-
-type MutatingOperatorEntry = {
-  readonly category: string;
-  readonly kind: string;
-  readonly operator: string;
-  readonly target: string;
-  readonly oldValue?: ReturnType<typeof representValue>;
-  readonly newValue: ReturnType<typeof representValue>;
-  readonly operand?: ReturnType<typeof representValue>;
+  readonly oldValue?: unknown;
+  readonly newValue: unknown;
+  readonly operand?: unknown; // For compound assignments (+=, -=, etc.)
 };
 
 /**
@@ -40,8 +31,8 @@ function createMutatingOperator(
   {
     data,
   }: {
-    readonly data: 'full' | 'types' | 'values' | 'raw' | false;
-  } = {} as { readonly data: 'full' | 'types' | 'values' | 'raw' | false },
+    readonly data: DataMode;
+  } = {} as { readonly data: DataMode },
 ): MutatingOperatorEntry {
   return {
     category: 'operator',

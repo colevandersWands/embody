@@ -3,10 +3,10 @@
  */
 
 import applyPreset from '../apply-preset.js';
-import type { Config } from '../types.js';
-import overview from '../presets/overview.js';
 import detailed from '../presets/detailed.js';
 import exhaustive from '../presets/exhaustive.js';
+import overview from '../presets/overview.js';
+import type { Config } from '../types.js';
 
 describe('applyPreset with new Config structure', () => {
   describe('preset application', () => {
@@ -248,11 +248,11 @@ describe('applyPreset with new Config structure', () => {
         { presets: 'exhaustive' },
       ] as Config[];
 
-      configs.forEach((config) => {
+      for (const config of configs) {
         const result = applyPreset(config);
         expect(result.lang).toBeDefined();
         expect(result.meta).toBeDefined();
-      });
+      }
     });
   });
 });

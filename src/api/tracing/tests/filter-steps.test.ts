@@ -1,5 +1,5 @@
-import filterSteps from '../filter-steps.js';
 import createConfig from '../../../configuring/create.js';
+import filterSteps from '../filter-steps.js';
 
 describe('filterSteps', () => {
   it('passes through steps unchanged (stub)', () => {

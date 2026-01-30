@@ -1,5 +1,5 @@
 import shadow from './shadow.js';
-import type { TrackerFactoryOptions, FactoryFunction } from './types.js';
+import type { TrackerFactoryOptions } from './types.js';
 import unwrap from './unwrap.js';
 import wrap from './wrap.js';
 

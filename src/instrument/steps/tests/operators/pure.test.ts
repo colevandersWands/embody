@@ -35,9 +35,9 @@ describe('createPureOperationEvent', () => {
             { operator: '+', operands: [5, 'hello'], result: '5hello' },
             { data: 'full', coercion: true },
           );
-          event.operands.forEach((op) => {
+          for (const op of event.operands) {
             expect(op).toHaveProperty('type');
-          });
+          }
         });
 
         it('each operand has value field', () => {
@@ -45,9 +45,9 @@ describe('createPureOperationEvent', () => {
             { operator: '+', operands: [5, 'hello'], result: '5hello' },
             { data: 'full', coercion: true },
           );
-          event.operands.forEach((op) => {
+          for (const op of event.operands) {
             expect(op).toHaveProperty('value');
-          });
+          }
         });
 
         it('each operand has lookup field', () => {
@@ -55,9 +55,9 @@ describe('createPureOperationEvent', () => {
             { operator: '+', operands: [5, 'hello'], result: '5hello' },
             { data: 'full', coercion: true },
           );
-          event.operands.forEach((op) => {
+          for (const op of event.operands) {
             expect(op).toHaveProperty('lookup');
-          });
+          }
         });
 
         it('each operand has instance field', () => {
@@ -65,9 +65,9 @@ describe('createPureOperationEvent', () => {
             { operator: '+', operands: [5, 'hello'], result: '5hello' },
             { data: 'full', coercion: true },
           );
-          event.operands.forEach((op) => {
+          for (const op of event.operands) {
             expect(op).toHaveProperty('instance');
-          });
+          }
         });
       });
 
@@ -561,7 +561,7 @@ describe('createPureOperationEvent', () => {
     describe('NaN result', () => {
       it('result.type = "number"', () => {
         const event = createPureOperationEvent(
-          { operator: '-', operands: ['not a number', 5], result: NaN },
+          { operator: '-', operands: ['not a number', 5], result: Number.NaN },
           { data: 'full', coercion: true },
         );
         expect(event.result.type).toBe('number');
@@ -569,7 +569,7 @@ describe('createPureOperationEvent', () => {
 
       it('result.value is NaN', () => {
         const event = createPureOperationEvent(
-          { operator: '-', operands: ['not a number', 5], result: NaN },
+          { operator: '-', operands: ['not a number', 5], result: Number.NaN },
           { data: 'full', coercion: true },
         );
         expect(Number.isNaN(event.result.value)).toBe(true);
@@ -593,36 +593,36 @@ describe('createPureOperationEvent', () => {
 
     describe('function operands', () => {
       it('type = "function"', () => {
-        const fn = function test() {};
+        const function_ = function test() {};
         const event = createPureOperationEvent(
-          { operator: '+', operands: [fn, ''], result: 'function test() {}' },
+          { operator: '+', operands: [function_, ''], result: 'function test() {}' },
           { data: 'full', coercion: true },
         );
         expect(event.operands[0].type).toBe('function');
       });
 
       it('instance = "Function"', () => {
-        const fn = function test() {};
+        const function_ = function test() {};
         const event = createPureOperationEvent(
-          { operator: '+', operands: [fn, ''], result: 'function test() {}' },
+          { operator: '+', operands: [function_, ''], result: 'function test() {}' },
           { data: 'full', coercion: true },
         );
         expect(event.operands[0].instance).toBe('Function');
       });
 
       it('value.name = "test"', () => {
-        const fn = function test() {};
+        const function_ = function test() {};
         const event = createPureOperationEvent(
-          { operator: '+', operands: [fn, ''], result: 'function test() {}' },
+          { operator: '+', operands: [function_, ''], result: 'function test() {}' },
           { data: 'full', coercion: true },
         );
         expect(event.operands[0].value.name).toBe('test');
       });
 
       it('value.preview matches function signature', () => {
-        const fn = function test() {};
+        const function_ = function test() {};
         const event = createPureOperationEvent(
-          { operator: '+', operands: [fn, ''], result: 'function test() {}' },
+          { operator: '+', operands: [function_, ''], result: 'function test() {}' },
           { data: 'full', coercion: true },
         );
         expect(event.operands[0].value.preview).toBe('function test() { }');

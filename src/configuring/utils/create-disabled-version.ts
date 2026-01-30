@@ -10,15 +10,15 @@
  * @param obj - Object to create disabled version of
  * @returns Disabled version with same structure
  */
-function createDisabledVersion(object: any): any {
+function createDisabledVersion(object: unknown): unknown {
   if (Array.isArray(object)) {
     return [];
   }
 
   if (object !== null && typeof object === 'object') {
-    const disabled: any = {};
+    const disabled: Record<string, unknown> = {};
     for (const key of Object.keys(object)) {
-      disabled[key] = createDisabledVersion(object[key]);
+      disabled[key] = createDisabledVersion((object as Record<string, unknown>)[key]);
     }
     return disabled;
   }

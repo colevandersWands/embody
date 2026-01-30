@@ -1,5 +1,5 @@
-import trace from '../trace.js';
 import createConfig from '../configuring/create.js';
+import trace from '../trace.js';
 
 describe('trace', () => {
   it('traces code → returns Step[]', () => {

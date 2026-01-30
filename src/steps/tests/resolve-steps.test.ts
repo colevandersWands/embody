@@ -4,7 +4,7 @@ describe('resolveSteps', () => {
   // --- Undefined ---
 
   it('returns undefined when steps is undefined', () => {
-    expect(resolveSteps(undefined)).toBeUndefined();
+    expect(resolveSteps()).toBeUndefined();
   });
 
   // --- String inputs (JSON.parse + validate) ---

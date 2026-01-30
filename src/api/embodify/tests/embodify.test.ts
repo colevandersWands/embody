@@ -1,5 +1,5 @@
-import embodify from '../embodify.js';
 import createConfig from '../../../configuring/create.js';
+import embodify from '../embodify.js';
 
 describe('Increment 1 — Empty construction', () => {
   it('returns an object', () => {
@@ -134,7 +134,7 @@ describe('Increment 4 — String auto-detection (steps)', () => {
     const e = embodify({ config: {} });
     const pickled = e.pickledConfig;
     expect(typeof pickled).toBe('string');
-    const parsed = JSON.parse(pickled!);
+    const parsed = JSON.parse(pickled);
     expect(parsed).toHaveProperty('lang');
     expect(parsed).toHaveProperty('meta');
   });

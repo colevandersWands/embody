@@ -76,7 +76,11 @@
       "Bash(tee:*)",
       "Bash(./node_modules/.bin/tsc:*)",
       "Bash(/opt/homebrew/bin/npm run lint -- DEV.md)",
-      "Bash(./node_modules/.bin/eslint:*)"
+      "Bash(./node_modules/.bin/eslint:*)",
+      "Bash(/usr/local/bin/npm run lint -- src/instrument/steps/types.ts)",
+      "Bash(export PATH=\"$PATH:/opt/homebrew/bin:/usr/local/bin:$HOME/.nvm/versions/node/*/bin\")",
+      "Bash(/usr/local/bin/npm run type-check)",
+      "Bash(export PATH=\"/Users/master/.nvm/versions/node/v24.6.0/bin:$PATH\")"
     ],
     "deny": [],
     "ask": []

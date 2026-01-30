@@ -408,7 +408,7 @@ describe('represent-coercion', () => {
     });
 
     it('object ToPrimitive coercion', () => {
-      const objWithValueOf = {
+      const objectWithValueOf = {
         valueOf() {
           return 42;
         },
@@ -416,7 +416,7 @@ describe('represent-coercion', () => {
           return 'not used';
         },
       };
-      const [coerced, unchanged] = representCoercion('==', [objWithValueOf, 42], 'full');
+      const [coerced, unchanged] = representCoercion('==', [objectWithValueOf, 42], 'full');
       expect(coerced).toEqual({
         type: 'number',
         value: 42,
@@ -432,12 +432,12 @@ describe('represent-coercion', () => {
     });
 
     it('object uses toString when valueOf not present', () => {
-      const objWithToString = {
+      const objectWithToString = {
         toString() {
           return '42';
         },
       };
-      const [coerced, unchanged] = representCoercion('==', [objWithToString, '42'], 'full');
+      const [coerced, unchanged] = representCoercion('==', [objectWithToString, '42'], 'full');
       expect(coerced).toEqual({
         type: 'string',
         value: '42',

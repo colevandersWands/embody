@@ -1,5 +1,5 @@
-import resolveMethodConfig from '../resolve-method-config.js';
 import createConfig from '../../../configuring/create.js';
+import resolveMethodConfig from '../resolve-method-config.js';
 
 describe('resolveMethodConfig', () => {
   const chainConfig = createConfig({});
@@ -20,10 +20,10 @@ describe('resolveMethodConfig', () => {
 
   it('parses JSON string override then merges', () => {
     const jsonOverride = '{"lang":{"bindings":{"events":{"read":false}}}}';
-    const objOverride = { lang: { bindings: { events: { read: false } } } };
+    const objectOverride = { lang: { bindings: { events: { read: false } } } };
 
     const fromString = resolveMethodConfig(jsonOverride, chainConfig);
-    const fromObject = resolveMethodConfig(objOverride, chainConfig);
+    const fromObject = resolveMethodConfig(objectOverride, chainConfig);
 
     expect(fromString).toEqual(fromObject);
   });

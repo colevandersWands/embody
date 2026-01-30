@@ -78,7 +78,7 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
 
   describe('special number values', () => {
     it('handles NaN', () => {
-      const result = representValue(NaN, 'full');
+      const result = representValue(Number.NaN, 'full');
       expect(result.type).toBe('number');
       expect(Number.isNaN(result.value)).toBe(true);
       expect(result.instance).toBeNull();
@@ -185,8 +185,8 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
     });
 
     it('object with properties', () => {
-      const obj = { a: 1, b: 'hello' };
-      const result = representValue(obj, 'full');
+      const object = { a: 1, b: 'hello' };
+      const result = representValue(object, 'full');
       expect(result.type).toBe('object');
       expect(result.value).toEqual({ a: 1, b: 'hello' });
       expect(result.lookup).toEqual(['Object', 'null']);
@@ -234,8 +234,8 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
     });
 
     it('Error object', () => {
-      const err = new Error('test');
-      const result = representValue(err, 'full');
+      const error = new Error('test');
+      const result = representValue(error, 'full');
       expect(result.type).toBe('object');
       expect(result.lookup).toEqual(['Error', 'Object', 'null']);
       expect(result.instance).toBe('Error');
@@ -243,8 +243,8 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
 
     it('custom class inheritance shows most specific instance', () => {
       class MyError extends Error {}
-      const err = new MyError('test');
-      const result = representValue(err, 'full');
+      const error = new MyError('test');
+      const result = representValue(error, 'full');
       expect(result.type).toBe('object');
       expect(result.lookup).toEqual(['MyError', 'Error', 'Object', 'null']);
       expect(result.instance).toBe('MyError');
@@ -254,8 +254,8 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
       class A {}
       class B extends A {}
       class C extends B {}
-      const obj = new C();
-      const result = representValue(obj, 'full');
+      const object = new C();
+      const result = representValue(object, 'full');
       expect(result.lookup).toEqual(['C', 'B', 'A', 'Object', 'null']);
       expect(result.instance).toBe('C');
     });
@@ -325,8 +325,8 @@ describe('represent-value with { type, value, lookup, instance } signature', () 
     });
 
     it('function with parameters', () => {
-      function withParams(a, b, c) {}
-      const result = representValue(withParams, 'full');
+      function withParameters(a, b, c) {}
+      const result = representValue(withParameters, 'full');
       expect(result.value.length).toBe(3);
     });
   });

@@ -1,5 +1,5 @@
-import fillConfig from '../fill-config.js';
 import createConfig from '../../../configuring/create.js';
+import fillConfig from '../fill-config.js';
 
 describe('fillConfig', () => {
   it('expands empty object to default config', () => {

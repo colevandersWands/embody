@@ -1,10 +1,12 @@
+import type { BindingsRecord } from '../types.js';
+
 function module({
   event,
   bindings,
   file,
 }: {
   readonly event?: string;
-  readonly bindings?: any;
+  readonly bindings?: BindingsRecord;
   readonly file?: string;
 } = {}) {
   return {

@@ -2,8 +2,8 @@ import parseSteps from '../parse-steps.js';
 
 describe('parseSteps', () => {
   it('passes through an array', () => {
-    const arr = [{}, {}, {}];
-    expect(parseSteps(arr)).toBe(arr);
+    const array = [{}, {}, {}];
+    expect(parseSteps(array)).toBe(array);
   });
 
   it('deserializes a JSON string', () => {

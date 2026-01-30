@@ -1,5 +1,5 @@
-import record from '../record.js';
 import createConfig from '../../../configuring/create.js';
+import record from '../record.js';
 
 describe('record', () => {
   it('records instrumented (stub: one {} per non-space char)', () => {

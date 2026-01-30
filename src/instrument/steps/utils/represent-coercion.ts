@@ -1,3 +1,5 @@
+import type { DataMode, ValueRepresentation } from '../types.js';
+
 import representValue from './represent-value.js';
 
 /**
@@ -11,9 +13,9 @@ import representValue from './represent-value.js';
  */
 export default function representCoercion(
   operator: string,
-  operands: readonly any[],
-  mode: 'full' | 'types' | 'values' | 'raw' | false,
-): readonly any[] {
+  operands: readonly unknown[],
+  mode: DataMode,
+): readonly ValueRepresentation[] {
   // Handle unary operators
   if (operands.length === 1) {
     if (operator === '!') {
@@ -102,13 +104,17 @@ export default function representCoercion(
       // Object vs primitive -> coerce object to primitive (ToPrimitive)
       if (leftType === 'object' && left !== null && rightType !== 'object') {
         // This is a simplification - actual ToPrimitive is complex
+        // Safe cast: we've verified left !== null and typeof left === 'object'
+        const leftObject = left as { valueOf(): unknown; toString(): string };
         const primitive =
-          left.valueOf === Object.prototype.valueOf ? left.toString() : left.valueOf();
+          leftObject.valueOf === Object.prototype.valueOf ? leftObject.toString() : leftObject.valueOf();
         return [representValue(primitive, mode), representValue(right, mode)];
       }
       if (rightType === 'object' && right !== null && leftType !== 'object') {
+        // Safe cast: we've verified right !== null and typeof right === 'object'
+        const rightObject = right as { valueOf(): unknown; toString(): string };
         const primitive =
-          right.valueOf === Object.prototype.valueOf ? right.toString() : right.valueOf();
+          rightObject.valueOf === Object.prototype.valueOf ? rightObject.toString() : rightObject.valueOf();
         return [representValue(left, mode), representValue(primitive, mode)];
       }
 

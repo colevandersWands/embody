@@ -1,5 +1,5 @@
-import embody from '../embody.js';
 import createConfig from '../../configuring/create.js';
+import embody from '../embody.js';
 
 describe('embody', () => {
   it('both params → TraceResult', () => {

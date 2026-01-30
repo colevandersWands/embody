@@ -1,11 +1,18 @@
 import deepClone from '../../../utils/deep-clone.js';
+import type {
+  DataMode,
+  FullValueRepresentation,
+  TypesValueRepresentation,
+  ValuesValueRepresentation,
+  ValueRepresentation,
+} from '../types.js';
 
 /**
  * Gets the prototype lookup chain for a value
  * For primitives: shows the theoretical chain used during property access
  * For objects/functions: shows the actual prototype chain
  */
-function getPrototypeLookup(value: any): readonly string[] {
+function getPrototypeLookup(value: unknown): readonly string[] {
   if (value === null || value === undefined) return [];
 
   const valueType = typeof value;
@@ -23,7 +30,7 @@ function getPrototypeLookup(value: any): readonly string[] {
     let proto = Object.getPrototypeOf(value);
 
     while (proto !== null) {
-      const constructorName = proto.constructor?.name;
+      const constructorName = (proto as { readonly constructor?: { readonly name?: string } }).constructor?.name;
       if (constructorName) {
         lookup.push(constructorName);
       }
@@ -41,7 +48,7 @@ function getPrototypeLookup(value: any): readonly string[] {
  * Gets the constructor name if the value is an instance (instanceof returns true)
  * Returns null for primitives, null, undefined, and objects without constructors
  */
-function getInstance(value: any): string | null {
+function getInstance(value: unknown): string | null {
   if (value === null || value === undefined) return null;
 
   const valueType = typeof value;
@@ -49,8 +56,8 @@ function getInstance(value: any): string | null {
   if (valueType !== 'object' && valueType !== 'function') return null;
 
   // Return constructor name (most specific)
-  const ctor = value.constructor;
-  return ctor ? ctor.name : null;
+  const ctor = (value as { readonly constructor?: { readonly name?: string } }).constructor;
+  return ctor ? (ctor.name ?? null) : null;
 }
 
 /**
@@ -73,10 +80,13 @@ function getInstance(value: any): string | null {
  *
  * @returns Value representation based on mode, or undefined if mode is false
  */
-export default function representValue(
-  value: any,
-  mode: 'full' | 'types' | 'values' | 'raw' | false,
-) {
+function representValue(value: unknown, mode: 'full'): FullValueRepresentation;
+function representValue(value: unknown, mode: 'types'): TypesValueRepresentation;
+function representValue(value: unknown, mode: 'values'): ValuesValueRepresentation;
+function representValue(value: unknown, mode: 'raw'): unknown;
+function representValue(value: unknown, mode: false): undefined;
+function representValue(value: unknown, mode: DataMode): ValueRepresentation;
+function representValue(value: unknown, mode: DataMode): ValueRepresentation {
   // Early return for false mode
   if (mode === false) {
     return;
@@ -106,13 +116,14 @@ export default function representValue(
   } else if (type === 'symbol') {
     // Symbols can't be serialized directly, use string representation
     // Note: This loses uniqueness - two different Symbol('x') will look the same
-    valueRepresentation = value.toString();
+    valueRepresentation = (value as symbol).toString();
   } else if (type === 'function') {
     // First line only to keep output manageable
-    const firstLine = value.toString().split('\n')[0];
+    const function_ = value as Function;
+    const firstLine = function_.toString().split('\n')[0];
     valueRepresentation = {
-      name: value.name || 'anonymous',
-      length: value.length,
+      name: function_.name || 'anonymous',
+      length: function_.length,
       preview: firstLine,
     };
   } else {
@@ -137,3 +148,5 @@ export default function representValue(
 
   throw new Error(`Invalid representValue mode: ${mode}`);
 }
+
+export default representValue;

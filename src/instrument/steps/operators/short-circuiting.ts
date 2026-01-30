@@ -1,20 +1,11 @@
+import type { DataMode, ShortCircuitingOperatorEntry } from '../types.js';
 import representValue from '../utils/represent-value.js';
 
 type ShortCircuitingOperatorParameters = {
   readonly operator?: string;
-  readonly left: any;
-  readonly right?: any;
-  readonly result: any;
-  readonly rightEvaluated: boolean;
-};
-
-type ShortCircuitingOperatorEntry = {
-  readonly category: string;
-  readonly kind: string;
-  readonly operator: string;
-  readonly left: ReturnType<typeof representValue>;
-  readonly right?: ReturnType<typeof representValue>;
-  readonly result: ReturnType<typeof representValue>;
+  readonly left: unknown;
+  readonly right?: unknown;
+  readonly result: unknown;
   readonly rightEvaluated: boolean;
 };
 
@@ -41,8 +32,8 @@ function createShortCircuitingOperator(
   {
     data,
   }: {
-    readonly data: 'full' | 'types' | 'values' | 'raw' | false;
-  } = {} as { readonly data: 'full' | 'types' | 'values' | 'raw' | false },
+    readonly data: DataMode;
+  } = {} as { readonly data: DataMode },
 ): ShortCircuitingOperatorEntry {
   return {
     category: 'operator',

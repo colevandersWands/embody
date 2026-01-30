@@ -15,7 +15,7 @@ describe('deepMerge', () => {
 
     test('should return user value for null/undefined', () => {
       expect(deepMerge({ a: 1 }, null)).toBe(null);
-      expect(deepMerge({ a: 1 }, undefined)).toBe(undefined);
+      expect(deepMerge({ a: 1 })).toBe(undefined);
       expect(deepMerge(null, { a: 1 })).toEqual({ a: 1 });
       expect(deepMerge(undefined, { a: 1 })).toEqual({ a: 1 });
     });
@@ -195,14 +195,14 @@ describe('deepMerge', () => {
     });
 
     test('should handle functions in objects', () => {
-      const fn1 = () => 'preset';
-      const fn2 = () => 'user';
+      const function1 = () => 'preset';
+      const function2 = () => 'user';
 
-      const preset = { func: fn1 };
-      const user = { func: fn2 };
+      const preset = { func: function1 };
+      const user = { func: function2 };
       const result = deepMerge(preset, user);
 
-      expect(result.func).toBe(fn2);
+      expect(result.func).toBe(function2);
     });
 
     test('should handle Date objects', () => {

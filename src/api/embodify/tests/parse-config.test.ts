@@ -2,8 +2,8 @@ import parseConfig from '../parse-config.js';
 
 describe('parseConfig', () => {
   it('passes through a plain object', () => {
-    const obj = { presets: 'overview' };
-    expect(parseConfig(obj)).toBe(obj);
+    const object = { presets: 'overview' };
+    expect(parseConfig(object)).toBe(object);
   });
 
   it('parses a valid JSON string', () => {
@@ -21,7 +21,7 @@ describe('parseConfig', () => {
   });
 
   it('returns empty object for undefined', () => {
-    expect(parseConfig(undefined)).toEqual({});
+    expect(parseConfig()).toEqual({});
   });
 
   it('parses empty JSON object string', () => {

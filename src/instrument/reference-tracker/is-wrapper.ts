@@ -37,14 +37,18 @@ import type { TrackedObject } from './types.js';
  * }
  * ```
  */
-function isWrapper(object: any): object is TrackedObject {
+function isWrapper(object: unknown): object is TrackedObject {
   return (
     object != undefined &&
     typeof object === 'object' &&
-    (typeof object.id === 'number' || object.id === null) &&
-    typeof object.type === 'string' &&
+    object !== null &&
+    'id' in object &&
+    (typeof (object as TrackedObject).id === 'number' || (object as TrackedObject).id === null) &&
+    'type' in object &&
+    typeof (object as TrackedObject).type === 'string' &&
     'value' in object &&
-    typeof object.secret === 'symbol'
+    'secret' in object &&
+    typeof (object as TrackedObject).secret === 'symbol'
   );
 }
 

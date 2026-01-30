@@ -1,3 +1,5 @@
+import type { BindingsRecord } from '../types.js';
+
 function script({
   event,
   file,
@@ -5,7 +7,7 @@ function script({
 }: {
   readonly event?: string;
   readonly file?: string;
-  readonly bindings?: any;
+  readonly bindings?: BindingsRecord;
 } = {}) {
   return {
     category: 'scope',

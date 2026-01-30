@@ -234,6 +234,7 @@ export default tseslint.config(
       'import/no-named-export': 'off',
       'functional/immutable-data': 'off',
       'functional/prefer-readonly-type': 'off',
+      'arrow-body-style': 'off', // Test callbacks use standard arrow pattern
     },
   },
 

@@ -55,7 +55,7 @@ describe('parseJSON', () => {
       // Should not reach here
       expect(true).toBe(false);
     } catch (error) {
-      const message = (error as Error).message;
+      const {message} = (error as Error);
       // Should start with the prefix
       expect(message).toMatch(/^test prefix/);
       // Should contain the em dash separator

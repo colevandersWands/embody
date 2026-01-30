@@ -14,6 +14,8 @@
 
 import createNarrowConfig from '../../configuring/create-narrow-config.js';
 import createConfig from '../../configuring/create.js';
+import type { ExpandedConfig, UserConfig } from '../../configuring/types.js';
+import type { Step } from '../../types/api.js';
 import deepMerge from '../../utils/deep-merge.js';
 import filterStepsFunction from '../tracing/filter-steps.js';
 import instrumentRecord from '../tracing/instrument-record.js';
@@ -27,6 +29,65 @@ import resolveMethodConfig from './resolve-method-config.js';
 import validateField from './validate-field.js';
 
 /**
+ * Internal chain state - holds the current pipeline data
+ * Note: Uses null for "not provided" (different from undefined for "omitted")
+ */
+type ChainState = {
+  readonly _code?: string | null | undefined;
+  readonly _config?: ExpandedConfig | undefined;
+  readonly _instrumented?: string | null | undefined;
+  readonly _steps?: readonly unknown[] | null | undefined;
+};
+
+/**
+ * Config input type - accepts object, JSON string, or null
+ */
+type ConfigInput = UserConfig | string | null;
+
+/**
+ * Input for set() method - one of code, instrumented, steps, or config
+ * Index signature needed for dynamic key filtering in set() implementation
+ */
+type SetInput = {
+  readonly code?: string;
+  readonly instrumented?: string;
+  readonly steps?: readonly unknown[] | string;
+  readonly config?: ConfigInput;
+  readonly [key: string]: unknown;
+};
+
+/**
+ * Input for mergeConfig() method
+ */
+type MergeConfigInput = {
+  readonly config?: ConfigInput;
+};
+
+/**
+ * Input for instrument() method
+ */
+type InstrumentInput = {
+  readonly config?: ConfigInput;
+};
+
+/**
+ * Input for trace() method
+ */
+type TraceInput = {
+  readonly code?: string;
+  readonly instrumented?: string;
+  readonly config?: ConfigInput;
+};
+
+/**
+ * Input for filterSteps() method
+ */
+type FilterStepsInput = {
+  readonly steps?: readonly unknown[] | string;
+  readonly config?: ConfigInput;
+};
+
+/**
  * Builds an immutable chain chainLink with lazy-cascading getters
  * and pipeline methods. Each method returns a new chainLink.
  *
@@ -38,8 +99,8 @@ function chainEmbodify({
   _config = createConfig({}),
   _instrumented = null,
   _steps = null,
-}: any = {}) {
-  const chainLink: any = {
+}: ChainState = {}) {
+  const chainLink = {
     // === Getters (cascade lazily, pure — no caching) ===
 
     /**
@@ -85,7 +146,7 @@ function chainEmbodify({
           config: _config,
         }).steps;
       }
-      return instrumentRecord({ code: _code, config: _config }).steps;
+      return instrumentRecord({ code: _code as string, config: _config }).steps;
     },
 
     /**
@@ -93,7 +154,7 @@ function chainEmbodify({
      * @type {string}
      */
     get pickledSteps() {
-      return serialize({ steps: chainLink.steps });
+      return serialize({ steps: chainLink.steps as readonly Step[] });
     },
 
     /**
@@ -124,7 +185,7 @@ function chainEmbodify({
      * @throws {Error} If multiple properties provided
      * @throws {Error} If provided value has wrong type
      */
-    set(input: any = {}) {
+    set(input: SetInput = {}) {
       const keys = ['code', 'instrumented', 'steps', 'config'].filter(
         (k) => input[k] !== undefined,
       );
@@ -194,7 +255,7 @@ function chainEmbodify({
      * @param {object|string} [options.config] - Partial config
      * @returns {object} New chainable chainLink
      */
-    mergeConfig({ config: newCfg }: any = {}) {
+    mergeConfig({ config: newCfg }: MergeConfigInput = {}) {
       if (newCfg === undefined) {
         return chainEmbodify({
           _code,
@@ -225,7 +286,7 @@ function chainEmbodify({
      * @param {object|string} [options.config] - Config override
      * @returns {object} New chainable chainLink with instrumented code
      */
-    instrument({ config: cfgOverride }: any = {}) {
+    instrument({ config: cfgOverride }: InstrumentInput = {}) {
       const resolvedCfg = resolveMethodConfig(cfgOverride, _config);
       const c = _code ?? '';
       const result = instrumentFunction({
@@ -257,7 +318,7 @@ function chainEmbodify({
      * @returns {object} New chainable chainLink with steps
      * @throws {Error} If both code and instrumented overrides given
      */
-    trace({ code: codeOvr, instrumented: instrOvr, config: cfgOvr }: any = {}) {
+    trace({ code: codeOvr, instrumented: instrOvr, config: cfgOvr }: TraceInput = {}) {
       if (codeOvr !== undefined && instrOvr !== undefined) {
         throw new Error('provide code or instrumented, not both');
       }
@@ -304,12 +365,12 @@ function chainEmbodify({
      * @param {object|string} [options.config] - Config override
      * @returns {object} New chainable chainLink with filtered steps
      */
-    filterSteps({ steps: stepsOvr, config: cfgOvr }: any = {}) {
+    filterSteps({ steps: stepsOvr, config: cfgOvr }: FilterStepsInput = {}) {
       const s = stepsOvr === undefined ? chainLink.steps : parseSteps(stepsOvr);
 
       const resolvedCfg = resolveMethodConfig(cfgOvr, _config);
       const result = filterStepsFunction({
-        steps: s,
+        steps: s as readonly Step[],
         config: resolvedCfg,
       });
 

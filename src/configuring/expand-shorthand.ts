@@ -20,7 +20,7 @@ import isExpandableObject from './utils/is-expandable-object.js';
  * @param defaults - Default values to use for expansion
  * @returns Object with boolean shorthand expanded
  */
-function expandObjectRecursively(current: any, defaults: any): any {
+function expandObjectRecursively(current: unknown, defaults: unknown): unknown {
   if (current === null || defaults === null) {
     return current;
   }
@@ -29,7 +29,7 @@ function expandObjectRecursively(current: any, defaults: any): any {
     return current;
   }
 
-  const result = { ...current };
+  const result: Record<string, unknown> = { ...current };
 
   // Process each key in the current object
   for (const key of Object.keys(current)) {
@@ -64,13 +64,14 @@ function expandObjectRecursively(current: any, defaults: any): any {
  * @returns Configuration with all boolean shorthand expanded
  */
 function expandShorthand(config: Config): ExpandedConfig {
-  const expanded = { ...config } as any;
+  const expanded: Record<string, unknown> = { ...config };
+  const defaults = defaultConfig as Record<string, unknown>;
 
   // Dynamically process all keys based on defaultConfig structure
   // No hardcoded lists - automatically detects expandable object fields
   for (const key of Object.keys(expanded)) {
     const currentValue = expanded[key];
-    const defaultValue = (defaultConfig as any)[key];
+    const defaultValue = defaults[key];
 
     if (currentValue === true && defaultValue !== undefined && isExpandableObject(defaultValue)) {
       // Expand true to default object value

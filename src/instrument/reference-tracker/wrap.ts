@@ -1,5 +1,5 @@
 import isWrapper from './is-wrapper.js';
-import type { TrackedObject, WrapFunction } from './types.js';
+import type { TrackedObject } from './types.js';
 
 /**
  * Creates a recursive wrapping function for tracking all JavaScript values
@@ -30,7 +30,7 @@ import type { TrackedObject, WrapFunction } from './types.js';
  * // trackedPrimitive = {value: 42, id: null, secret, type: 'number'}
  * ```
  */
-function wrap<WrapFunction>(secret = Symbol('tracked'), startId = 0) {
+function wrap(secret = Symbol('tracked'), startId = 0) {
   let id = startId; // Mutable counter in closure
 
   /**

@@ -1,4 +1,5 @@
 import createNarrowConfig from '../../configuring/create-narrow-config.js';
+import type { ExpandedConfig } from '../../configuring/types.js';
 import deepMerge from '../../utils/deep-merge.js';
 
 import parseConfig from './parse-config.js';
@@ -15,11 +16,11 @@ import parseConfig from './parse-config.js';
  * - Override provided → parse, narrow-expand, deepMerge on chain
  * - No override → chain as-is
  *
- * @param {object|string|undefined} override - config from method call
- * @param {object} chainConfig - current chain config (ExpandedConfig)
- * @returns {object} resolved ExpandedConfig
+ * @param override - config from method call (object, string, or undefined)
+ * @param chainConfig - current chain config (ExpandedConfig)
+ * @returns resolved ExpandedConfig
  */
-function resolveMethodConfig(override: any, chainConfig: any) {
+function resolveMethodConfig(override: unknown, chainConfig: ExpandedConfig): ExpandedConfig {
   if (override !== undefined) {
     const parsed = parseConfig(override);
     const narrow = createNarrowConfig(parsed);

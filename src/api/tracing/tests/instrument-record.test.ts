@@ -1,5 +1,5 @@
-import instrumentRecord from '../instrument-record.js';
 import createConfig from '../../../configuring/create.js';
+import instrumentRecord from '../instrument-record.js';
 
 describe('instrumentRecord', () => {
   it('full pipeline: abc → steps [{},{},{}]', () => {

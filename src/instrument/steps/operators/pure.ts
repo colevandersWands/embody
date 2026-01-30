@@ -1,14 +1,6 @@
+import type { DataMode, PureOperatorEntry } from '../types.js';
 import representCoercion from '../utils/represent-coercion.js';
 import representValue from '../utils/represent-value.js';
-
-type PureOperatorEntry = {
-  readonly category: 'operator';
-  readonly kind: 'pure';
-  readonly operator: string;
-  readonly operands?: readonly any[];
-  readonly result?: any;
-  readonly coercion?: readonly any[];
-};
 
 /**
  * Factory for pure operator step entries
@@ -25,21 +17,21 @@ function createPureOperationEntry(
     operands = [],
   }: {
     readonly operator?: string;
-    readonly result: any;
-    readonly operands?: readonly any[];
+    readonly result: unknown;
+    readonly operands?: readonly unknown[];
   } = {} as {
     readonly operator?: string;
-    readonly result: any;
-    readonly operands?: readonly any[];
+    readonly result: unknown;
+    readonly operands?: readonly unknown[];
   },
   {
     data,
     coercion,
   }: {
-    readonly data: 'full' | 'types' | 'values' | 'raw' | false;
+    readonly data: DataMode;
     readonly coercion: boolean;
   } = {} as {
-    readonly data: 'full' | 'types' | 'values' | 'raw' | false;
+    readonly data: DataMode;
     readonly coercion: boolean;
   },
 ): PureOperatorEntry {

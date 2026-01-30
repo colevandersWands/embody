@@ -18,7 +18,7 @@
 import createDisabledVersion from './create-disabled-version.js';
 import isExpandableObject from './is-expandable-object.js';
 
-function expandPartial(current: any, defaults: any): any {
+function expandPartial(current: unknown, defaults: unknown): unknown {
   if (current === null || defaults === null) {
     return current;
   }
@@ -26,7 +26,7 @@ function expandPartial(current: any, defaults: any): any {
     return current;
   }
 
-  const result = { ...current };
+  const result: Record<string, unknown> = { ...current };
 
   for (const key of Object.keys(current)) {
     const value = current[key];

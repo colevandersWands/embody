@@ -41,33 +41,10 @@ export type UntrackFunction = <T>(value: T) => T extends TrackedObject<infer U> 
 export type TrackerFunction = <T>(value: T) => TrackedObject<T>;
 
 /**
- * Legacy type - now all JavaScript values are trackable, not just references
- * Kept for backwards compatibility
- */
-export type TrackableReferenceType =
-  | object
-  | readonly unknown[]
-  | Function
-  | ReadonlyMap<unknown, unknown>
-  | ReadonlySet<unknown>
-  | WeakMap<object, unknown>
-  | WeakSet<object>
-  | Date
-  | RegExp
-  | Error;
-
-/**
  * Type guard to check if a value is a tracked object
  */
 export type TrackedObjectTypeGuard = {
   (value: unknown, secret: symbol): value is TrackedObject<unknown>;
-};
-
-/**
- * Reference type detection utility
- */
-export type ReferenceTypeDetector = {
-  (value: unknown): value is TrackableReferenceType;
 };
 
 /**
@@ -126,14 +103,14 @@ export type WrapFunction = (
  */
 export type UnwrapFunction = (
   secret?: symbol,
-) => <T>(value: T, unwrapped?: WeakMap<object, any>) => T extends TrackedObject<infer U> ? U : T;
+) => <T>(value: T, unwrapped?: WeakMap<object, unknown>) => T extends TrackedObject<infer U> ? U : T;
 
 /**
  * Function that creates shadowing closures
  */
 export type ShadowFunction = (
   record: WeakMap<object, TrackedObject>,
-  wrapFunction: (value: any) => any,
+  wrapFunction: <T>(value: T) => TrackedObject<T>,
 ) => <T>(value: T) => TrackedObject<T>;
 
 /**

@@ -1,5 +1,5 @@
-import squint from '../squint.js';
 import createConfig from '../../configuring/create.js';
+import squint from '../squint.js';
 
 describe('squint', () => {
   it('both params → FilterResult', () => {

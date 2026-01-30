@@ -7,7 +7,7 @@
  * @param value - Value to check
  * @returns True if value is a plain object suitable for expansion
  */
-function isExpandableObject(value: any): boolean {
+function isExpandableObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 

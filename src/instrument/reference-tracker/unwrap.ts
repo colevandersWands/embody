@@ -1,5 +1,5 @@
 import isWrapper from './is-wrapper.js';
-import type { TrackedObject, UnwrapFunction } from './types.js';
+import type { TrackedObject } from './types.js';
 
 /**
  * Creates an unwrapping function for trace output generation
@@ -31,7 +31,7 @@ import type { TrackedObject, UnwrapFunction } from './types.js';
  * // unwrappedPrimitive = 42
  * ```
  */
-function unwrap<UnwrapFunction>(secret = Symbol('tracked')) {
+function unwrap(secret = Symbol('tracked')) {
   /**
    * Recursively unwraps TrackedObjects back to original values
    *
@@ -83,7 +83,7 @@ function unwrap<UnwrapFunction>(secret = Symbol('tracked')) {
         return value as T extends TrackedObject<infer U> ? U : T;
       }
 
-      const unwrappedArray: readonly any[] = [];
+      const unwrappedArray: readonly unknown[] = [];
       unwrapped.set(value, unwrappedArray);
 
       // Process elements after setting cache to prevent infinite recursion

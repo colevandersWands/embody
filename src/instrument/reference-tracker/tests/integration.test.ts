@@ -158,7 +158,7 @@ describe('Tracer Integration Workflows', () => {
       const start = performance.now();
 
       // Simulate 1000 advice function calls
-      for (let i = 0; i < 1000; i++) {
+      for (let index = 0; index < 1000; index++) {
         const tracked = tracker.shadow(testObject); // Will reuse after first call
 
         // Advice function checks if already tracked
@@ -184,9 +184,9 @@ describe('Tracer Integration Workflows', () => {
 
       // Create moderately complex object
       const complexObject = {
-        users: Array.from({ length: 10 }, (_, i) => ({
-          id: i,
-          name: `User ${i}`,
+        users: Array.from({ length: 10 }, (_, index) => ({
+          id: index,
+          name: `User ${index}`,
           preferences: {
             theme: 'dark',
             notifications: true,
@@ -218,14 +218,14 @@ describe('Tracer Integration Workflows', () => {
       const tracker = factory({ id: 2000 });
 
       // Simulate tracing function call with arguments and return value
-      const args = [{ config: true }, 'param2', 42];
+      const arguments_ = [{ config: true }, 'param2', 42];
       const returnValue = { result: 'success', data: [1, 2, 3] };
 
       // Track arguments
-      const trackedArgs = args.map((arg) => tracker.shadow(arg));
-      trackedArgs.forEach((arg) => {
-        expect(isWrapper(arg)).toBe(true);
-      });
+      const trackedArguments = arguments_.map((argument) => tracker.shadow(argument));
+      for (const argument of trackedArguments) {
+        expect(isWrapper(argument)).toBe(true);
+      }
 
       // Track return value
       const trackedReturn = tracker.shadow(returnValue);
@@ -235,7 +235,7 @@ describe('Tracer Integration Workflows', () => {
       // Simulate generating trace event
       const traceEvent = {
         type: 'function-call',
-        argumentIds: trackedArgs.map((arg) => (isWrapper(arg) ? arg.id : null)),
+        argumentIds: trackedArguments.map((argument) => (isWrapper(argument) ? argument.id : null)),
         returnValueId: trackedReturn.id,
       };
 

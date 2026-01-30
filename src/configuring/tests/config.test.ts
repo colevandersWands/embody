@@ -1,10 +1,9 @@
 import createConfig from '../create.js';
 import defaultConfig from '../default-config.js';
 import expandShorthand from '../expand-shorthand.js';
-import overview from '../presets/overview.js';
 import detailed from '../presets/detailed.js';
 import exhaustive from '../presets/exhaustive.js';
-
+import overview from '../presets/overview.js';
 import type { Config, ExpandedConfig } from '../types.js';
 
 describe('Configuration System', () => {
@@ -687,7 +686,7 @@ describe('Configuration System', () => {
     });
 
     describe('production configuration', () => {
-      const prodConfig: Partial<Config> = {
+      const productionConfig: Partial<Config> = {
         presets: 'overview',
         meta: {
           index: false,
@@ -709,7 +708,7 @@ describe('Configuration System', () => {
           },
         },
       };
-      const config = createConfig(prodConfig);
+      const config = createConfig(productionConfig);
 
       it('meta.index = false', () => {
         expect(config.meta?.index).toBe(false);

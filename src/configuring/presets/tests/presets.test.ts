@@ -1,7 +1,7 @@
 import type { Config } from '../../types.js';
-import overview from '../overview.js';
 import detailed from '../detailed.js';
 import exhaustive from '../exhaustive.js';
+import overview from '../overview.js';
 
 describe('preset configurations', () => {
   describe('overview', () => {

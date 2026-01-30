@@ -1,5 +1,5 @@
-import instrument from '../instrument.js';
 import createConfig from '../../../configuring/create.js';
+import instrument from '../instrument.js';
 
 describe('instrument', () => {
   it('instruments code (stub: spaces between chars)', () => {

@@ -1,3 +1,5 @@
+import type { BindingsRecord } from '../types.js';
+
 function block({
   event,
   bindings,
@@ -5,7 +7,7 @@ function block({
   label,
 }: {
   readonly event?: string;
-  readonly bindings?: any;
+  readonly bindings?: BindingsRecord;
   readonly structure?: string;
   readonly label?: string;
 } = {}) {
