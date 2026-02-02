@@ -1,5 +1,5 @@
-import createNarrowConfig from '../../configuring/create-narrow-config.js';
-import type { ExpandedConfig } from '../../configuring/types.js';
+import createNarrowConfig from '../../langs/js/configuring/create-narrow-config.js';
+import type { ExpandedConfig } from '../../langs/js/configuring/types.js';
 import deepMerge from '../../utils/deep-merge.js';
 
 import parseConfig from './parse-config.js';
@@ -7,9 +7,9 @@ import parseConfig from './parse-config.js';
 /**
  * Resolves the effective config for a pipeline method call.
  *
- * When a method (instrument, trace, filterSteps) receives a
- * config override, this merges it on top of the chain's config.
- * When no override is provided, the chain config passes through.
+ * When a method (trace) receives a config override, this merges it
+ * on top of the chain's config. When no override is provided, the
+ * chain config passes through.
  *
  * chainConfig is always an ExpandedConfig (never null/undefined),
  * so only two branches:

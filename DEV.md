@@ -20,7 +20,7 @@ Internal architecture, conventions, and implementation details for `@study-lense
 The tracer follows a strict linear pipeline architecture:
 
 ```
-Input → fillConfig → instrument → record → trace → filterSteps → Output
+Input → fillConfig → record → Output
 ```
 
 Each stage:
@@ -191,9 +191,9 @@ The `@typescript-eslint/no-explicit-any` rule is set to **warn** (not error) bec
 5. **Stub implementations** — temporary mock data during TDD cycles
 
    ```typescript
-   function instrument(input: any): any {
-     // Stub: return mock instrumented code
-     return { ...input, instrumented: 'mock' };
+   function record(input: any): any {
+     // Stub: return mock trace steps
+     return { ...input, steps: [] };
    }
    ```
 
@@ -257,8 +257,8 @@ Functions accept and return objects with predetermined keys:
 const input = { code: 'let x = 5', config: expandedConfig };
 
 // Function adds new keys while preserving input
-const output = instrument(input);
-// Returns: { code, config, instrumented }
+const output = record(input);
+// Returns: { code, config, steps }
 ```
 
 **Benefits**:
@@ -522,7 +522,7 @@ function createCounter(initialCount = 0) {
 
 ```javascript
 // ✅ OK - closure over immutable values
-// The currying pattern in embody() and squint() closes over cached config.
+// The currying pattern in embody() closes over cached config.
 // This is fine because the closed-over value is never mutated.
 function embodyWithClosedConfig({ code }) {
   // cachedConfig was set once and never changes
@@ -798,9 +798,8 @@ function embody({ code, config }: { readonly code?: string; readonly config?: Us
 }
 ```
 
-**Pickle support**: Both `embody` and `squint` accept JSON strings for
-`config` (and `steps` in squint's case). Invalid JSON config degrades
-gracefully to default configuration.
+**Pickle support**: `embody` accepts JSON strings for `config`. Invalid
+JSON config degrades gracefully to default configuration.
 
 All curried API functions validate input types and throw self-documenting
 errors (e.g., `'embody: expected code to be a string, got number'`).
@@ -844,15 +843,12 @@ Consistent event format across all trace types:
 
 These functions currently return mock data (see unit tests for full behavioral contracts):
 
-- `instrument('abc')` → `{ code: 'abc', config, instrumented: 'a b c' }` (spaces between each character)
-- `record('a b c')` → `{ instrumented: 'a b c', config, steps: [{},{},{}] }` (one `{}` per non-space character)
-- `filterSteps(steps)` → passthrough (returns `{ steps, config }` unchanged)
+- `record({ code: 'abc' })` → `{ code: 'abc', config, steps: [{},{},{}] }` (one `{}` per character)
 - `serialize([{},{}])` → `'[{},{}]'` (JSON.stringify)
 - `deserialize({ steps, config })` → delegates to:
   - `resolveSteps` (from `src/steps/`) for steps parsing/validation
   - `parseJSON` (from `src/utils/`) for JSON string parsing
   - `isExpandableObject` (from `configuring/utils/`) for config validation
-- `instrumentRecord('abc')` → `{ code: 'abc', config, steps: [{},{},{}] }` (instrument then record)
 - `fillConfig({})` → `{ config: createConfig({}) }` (expands user config to full ExpandedConfig)
 
 All tracing functions validate input types and throw self-documenting errors

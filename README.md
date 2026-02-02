@@ -137,20 +137,11 @@ const tracer = embody({ config: { presets: 'overview' } });
 const trace1 = tracer({ code: 'let x = 5' });
 const trace2 = tracer({ code: 'const y = 10' });
 
-// Filter existing traces
-import { squint } from '@study-lenses/embody';
-const filtered = squint({
-  steps: trace.steps,
-  config: { lang: { bindings: { filter: { include: ['x'] } } } },
-});
-
-// Chainable workflow with branching
+// Chainable workflow for batch processing
 import { embodify } from '@study-lenses/embody';
 
-const base = embodify({ code: myCode, config: { presets: 'detailed' } }).trace();
-const overview = base.filterSteps({ config: { presets: 'overview' } });
-const exhaustive = base.filterSteps({ config: { presets: 'exhaustive' } });
-// base is unchanged — overview and exhaustive are independent branches
+const tracer = embodify({ config: { presets: 'detailed' } });
+const results = codes.map((code) => tracer.trace({ code }).steps);
 ```
 
 ## Documentation

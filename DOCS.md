@@ -6,8 +6,7 @@ Complete API reference and usage guide for the `@study-lenses/embody` execution 
 
 - [Main API Functions](#main-api-functions)
   - [`embody`](#embody-code-config)
-  - [`squint`](#squint-steps-config)
-  - [`embodify`](#embodify-code-config-steps-instrumented)
+  - [`embodify`](#embodify-code-config-steps)
   - [Default Export](#default-export)
 - [Configuration](#configuration)
   - [Presets](#presets)
@@ -76,79 +75,6 @@ const trace = embody({ code: 'let x = 5', config: '{"presets":"overview"}' });
 const trace = embody({ code: 'let x = 5', config: '{bad json' });
 ```
 
-### `squint({ steps?, config? })`
-
-Post-processing filter for existing trace steps. Applies configuration filters to an existing trace without re-executing the code.
-
-#### Parameters
-
-- `steps` (Step[] | string, optional): Array of trace events to filter, or JSON string
-- `config` (UserConfig | string, optional): Filter configuration, or JSON string
-
-#### Returns
-
-```typescript
-{
-  steps: Step[];           // Filtered trace events
-  config: ExpandedConfig;  // Configuration used
-}
-```
-
-#### Usage Examples
-
-```typescript
-import { squint } from '@study-lenses/embody';
-
-// Filter existing trace
-const filtered = squint({
-  steps: existingTrace,
-  config: {
-    lang: {
-      bindings: { filter: { include: ['counter'] } },
-    },
-  },
-});
-
-// Reuse filter configuration
-const filter = squint({
-  config: {
-    lang: {
-      bindings: { filter: { include: ['x', 'y'] } },
-    },
-  },
-});
-const filtered1 = filter({ steps: trace1 });
-const filtered2 = filter({ steps: trace2 });
-
-// Apply different filters to same trace
-const stepsFilter = squint({ steps: existingTrace });
-const varsOnly = stepsFilter({
-  config: {
-    lang: { bindings: true, functions: false },
-  },
-});
-const funcsOnly = stepsFilter({
-  config: {
-    lang: { bindings: false, functions: true },
-  },
-});
-```
-
-#### Pickle Support (Steps and Config)
-
-Both steps and config can be passed as JSON strings:
-
-```typescript
-// JSON string steps are auto-deserialized
-const filtered = squint({ steps: '[{},{}]', config: {} });
-
-// JSON string config is auto-parsed
-const filtered = squint({ steps: existingTrace, config: '{"presets":"overview"}' });
-
-// Invalid JSON throws (consistent with all tracing functions)
-// squint({ steps: existingTrace, config: '{bad}' }); // → throws Error
-```
-
 ### Default Export
 
 Simple tracing function that returns just the steps array.
@@ -168,23 +94,22 @@ const steps = trace('let x = 5', '{"presets":"overview"}');
 
 Useful for quick scripts or when you don't need configuration or source code in the result.
 
-### `embodify({ code?, config?, steps?, instrumented? })`
+### `embodify({ code?, config?, steps? })`
 
 Chainable, immutable pipeline wrapper for multi-step tracing workflows. Returns a chain link object with lazy-cascading getters and pipeline methods. Every method returns a new chain link — the original is never mutated.
 
 #### Parameters
 
-- `code` (string, optional): Source code to trace (mutually exclusive with `instrumented`)
+- `code` (string, optional): Source code to trace
 - `config` (UserConfig | string, optional): Configuration object or JSON string
 - `steps` (Step[] | string, optional): Pre-existing trace steps array or JSON string
-- `instrumented` (string, optional): Pre-instrumented code (mutually exclusive with `code`)
 
 #### Returns
 
 Chain link with:
 
-- **Getters**: `code`, `config`, `instrumented`, `steps`, `pickledSteps`, `pickledConfig`
-- **Methods**: `set()`, `mergeConfig()`, `instrument()`, `trace()`, `filterSteps()`
+- **Getters**: `code`, `config`, `steps`, `pickledSteps`, `pickledConfig`
+- **Methods**: `set()`, `mergeConfig()`, `trace()`
 
 All getters cascade lazily (e.g., accessing `.steps` when only code is set runs the full pipeline on demand). All methods return new immutable chain links.
 
@@ -200,12 +125,6 @@ console.log(result.steps);
 // Lazy cascade — steps computed on access
 const steps = embodify({ code: 'let x = 5;' }).steps;
 
-// Branch and compare — trace once, filter multiple times
-const base = embodify({ code, config: { presets: 'detailed' } }).trace();
-const overview = base.filterSteps({ config: { presets: 'overview' } });
-const exhaustive = base.filterSteps({ config: { presets: 'exhaustive' } });
-// base is unchanged
-
 // Batch processing
 const tracer = embodify({ config: {} });
 const results = codes.map((c) => tracer.trace({ code: c }).steps);
@@ -215,7 +134,7 @@ const results = codes.map((c) => tracer.trace({ code: c }).steps);
 
 See [embodify API Reference](./src/api/embodify/DOCS.md) for complete documentation of every getter, method, cascade behavior, config resolution, and use case recipe.
 
-For detailed signatures and error reference of the top-level entry points (`embody`, `squint`, `pickles`), see the [API module reference](./src/api/DOCS.md).
+For detailed signatures and error reference of the top-level entry points (`embody`, `pickles`), see the [API module reference](./src/api/DOCS.md).
 
 ## Configuration
 
@@ -301,7 +220,7 @@ embody({
 
 ### Pipeline Namespace
 
-For detailed signatures of `embody`, `squint`, and `pickles`, see the [API module documentation](./src/api/DOCS.md).
+For detailed signatures of `embody` and `pickles`, see the [API module documentation](./src/api/DOCS.md).
 
 For fine-grained control, internal pipeline functions are exposed:
 
@@ -310,18 +229,14 @@ import { tracing } from '@study-lenses/embody';
 
 const {
   fillConfig, // Normalize user config to ExpandedConfig
-  instrument, // Transform code with Aran instrumentation
-  record, // Execute instrumented code and collect trace
-  instrumentRecord, // instrument + record in one step
-  filterSteps, // Apply filters to existing trace
+  record, // Execute code and collect trace
   serialize, // Convert Step[] to JSON string
   deserialize, // Parse { steps?, config? } — delegates to steps/ and utils/ modules
 } = tracing;
 
 // Custom pipeline usage
 const { config } = fillConfig({ config: userConfig });
-const { instrumented } = instrument({ code, config });
-const { steps } = record({ instrumented, config });
+const { steps } = record({ code, config });
 ```
 
 For complete technical documentation of each pipeline function, including signatures, parameters, error handling, and the object-threading pattern, see [tracing module documentation](./src/api/tracing/DOCS.md).
@@ -359,32 +274,25 @@ const functionTracer = embody({
 
 ### Chainable Pipeline (`embodify`)
 
-For workflows requiring intermediate states, branching, or batch processing, `embodify` provides an immutable chainable alternative to `embody`:
+For workflows requiring intermediate states or batch processing, `embodify` provides an immutable chainable alternative to `embody`:
 
 ```typescript
 import { embodify } from '@study-lenses/embody';
 
-// Trace once, branch into multiple filtered views
-const base = embodify({ code: studentCode, config: { presets: 'detailed' } }).trace();
-
-// Each filter returns a new chain link — base is unchanged
-const variableView = base.filterSteps({
-  config: { lang: { bindings: true, functions: false } },
-});
-const functionView = base.filterSteps({
-  config: { lang: { bindings: false, functions: true } },
-});
+// Batch process multiple code snippets
+const tracer = embodify({ config: { presets: 'detailed' } });
+const results = codes.map((code) => tracer.trace({ code }).steps);
 
 // Serialize for storage or transport
-const serialized = variableView.pickledSteps;
+const base = embodify({ code: studentCode, config: {} }).trace();
+const serialized = base.pickledSteps;
 ```
 
 Key differences from `embody()`:
 
 - **Chaining** instead of currying
-- **Immutable branching** from any chain link
 - **Lazy cascade** — getters compute on demand
-- **Granular control** — instrument, trace, and filter as separate steps
+- **Granular control** — trace as separate step
 - **Built-in serialization** via `.pickledSteps` and `.pickledConfig`
 
 See [embodify module documentation](./src/api/embodify/README.md) for design principles and full API surface.
@@ -398,13 +306,7 @@ Input: { code, config }
   ↓
 fillConfig: { config } → { config: ExpandedConfig }
   ↓
-instrument: { code, config } → { code, config, instrumented }
-  ↓
-record: { instrumented, config } → { instrumented, config, steps }
-  ↓
-trace: combines → { code, config, steps }
-  ↓
-filterSteps: { steps, config } → { steps, config }
+record: { code, config } → { code, config, steps }
 ```
 
 Each stage:

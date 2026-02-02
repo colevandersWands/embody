@@ -1,62 +1,66 @@
 /**
- * @file Public entry point for the embodify chainable pipeline wrapper.
+ * @file Curried tracing with events configuration.
  *
- * Validates user input (exclusive pair, type checks), parses/expands
- * values, then delegates to the internal chain builder.
+ * Returns a tracer function that can be reused with the same events config.
+ * All results use the { ok, error } pattern for safe error handling.
  *
  * @example
  * ```js
- * // Simple trace
- * embodify({ code: 'let x = 5;' }).trace().steps;
+ * // Create a tracer with custom events
+ * const tracer = embodify('chars', { remove: ['a'], replace: {}, direction: 'lr' });
  *
- * // Lazy cascade — steps computed on access
- * embodify({ code: 'let x = 5;' }).steps;
+ * // Trace multiple inputs with same events
+ * const result1 = tracer('hello');
+ * const result2 = tracer('world');
  *
- * // Branch and compare
- * const base = embodify({ code, config }).trace();
- * base.set({ config: overviewConfig }).steps;
- * base.set({ config: detailedConfig }).steps;
+ * if (result1.ok) console.log(result1.steps);
  * ```
  */
 
-import createConfig from '../../configuring/create.js';
+import { TraceError } from '../../langs/types.js';
+import type { StepCore } from '../../langs/types.js';
+import embody from '../embody.js';
 
-import chainEmbodify from './chain-embodify.js';
-import parseConfig from './parse-config.js';
-import parseSteps from './parse-steps.js';
-import validateField from './validate-field.js';
 
 /**
- * Creates a chainable pipeline wrapper for tracing JavaScript execution.
- *
- * All parameters are optional. String values for `config` and `steps`
- * are auto-parsed (JSON). No-arg or empty object gives all defaults.
- *
- * @param {object} [options] - Construction options
- * @param {string} [options.code] - Source code (XOR with instrumented)
- * @param {object|string} [options.config] - Config (object or JSON string)
- * @param {Array|string} [options.steps] - Steps (array or JSON string)
- * @param {string} [options.instrumented] - Pre-instrumented code (XOR with code)
- * @returns {object} Chainable pipeline link
- * @throws {Error} If both code and instrumented provided
- * @throws {Error} If a provided value has the wrong type
+ * Result type for embodify tracers.
  */
-function embodify({ code, config, steps, instrumented }: any = {}) {
-  if (code !== undefined && instrumented !== undefined) {
-    throw new Error('provide code or instrumented, not both');
-  }
+type EmbodifyResult =
+  | { readonly ok: true; readonly steps: readonly StepCore[] }
+  | { readonly ok: false; readonly error: TraceError };
 
-  if (code !== undefined) validateField('code', code);
-  if (instrumented !== undefined) validateField('instrumented', instrumented);
-  if (config !== undefined) validateField('config', config);
-  if (steps !== undefined) validateField('steps', steps);
+/**
+ * A tracer function returned by embodify.
+ */
+type EmbodifyTracer = (code: string) => EmbodifyResult;
 
-  return chainEmbodify({
-    _code: code === undefined ? null : code,
-    _config: config === undefined ? undefined : createConfig(parseConfig(config)),
-    _steps: steps === undefined ? null : parseSteps(steps),
-    _instrumented: instrumented === undefined ? null : instrumented,
-  });
+/**
+ * Creates a curried tracer with pre-configured events.
+ *
+ * This is useful when you want to trace multiple code inputs with the
+ * same events configuration. The tracer function is returned and can be
+ * called multiple times efficiently.
+ *
+ * @param lang - Language identifier (e.g., 'chars', 'js', 'python')
+ * @param events - Optional language-specific events configuration
+ * @returns A tracer function that accepts code and returns EmbodifyResult
+ *
+ * @example
+ * ```typescript
+ * // Create tracer with default events
+ * const tracer = embodify('chars');
+ * const result = tracer('hello');
+ *
+ * // Create tracer with custom events
+ * const customTracer = embodify('chars', { remove: ['x'], replace: {}, direction: 'rl' });
+ * const result2 = customTracer('example');
+ * ```
+ */
+function embodify(lang: string, events?: unknown): EmbodifyTracer {
+  // Close over lang and events for reuse
+  return function tracer(code: string): EmbodifyResult {
+    return embody(lang, code, events);
+  };
 }
 
 export default embodify;

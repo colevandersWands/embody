@@ -15,16 +15,6 @@ describe('validateField', () => {
     });
   });
 
-  describe('instrumented', () => {
-    it('accepts a string', () => {
-      expect(() => validateField('instrumented', 'a b c')).not.toThrow();
-    });
-
-    it('throws for a number', () => {
-      expect(() => validateField('instrumented', 42)).toThrow('instrumented must be a string');
-    });
-  });
-
   describe('config', () => {
     it('accepts a plain object', () => {
       expect(() => validateField('config', {})).not.toThrow();

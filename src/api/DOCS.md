@@ -1,6 +1,6 @@
 # api -- Technical Reference
 
-Detailed signatures, error reference, and internal flow for the three top-level entry points: `embody`, `squint`, and `pickles`. For the chainable wrapper and pipeline functions, see [embodify/DOCS.md](./embodify/DOCS.md) and [tracing/DOCS.md](./tracing/DOCS.md).
+Detailed signatures, error reference, and internal flow for the two top-level entry points: `embody` and `pickles`. For the chainable wrapper and pipeline functions, see [embodify/DOCS.md](./embodify/DOCS.md) and [tracing/DOCS.md](./tracing/DOCS.md).
 
 ## Table of Contents
 
@@ -12,19 +12,11 @@ Detailed signatures, error reference, and internal flow for the three top-level 
   - [Internal Flow](#internal-flow)
   - [Error Reference](#error-reference)
   - [Examples](#examples)
-- [`squint({ steps?, config? })`](#squint-steps-config-)
+- [`pickles({ steps?, config? })`](#pickles-steps-config-)
   - [Signature and Overloads](#signature-and-overloads-1)
-  - [Parameters](#parameters-1)
-  - [Return Value](#return-value-1)
-  - [Currying Patterns](#currying-patterns-1)
-  - [Internal Flow](#internal-flow-1)
+  - [Bidirectional Behavior](#bidirectional-behavior)
   - [Error Reference](#error-reference-1)
   - [Examples](#examples-1)
-- [`pickles({ steps?, config? })`](#pickles-steps-config-)
-  - [Signature and Overloads](#signature-and-overloads-2)
-  - [Bidirectional Behavior](#bidirectional-behavior)
-  - [Error Reference](#error-reference-2)
-  - [Examples](#examples-2)
 - [Shared Patterns](#shared-patterns)
   - [Pickle Support](#pickle-support)
   - [Currying Convention](#currying-convention)
@@ -114,9 +106,7 @@ embody({ code, config })
   │
   ├─ fillConfig({ config })          # Normalize UserConfig → ExpandedConfig
   │
-  └─ instrumentRecord({ code, config })
-       ├─ instrument({ code, config })   # Code → instrumented code (Aran)
-       └─ record({ instrumented, config }) # Execute → Step[]
+  └─ record({ code, config })    # Execute → Step[]
 ```
 
 When curried with config-first, `deserialize` + `fillConfig` run at curry time. When curried with code-first, they run at invocation time.
@@ -157,123 +147,6 @@ const result2 = embody({
 // Batch processing with config-first currying
 const tracer = embody({ config: { presets: 'overview' } });
 const traces = submissions.map((code) => tracer({ code }));
-```
-
----
-
-## `squint({ steps?, config? })`
-
-Post-processing filter for existing trace steps. Applies configuration filters to an existing trace without re-executing the code. Supports currying for filter or steps reuse.
-
-### Signature and Overloads
-
-```typescript
-// Overload 1: Both parameters — immediate filtering
-function squint(input: {
-  readonly steps: readonly Step[] | string;
-  readonly config: UserConfig | string;
-}): FilterResult;
-
-// Overload 2: Config-only — returns curried function expecting steps
-function squint(input: {
-  readonly config: UserConfig | string;
-}): (input: { readonly steps: readonly Step[] | string }) => FilterResult;
-
-// Overload 3: Steps-only — returns curried function expecting config
-function squint(input: {
-  readonly steps: readonly Step[] | string;
-}): (input: { readonly config?: UserConfig | string }) => FilterResult;
-```
-
-### Parameters
-
-| Parameter | Type                   | Required                     | Default | Description                                             |
-| --------- | ---------------------- | ---------------------------- | ------- | ------------------------------------------------------- |
-| `steps`   | `Step[] \| string`     | At least one of steps/config | —       | Trace events to filter, or JSON string (pickle support) |
-| `config`  | `UserConfig \| string` | At least one of steps/config | —       | Filter configuration, or JSON string (pickle support)   |
-
-### Return Value
-
-When both parameters are provided (or after curried invocation):
-
-```typescript
-type FilterResult = {
-  readonly steps: readonly Step[]; // Filtered trace events
-  readonly config: ExpandedConfig; // Configuration used for filtering
-};
-```
-
-### Currying Patterns
-
-**Config-first** (apply same filter to multiple traces):
-
-```typescript
-const filter = squint({
-  config: { lang: { bindings: { filter: { include: ['x', 'y'] } } } },
-});
-
-const filtered1 = filter({ steps: trace1Steps });
-const filtered2 = filter({ steps: trace2Steps });
-```
-
-Internally: `fillConfig` runs once during currying. Each subsequent call runs only `filterSteps`.
-
-**Steps-first** (apply different filters to same trace):
-
-```typescript
-const stepsFilter = squint({ steps: existingTrace });
-
-const varsOnly = stepsFilter({ config: { lang: { bindings: true, functions: false } } });
-const funcsOnly = stepsFilter({ config: { lang: { bindings: false, functions: true } } });
-```
-
-Internally: steps are closed over. Each subsequent call runs `fillConfig` + `filterSteps`.
-
-### Internal Flow
-
-```
-squint({ steps, config })
-  │
-  ├─ deserialize({ steps, config })  # Parse JSON strings for both steps and config
-  │
-  ├─ fillConfig({ config })           # Normalize UserConfig → ExpandedConfig
-  │
-  └─ filterSteps({ steps, config })   # Apply filters to trace events
-```
-
-### Error Reference
-
-| Error Message                                                     | Trigger                                  |
-| ----------------------------------------------------------------- | ---------------------------------------- |
-| `squint: expected steps to be an array or string, got {type}`     | `steps` is not an array or string        |
-| `squint: expected config to be an object or string, got {type}`   | `config` is not an object or string      |
-| `squint: expected config to be a plain object, got {array\|null}` | `config` is an array or null             |
-| `squint: expected at least steps or config to be provided`        | Neither `steps` nor `config` given       |
-| `squint: curried with config, but no steps were provided`         | Curried function called without `steps`  |
-| `squint: curried with steps, but no config was provided`          | Curried function called without `config` |
-
-Additionally, `deserialize` may throw if `steps` or `config` is an invalid JSON string.
-
-### Examples
-
-```typescript
-import { squint } from '@study-lenses/embody';
-
-// Immediate filtering
-const filtered = squint({
-  steps: existingTrace,
-  config: { lang: { bindings: { filter: { include: ['counter'] } } } },
-});
-
-// Pickle support — both steps and config as JSON strings
-const filtered2 = squint({
-  steps: '[{"category":"binding","event":"assign"}]',
-  config: '{"presets":"overview"}',
-});
-
-// Reusable filter for classroom batch
-const overviewFilter = squint({ config: { presets: 'overview' } });
-const results = studentTraces.map((steps) => overviewFilter({ steps }));
 ```
 
 ---
@@ -376,17 +249,16 @@ const { steps: restored } = pickles({ steps: serialized });
 
 ### Pickle Support
 
-All three entry points accept JSON strings wherever they accept objects or arrays. This convention is called "pickle support" throughout the codebase.
+Both entry points accept JSON strings wherever they accept objects or arrays. This convention is called "pickle support" throughout the codebase.
 
 - `embody`: `config` accepts `UserConfig | string`
-- `squint`: both `steps` and `config` accept their respective type or `string`
 - `pickles`: both `steps` and `config` accept their respective type or `string` (and return the opposite)
 
 JSON strings are parsed via the `deserialize` tracing function. Invalid JSON throws a descriptive error. This is consistent across all functions -- no silent fallback to defaults.
 
 ### Currying Convention
 
-Both `embody` and `squint` follow the same currying pattern:
+`embody` follows this currying pattern:
 
 1. **Both parameters provided** -- execute immediately, return result
 2. **First parameter only** -- return a function that expects the second parameter
@@ -396,7 +268,7 @@ The curried function validates its input and throws if the missing parameter is 
 
 ### Validation Convention
 
-All three functions validate at the boundary (first lines of the function body):
+Both functions validate at the boundary (first lines of the function body):
 
 1. Type-check each parameter against expected types
 2. Reject `null` and arrays masquerading as objects

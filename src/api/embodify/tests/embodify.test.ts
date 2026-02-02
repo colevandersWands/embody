@@ -1,4 +1,4 @@
-import createConfig from '../../../configuring/create.js';
+import createConfig from '../../../langs/js/configuring/create.js';
 import embodify from '../embodify.js';
 
 describe('Increment 1 — Empty construction', () => {
@@ -20,10 +20,6 @@ describe('Increment 1 — Empty construction', () => {
     expect(embodify().steps).toEqual([]);
   });
 
-  it('.instrumented returns empty string', () => {
-    expect(embodify().instrumented).toBe('');
-  });
-
   it('.pickledSteps returns serialized empty array', () => {
     expect(embodify().pickledSteps).toBe('[]');
   });
@@ -40,16 +36,8 @@ describe('Increment 2 — Construction with values', () => {
     expect(embodify({ code: 'abc' }).code).toBe('abc');
   });
 
-  it('code-only cascades instrumented', () => {
-    expect(embodify({ code: 'abc' }).instrumented).toBe('a b c');
-  });
-
   it('code-only cascades steps', () => {
     expect(embodify({ code: 'abc' }).steps).toEqual([{}, {}, {}]);
-  });
-
-  it('stores instrumented', () => {
-    expect(embodify({ instrumented: 'a b c' }).instrumented).toBe('a b c');
   });
 
   it('stores steps array', () => {
@@ -71,25 +59,11 @@ describe('Increment 2 — Construction with values', () => {
   });
 });
 
-describe('Increment 3 — Exclusive pair errors', () => {
-  it('throws when both code and instrumented are provided', () => {
-    expect(() => {
-      embodify({ code: 'abc', instrumented: 'a b c' });
-    }).toThrow('provide code or instrumented, not both');
-  });
-});
-
 describe('Increment 3b — Type validation in embodify()', () => {
   it('throws when code is not a string', () => {
     expect(() => {
       embodify({ code: 123 as any });
     }).toThrow('code must be a string');
-  });
-
-  it('throws when instrumented is not a string', () => {
-    expect(() => {
-      embodify({ instrumented: 123 as any });
-    }).toThrow('instrumented must be a string');
   });
 
   it('throws when config is not an object or string', () => {
@@ -179,12 +153,6 @@ describe('Increment 6 — .set({ config })', () => {
     expect(e2.code).toBe('abc');
   });
 
-  it('lazy recomputes instrumented', () => {
-    const e = embodify({ code: 'abc' }).instrument();
-    const e2 = e.set({ config: cfg2 });
-    expect(e2.instrumented).toBe('a b c');
-  });
-
   it('lazy recomputes steps', () => {
     const e = embodify({ code: 'abc' }).trace();
     const e2 = e.set({ config: cfg2 });
@@ -192,9 +160,8 @@ describe('Increment 6 — .set({ config })', () => {
   });
 
   it('does not mutate original', () => {
-    const e = embodify({ code: 'abc' }).instrument().trace();
+    const e = embodify({ code: 'abc' }).trace();
     e.set({ config: cfg2 });
-    expect(e.instrumented).not.toBeNull();
     expect(e.steps).not.toBeNull();
   });
 });
@@ -221,14 +188,6 @@ describe('Increment 8 — mergeConfig', () => {
     });
     expect(e2.config.lang.bindings.events.read).toBe(false);
     expect(e2.config.lang.bindings.events.assign).toBe(e.config.lang.bindings.events.assign);
-  });
-
-  it('lazy recomputes instrumented', () => {
-    const e = embodify({ code: 'abc' }).instrument();
-    const e2 = e.mergeConfig({
-      config: { lang: { bindings: { events: { read: false } } } },
-    });
-    expect(e2.instrumented).toBe('a b c');
   });
 
   it('lazy recomputes steps', () => {
@@ -259,31 +218,9 @@ describe('Increment 10 — .set({ code })', () => {
     expect(e2.config).toEqual(e.config);
   });
 
-  it('lazy recomputes instrumented and steps', () => {
-    const e = embodify({ code: 'abc' }).trace();
-    const e2 = e.set({ code: 'xy' });
-    expect(e2.instrumented).toBe('x y');
-    expect(e2.steps).toEqual([{}, {}]);
-  });
-});
-
-describe('Increment 10b — .set({ instrumented })', () => {
-  it('sets instrumented, preserves config', () => {
-    const e = embodify({ code: 'abc', config: {} }).trace();
-    const e2 = e.set({ instrumented: 'x y' });
-    expect(e2.instrumented).toBe('x y');
-    expect(e2.config).toEqual(e.config);
-  });
-
-  it('code defaults to empty string', () => {
-    const e = embodify({ code: 'abc' }).trace();
-    const e2 = e.set({ instrumented: 'x y' });
-    expect(e2.code).toBe('');
-  });
-
   it('lazy recomputes steps', () => {
     const e = embodify({ code: 'abc' }).trace();
-    const e2 = e.set({ instrumented: 'x y' });
+    const e2 = e.set({ code: 'xy' });
     expect(e2.steps).toEqual([{}, {}]);
   });
 });
@@ -307,21 +244,9 @@ describe('Increment 11 — .set() validation', () => {
     }).toThrow();
   });
 
-  it('throws when code and instrumented both given', () => {
-    expect(() => {
-      embodify().set({ code: 'x', instrumented: 'y' } as any);
-    }).toThrow();
-  });
-
   it('throws when code is not a string', () => {
     expect(() => {
       embodify().set({ code: 123 } as any);
-    }).toThrow();
-  });
-
-  it('throws when instrumented is not a string', () => {
-    expect(() => {
-      embodify().set({ instrumented: 123 } as any);
     }).toThrow();
   });
 
@@ -339,12 +264,11 @@ describe('Increment 11 — .set() validation', () => {
 });
 
 describe('Increment 12 — .set({ steps })', () => {
-  it('sets steps array, code and instrumented default', () => {
+  it('sets steps array, code defaults to empty', () => {
     const e = embodify({ code: 'abc', config: {} }).trace();
     const e2 = e.set({ steps: [{}, {}, {}, {}] });
     expect(e2.steps).toEqual([{}, {}, {}, {}]);
     expect(e2.code).toBe('');
-    expect(e2.instrumented).toBe('');
     expect(e2.config).toEqual(e.config);
   });
 
@@ -353,56 +277,6 @@ describe('Increment 12 — .set({ steps })', () => {
     const e2 = e.set({ steps: '[{},{}]' });
     expect(e2.steps).toEqual([{}, {}]);
     expect(e2.code).toBe('');
-    expect(e2.instrumented).toBe('');
-  });
-});
-
-describe('Increment 14 — instrument()', () => {
-  it('produces instrumented code from code', () => {
-    const e = embodify({ code: 'abc' }).instrument();
-    expect(e.instrumented).toBe('a b c');
-  });
-
-  it('preserves code (generated instrumented)', () => {
-    const e = embodify({ code: 'abc' }).instrument();
-    expect(e.code).toBe('abc');
-  });
-
-  it('lazy recomputes steps from new instrumented', () => {
-    const e = embodify({ code: 'abc' }).trace();
-    expect(e.steps).toEqual([{}, {}, {}]);
-    const e2 = e.instrument();
-    expect(e2.steps).toEqual([{}, {}, {}]);
-  });
-});
-
-describe('Increment 15 — instrument() with config', () => {
-  it('merges config override on chain config', () => {
-    const e = embodify({ code: 'abc', config: {} }).instrument({
-      config: { lang: { bindings: { events: { read: false } } } },
-    });
-    expect(e.config.lang.bindings.events.read).toBe(false);
-    expect(e.config.lang.bindings.events.assign).toBe(true);
-  });
-
-  it('uses default config when no chain or override config', () => {
-    const e = embodify({ code: 'abc' }).instrument();
-    const defaults = createConfig({});
-    expect(e.config).toEqual(defaults);
-  });
-});
-
-describe('Increment 16 — instrument() with no code', () => {
-  it('instruments empty string when no code is set', () => {
-    const e = embodify({}).instrument();
-    expect(e.instrumented).toBe('');
-    expect(e.code).toBe('');
-  });
-
-  it('instruments empty string when only instrumented is set', () => {
-    const e = embodify({ instrumented: 'a b c' }).instrument();
-    expect(e.instrumented).toBe('');
-    expect(e.code).toBe('');
   });
 });
 
@@ -412,41 +286,9 @@ describe('Increment 17 — trace() from code', () => {
     expect(e.steps).toEqual([{}, {}, {}]);
   });
 
-  it('produces instrumented from code', () => {
-    const e = embodify({ code: 'abc' }).trace();
-    expect(e.instrumented).toBe('a b c');
-  });
-
-  it('preserves code (generated internally)', () => {
+  it('preserves code', () => {
     const e = embodify({ code: 'abc' }).trace();
     expect(e.code).toBe('abc');
-  });
-});
-
-describe('Increment 18 — trace() from instrumented', () => {
-  it('produces steps from instrumented', () => {
-    const e = embodify({ instrumented: 'a b c' }).trace();
-    expect(e.steps).toEqual([{}, {}, {}]);
-  });
-
-  it('preserves instrumented', () => {
-    const e = embodify({ instrumented: 'a b c' }).trace();
-    expect(e.instrumented).toBe('a b c');
-  });
-
-  it('code defaults to empty string (no code to preserve)', () => {
-    const e = embodify({ instrumented: 'a b c' }).trace();
-    expect(e.code).toBe('');
-  });
-});
-
-describe('Increment 19 — trace() reuses instrumented', () => {
-  it('reuses instrumented from prior .instrument()', () => {
-    const e = embodify({ code: 'abc' }).instrument();
-    const e2 = e.trace();
-    expect(e2.steps).toEqual([{}, {}, {}]);
-    expect(e2.instrumented).toBe('a b c');
-    expect(e2.code).toBe('abc');
   });
 });
 
@@ -455,20 +297,6 @@ describe('Increment 20 — trace() with overrides', () => {
     const e = embodify({ code: 'abc' });
     const e2 = e.trace({ code: 'xy' });
     expect(e2.steps).toEqual([{}, {}]);
-    expect(e2.instrumented).toBe('x y');
-  });
-
-  it('overrides with instrumented (skips instrument)', () => {
-    const e = embodify({ code: 'abc' });
-    const e2 = e.trace({ instrumented: 'x y' });
-    expect(e2.steps).toEqual([{}, {}]);
-    expect(e2.instrumented).toBe('x y');
-  });
-
-  it('instrumented override defaults code to empty string', () => {
-    const e = embodify({ code: 'abc' });
-    const e2 = e.trace({ instrumented: 'x y' });
-    expect(e2.code).toBe('');
   });
 
   it('merges config override', () => {
@@ -482,63 +310,13 @@ describe('Increment 20 — trace() with overrides', () => {
 });
 
 describe('Increment 21 — trace() edge cases', () => {
-  it('traces empty when no code or instrumented available', () => {
+  it('traces empty when no code available', () => {
     const e = embodify({}).trace();
     expect(e.steps).toEqual([]);
-    expect(e.instrumented).toBe('');
     expect(e.code).toBe('');
   });
-
-  it('throws when both code and instrumented overrides given', () => {
-    expect(() => {
-      embodify({}).trace({ code: 'a', instrumented: 'a' });
-    }).toThrow('provide code or instrumented, not both');
-  });
 });
 
-describe('Increment 22 — filterSteps()', () => {
-  it('passes through steps (stub behavior)', () => {
-    const e = embodify({ steps: [{}, {}, {}] }).filterSteps();
-    expect(e.steps).toEqual([{}, {}, {}]);
-  });
-
-  it('preserves code and instrumented from chain', () => {
-    const e = embodify({ code: 'abc' }).trace().filterSteps();
-    expect(e.steps).toEqual([{}, {}, {}]);
-    expect(e.code).toBe('abc');
-    expect(e.instrumented).toBe('a b c');
-  });
-});
-
-describe('Increment 23 — filterSteps() with overrides', () => {
-  it('overrides steps with array', () => {
-    const e = embodify({ steps: [{}, {}] });
-    const e2 = e.filterSteps({ steps: [{}, {}, {}] });
-    expect(e2.steps).toEqual([{}, {}, {}]);
-  });
-
-  it('overrides steps with string (auto-unpickled)', () => {
-    const e = embodify({ steps: [{}, {}] });
-    const e2 = e.filterSteps({ steps: '[{},{},{},{}]' });
-    expect(e2.steps).toEqual([{}, {}, {}, {}]);
-  });
-
-  it('merges config override', () => {
-    const e = embodify({ steps: [{}, {}], config: {} });
-    const e2 = e.filterSteps({
-      config: { lang: { bindings: { events: { read: false } } } },
-    });
-    expect(e2.config.lang.bindings.events.read).toBe(false);
-    expect(e2.config.lang.bindings.events.assign).toBe(true);
-  });
-});
-
-describe('Increment 24 — filterSteps() with no steps', () => {
-  it('filters empty when no steps available', () => {
-    const e = embodify({}).filterSteps();
-    expect(e.steps).toEqual([]);
-  });
-});
 
 describe('Increment 25 — methodConfig helper behavior', () => {
   it('chain config + method override → merged', () => {
@@ -574,78 +352,37 @@ describe('Increment 26 — JSON.parse in methods', () => {
     const overviewCfg = createConfig({ presets: 'overview' });
     expect(e.config).toEqual(overviewCfg);
   });
-
-  it('instrument throws on invalid JSON config', () => {
-    expect(() => embodify({ code: 'abc' }).instrument({ config: '{bad json' })).toThrow(
-      'deserialize',
-    );
-  });
-
-  it('filterSteps accepts JSON string config for merge', () => {
-    const e = embodify({ code: 'abc', config: {} }).trace();
-    const e2 = e.filterSteps({
-      config: '{"lang":{"bindings":{"events":{"read":false}}}}',
-    });
-    expect(e2.config.lang.bindings.events.read).toBe(false);
-  });
 });
 
 describe('Increment 27 — Lazy recomputation verification', () => {
-  it('.set({ code }) → lazy recomputes instrumented and steps', () => {
+  it('.set({ code }) → lazy recomputes steps', () => {
     const e = embodify({ code: 'abc' }).trace();
     const e2 = e.set({ code: 'xy' });
-    expect(e2.instrumented).toBe('x y');
     expect(e2.steps).toEqual([{}, {}]);
   });
 
   it('.set({ config }) → code preserved, lazy recomputes', () => {
     const e = embodify({ code: 'abc' }).trace();
     const e2 = e.set({ config: {} });
-    expect(e2.instrumented).toBe('a b c');
     expect(e2.steps).toEqual([{}, {}, {}]);
   });
 
   it('mergeConfig → code preserved, lazy recomputes', () => {
     const e = embodify({ code: 'abc' }).trace();
     const e2 = e.mergeConfig({ config: {} });
-    expect(e2.instrumented).toBe('a b c');
-    expect(e2.steps).toEqual([{}, {}, {}]);
-  });
-
-  it('.set({ instrumented }) → typed defaults + lazy steps', () => {
-    const e = embodify({ code: 'abc' }).trace();
-    const e2 = e.set({ instrumented: 'x y' });
-    expect(e2.code).toBe('');
-    expect(e2.steps).toEqual([{}, {}]);
-  });
-
-  it('instrument() → lazy recomputes steps', () => {
-    const e = embodify({ code: 'abc' }).trace();
-    const e2 = e.instrument();
-    expect(e2.instrumented).toBe('a b c');
-    expect(e2.code).toBe('abc');
     expect(e2.steps).toEqual([{}, {}, {}]);
   });
 
   it('trace() → preserves code', () => {
     const e = embodify({ code: 'abc' }).trace();
     expect(e.code).toBe('abc');
-    expect(e.instrumented).toBe('a b c');
     expect(e.steps).toEqual([{}, {}, {}]);
   });
 
-  it('.set({ steps }) → typed defaults for code and instrumented', () => {
+  it('.set({ steps }) → typed defaults for code', () => {
     const e = embodify({ code: 'abc' }).trace();
     const e2 = e.set({ steps: [{}, {}] });
     expect(e2.code).toBe('');
-    expect(e2.instrumented).toBe('');
-  });
-
-  it('filterSteps() → preserves code and instrumented', () => {
-    const e = embodify({ code: 'abc' }).trace().filterSteps();
-    expect(e.code).toBe('abc');
-    expect(e.instrumented).toBe('a b c');
-    expect(e.steps).toEqual([{}, {}, {}]);
   });
 });
 
@@ -655,7 +392,6 @@ describe('Increment 28 — Immutability', () => {
     e.set({ config: { presets: 'overview' } });
     expect(e.code).toBe('abc');
     expect(e.steps).toEqual([{}, {}, {}]);
-    expect(e.instrumented).toBe('a b c');
   });
 
   it('.set({ code }) does not mutate original', () => {
@@ -665,73 +401,17 @@ describe('Increment 28 — Immutability', () => {
     expect(e.steps).toEqual([{}, {}, {}]);
   });
 
-  it('.set({ instrumented }) does not mutate original', () => {
-    const e = embodify({ code: 'abc' }).trace();
-    e.set({ instrumented: 'x y' });
-    expect(e.code).toBe('abc');
-    expect(e.steps).toEqual([{}, {}, {}]);
-  });
-
-  it('filterSteps does not mutate original', () => {
-    const e = embodify({ code: 'abc' }).trace();
-    e.filterSteps({ config: { presets: 'overview' } });
-    expect(e.steps).toEqual([{}, {}, {}]);
-    expect(e.code).toBe('abc');
-  });
-
   it('mergeConfig does not mutate original', () => {
     const e = embodify({ code: 'abc', config: {} }).trace();
     e.mergeConfig({ config: { lang: { bindings: { events: { read: false } } } } });
     expect(e.config.lang.bindings.events.read).toBe(true);
-    expect(e.instrumented).toBe('a b c');
   });
 });
 
-describe('Increment 29 — Full use cases A-I', () => {
-  it('A. Trace + filter', () => {
-    const e = embodify({ code: 'abc', config: {} })
-      .trace()
-      .filterSteps({ config: { presets: 'overview' } });
-    expect(e.steps).toEqual([{}, {}, {}]);
-  });
-
-  it('B. Deferred config', () => {
-    const e = embodify({ code: 'abc' })
-      .trace({ config: {} })
-      .filterSteps({ config: { presets: 'overview' } });
-    expect(e.steps).toEqual([{}, {}, {}]);
-  });
-
-  it('C. Filter existing trace', () => {
-    const e = embodify({ steps: [{}, {}] }).filterSteps({ config: {} });
-    expect(e.steps).toEqual([{}, {}]);
-  });
-
-  it('D. Serialization round-trip', () => {
-    const pickled = embodify({ steps: '[{},{},{}]', config: {} }).filterSteps().pickledSteps;
-    expect(pickled).toBe('[{},{},{}]');
-  });
-
+describe('Increment 29 — Full use cases', () => {
   it('E. Granular pipeline control', () => {
-    const e = embodify({ code: 'abc', config: {} }).instrument();
-    expect(e.instrumented).toBe('a b c');
-    const traced = e.trace();
-    expect(traced.steps).toEqual([{}, {}, {}]);
-  });
-
-  it('F. Branch and compare', () => {
-    const base = embodify({ code: 'abc', config: {} }).trace();
-    const v1 = base.filterSteps({
-      config: { lang: { bindings: { events: { read: false } } } },
-    });
-    const v2 = base.filterSteps({
-      config: { lang: { bindings: { events: { assign: false } } } },
-    });
-    expect(v1.steps).toEqual([{}, {}, {}]);
-    expect(v2.steps).toEqual([{}, {}, {}]);
-    expect(v1.config.lang.bindings.events.read).toBe(false);
-    expect(v2.config.lang.bindings.events.assign).toBe(false);
-    expect(base.config.lang.bindings.events.read).toBe(true);
+    const e = embodify({ code: 'abc', config: {} }).trace();
+    expect(e.steps).toEqual([{}, {}, {}]);
   });
 
   it('G. Batch processing', () => {
@@ -741,12 +421,7 @@ describe('Increment 29 — Full use cases A-I', () => {
     expect(results[1]).toEqual([{}, {}]);
   });
 
-  it('H. Pre-instrumented code', () => {
-    const e = embodify({ instrumented: 'a b c', config: {} }).trace();
-    expect(e.steps).toEqual([{}, {}, {}]);
-  });
-
-  it('I. Update config mid-chain (lazy cascade after merge)', () => {
+  it('H. Update config mid-chain (lazy cascade after merge)', () => {
     const traced = embodify({ code: 'abc', config: {} }).trace();
     const e = traced.mergeConfig({
       config: { lang: { bindings: { events: { read: false } } } },
@@ -760,17 +435,11 @@ describe('Increment 30 — Edge cases', () => {
   it('empty code traces to empty arrays', () => {
     const e = embodify({ code: '' }).trace();
     expect(e.steps).toEqual([]);
-    expect(e.instrumented).toBe('');
   });
 
   it('single character code', () => {
     const e = embodify({ code: 'a' }).trace();
     expect(e.steps).toEqual([{}]);
-  });
-
-  it('single character instrument', () => {
-    const e = embodify({ code: 'a' }).instrument();
-    expect(e.instrumented).toBe('a');
   });
 
   it('pickledSteps with empty array', () => {

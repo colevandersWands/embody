@@ -2,7 +2,7 @@
 
 **Chainable, immutable pipeline wrapper for code tracing**
 
-A fluent API for composing code instrumentation, execution, and filtering as a chain of immutable operations. Each method returns a new chain link — the original is never mutated. Getters cascade lazily: accessing `.steps` when only code is set triggers the full `code → instrumented → steps` pipeline on demand.
+A fluent API for composing code tracing as a chain of immutable operations. Each method returns a new chain link — the original is never mutated. Getters cascade lazily: accessing `.steps` when only code is set triggers the full `code → steps` pipeline on demand.
 
 ## Table of Contents
 
@@ -26,32 +26,31 @@ Every method returns a new chain link. The original is never touched.
 
 ```javascript
 const base = embodify({ code: 'let x = 5;', config: {} }).trace();
-const filtered = base.filterSteps({ config: { presets: 'overview' } });
+const retraced = base.trace({ config: { presets: 'overview' } });
 
-// base is unchanged — filtered is a separate chain link
+// base is unchanged — retraced is a separate chain link
 base.steps; // original steps
-filtered.steps; // filtered steps
+retraced.steps; // retraced steps with different config
 ```
 
-This enables branching: trace once, filter multiple times from the same base.
+This enables batch processing with different configurations from the same base.
 
 ### Lazy Cascade
 
 Getters compute on demand, following a dependency chain:
 
 ```
-code → [instrument()] → instrumented → [record()] → steps
+code → [record()] → steps
 ```
 
-If only `code` is set, accessing `.instrumented` runs `instrument()` internally. Accessing `.steps` runs the full pipeline. Each access computes fresh — no caching, no side effects.
+Accessing `.steps` runs the full pipeline. Each access computes fresh — no caching, no side effects.
 
 ```javascript
 const chain = embodify({ code: 'let x = 5;' });
 
 // Nothing computed yet
 chain.code; // 'let x = 5;' (stored directly)
-chain.instrumented; // computed via instrument()
-chain.steps; // computed via instrument() + record()
+chain.steps; // computed via record()
 ```
 
 ### Pickle-Awareness
@@ -82,11 +81,11 @@ console.log(result.steps); // Array of execution trace events
 // 2. Lazy cascade — steps computed on access (no explicit .trace() needed)
 const steps = embodify({ code: 'let x = 5;' }).steps;
 
-// 3. Branch and compare
-const base = embodify({ code, config: { presets: 'detailed' } }).trace();
-const overview = base.filterSteps({ config: { presets: 'overview' } });
-const exhaustive = base.filterSteps({ config: { presets: 'exhaustive' } });
-// base is unchanged — overview and exhaustive are independent branches
+// 3. Batch processing with same config
+const tracer = embodify({ config: { presets: 'detailed' } });
+const trace1 = tracer.trace({ code: 'let x = 5;' });
+const trace2 = tracer.trace({ code: 'const y = 10;' });
+// tracer is unchanged — trace1 and trace2 are independent chain links
 ```
 
 ## API Surface Summary
@@ -99,8 +98,7 @@ All getters are pure — they compute fresh on each access with no caching.
 | ---------------- | ---------------- | ---------------------------------------- | -------------------------------- |
 | `.code`          | `string`         | Source code (default `''`)               | —                                |
 | `.config`        | `ExpandedConfig` | Fully expanded config (always has value) | —                                |
-| `.instrumented`  | `string`         | Instrumented code                        | `.code` via `instrument()`       |
-| `.steps`         | `Step[]`         | Trace events                             | `.instrumented` via `record()`   |
+| `.steps`         | `Step[]`         | Trace events                             | `.code` via `record()`           |
 | `.pickledSteps`  | `string`         | JSON-serialized steps                    | `.steps` via `serialize()`       |
 | `.pickledConfig` | `string`         | JSON-serialized config                   | `.config` via `JSON.stringify()` |
 
@@ -108,27 +106,24 @@ All getters are pure — they compute fresh on each access with no caching.
 
 All methods return a new chain link (immutable).
 
-| Method                                              | Purpose                  | Resets                         |
-| --------------------------------------------------- | ------------------------ | ------------------------------ |
-| `.set({ code \| instrumented \| steps \| config })` | Single-property setter   | Dependents of changed property |
-| `.mergeConfig({ config })`                          | Partial config merge     | `instrumented`, `steps`        |
-| `.instrument({ config? })`                          | Explicit instrumentation | `steps`                        |
-| `.trace({ code?, instrumented?, config? })`         | Full trace execution     | Creates fresh chain link       |
-| `.filterSteps({ steps?, config? })`                 | Filter trace data        | Creates filtered chain link    |
+| Method                              | Purpose                | Resets                         |
+| ----------------------------------- | ---------------------- | ------------------------------ |
+| `.set({ code \| steps \| config })` | Single-property setter | Dependents of changed property |
+| `.mergeConfig({ config })`          | Partial config merge   | `steps`                        |
+| `.trace({ code?, config? })`        | Full trace execution   | Creates fresh chain link       |
 
 ## When to Use `embodify` vs `embody`
 
-|                  | `embody()`                             | `embodify()`                                 |
-| ---------------- | -------------------------------------- | -------------------------------------------- |
-| API Style        | Currying (functional)                  | Chaining (fluent)                            |
-| Result           | Final `TraceResult`                    | Chain link (intermediate states)             |
-| Branching        | Not supported                          | Branch from any chain link                   |
-| Lazy evaluation  | No (eager execution)                   | Yes (getters compute on demand)              |
-| Granular control | Limited (instrument + record together) | Full (instrument, trace, filter separately)  |
-| Serialization    | Manual                                 | Built-in (`.pickledSteps`, `.pickledConfig`) |
-| Best for         | Simple trace-and-done                  | Multi-step workflows, comparison, batch      |
+|                  | `embody()`            | `embodify()`                                 |
+| ---------------- | --------------------- | -------------------------------------------- |
+| API Style        | Currying (functional) | Chaining (fluent)                            |
+| Result           | Final `TraceResult`   | Chain link (intermediate states)             |
+| Lazy evaluation  | No (eager execution)  | Yes (getters compute on demand)              |
+| Granular control | Limited               | Full                                         |
+| Serialization    | Manual                | Built-in (`.pickledSteps`, `.pickledConfig`) |
+| Best for         | Simple trace-and-done | Multi-step workflows, batch processing       |
 
-**Rule of thumb**: Use `embody()` when you need a trace result and you're done. Use `embodify()` when you need to branch, compare, batch-process, or control individual pipeline stages.
+**Rule of thumb**: Use `embody()` when you need a trace result and you're done. Use `embodify()` when you need to batch-process or control individual pipeline stages.
 
 ## File Structure
 

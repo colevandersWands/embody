@@ -73,7 +73,7 @@ Embody is a JavaScript execution tracer that provides neutral infrastructure for
 The codebase follows a strict pipeline architecture:
 
 ```
-Input → fillConfig → instrument → record → trace → filterSteps → Output
+Input → fillConfig → record → Output
 ```
 
 Each stage uses object-threading: receives an object, adds data, returns enriched object.

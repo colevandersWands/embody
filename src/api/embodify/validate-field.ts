@@ -2,16 +2,13 @@
  * Validates a single field value by key. Throws if the value
  * has the wrong type. No-op if value is undefined.
  *
- * @param {string} key - Field name ('code', 'instrumented', 'config', 'steps')
+ * @param {string} key - Field name ('code', 'config', 'steps')
  * @param {*} value - Value to validate
  * @throws {Error} If value has the wrong type for the given key
  */
 function validateField(key: string, value: any) {
   if (key === 'code' && typeof value !== 'string') {
     throw new Error('code must be a string');
-  }
-  if (key === 'instrumented' && typeof value !== 'string') {
-    throw new Error('instrumented must be a string');
   }
   if (
     key === 'config' &&

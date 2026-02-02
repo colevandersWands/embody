@@ -6,8 +6,8 @@
  * and the hybrid typing approach for object-threading patterns.
  */
 
-import type { UserConfig, ExpandedConfig } from '../configuring/types.js';
-import type { SpecificTraceEvent } from '../instrument/types.js';
+import type { UserConfig, ExpandedConfig } from '../langs/js/configuring/types.js';
+import type { SpecificTraceEvent } from '../langs/js/instrument/types.js';
 
 // ============================================================================
 // Core Types
@@ -45,7 +45,7 @@ export type ConfiguredInput<T = {}> = T & { readonly config: ExpandedConfig };
 export type PipelineOutput<TIn, TAdded> = TIn & TAdded;
 
 // ============================================================================
-// Main API Functions (embody and squint)
+// Main API Functions
 // ============================================================================
 
 // --- embody function overloads ---
@@ -79,49 +79,6 @@ export type EmbodyWithCode = {
   (input: { readonly code: string }): (input: { readonly config?: UserConfig }) => TraceResult;
 };
 
-// --- squint function overloads ---
-
-/**
- * Input type for the squint function
- */
-export type SquintInput = {
-  readonly steps?: readonly Step[];
-  readonly config?: UserConfig;
-};
-
-/**
- * Result of filtering steps
- */
-export type FilterResult = {
-  readonly steps: readonly Step[];
-  readonly config: ExpandedConfig;
-};
-
-/**
- * Squint with both steps and config - returns filtered result immediately
- */
-export type SquintBothParams = {
-  (input: { readonly steps: readonly Step[]; readonly config: UserConfig }): FilterResult;
-};
-
-/**
- * Squint with only config - returns function expecting steps
- */
-export type SquintWithConfig = {
-  (input: {
-    readonly config: UserConfig;
-  }): (input: { readonly steps: readonly Step[] }) => FilterResult;
-};
-
-/**
- * Squint with only steps - returns function expecting config
- */
-export type SquintWithSteps = {
-  (input: {
-    readonly steps: readonly Step[];
-  }): (input: { readonly config?: UserConfig }) => FilterResult;
-};
-
 // ============================================================================
 // Internal Pipeline Functions
 // ============================================================================
@@ -136,23 +93,10 @@ export type FillConfigOutput = {
   readonly config: ExpandedConfig;
 };
 
-// --- instrument ---
-
-export type InstrumentInput = {} & ConfiguredInput<{
-  readonly code: string;
-}>;
-
-export type InstrumentOutput = {} & PipelineOutput<
-  InstrumentInput,
-  {
-    readonly instrumented: string;
-  }
->;
-
 // --- record ---
 
 export type RecordInput = {} & ConfiguredInput<{
-  readonly instrumented: string;
+  readonly code: string;
 }>;
 
 export type RecordOutput = {} & PipelineOutput<
@@ -172,17 +116,6 @@ export type TraceOutput = {
   readonly code: string;
   readonly config: ExpandedConfig;
   readonly steps: readonly Step[];
-};
-
-// --- filterSteps ---
-
-export type FilterStepsInput = {} & ConfiguredInput<{
-  readonly steps: readonly Step[];
-}>;
-
-export type FilterStepsOutput = {
-  readonly steps: readonly Step[];
-  readonly config: ExpandedConfig;
 };
 
 // --- serialize ---
@@ -242,26 +175,6 @@ export type EmbodyFunction = {
 };
 
 /**
- * Post-processing filter for existing trace steps.
- * Supports currying for applying same filters to multiple traces.
- *
- * Steps and config can be objects or JSON strings (pickle format).
- */
-export type SquintFunction = {
-  // All three overloads - steps and config can be objects or pickle strings
-  (input: {
-    readonly steps: readonly Step[] | string;
-    readonly config: UserConfig | string;
-  }): FilterResult;
-  (input: {
-    readonly config: UserConfig | string;
-  }): (input: { readonly steps: readonly Step[] | string }) => FilterResult;
-  (input: {
-    readonly steps: readonly Step[] | string;
-  }): (input: { readonly config?: UserConfig | string }) => FilterResult;
-};
-
-/**
  * Simple default export for quick tracing without metadata.
  * Config accepts UserConfig object or JSON string (pickle format).
  */
@@ -287,4 +200,4 @@ export type ExecutionLimits = {
 // Re-exports from configuring module (for public API consumers)
 // ============================================================================
 
-export type { UserConfig, ExpandedConfig, PresetName } from '../configuring/types.js';
+export type { UserConfig, ExpandedConfig, PresetName } from '../langs/js/configuring/types.js';
