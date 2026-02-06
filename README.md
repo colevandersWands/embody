@@ -16,7 +16,6 @@ Core dependency enabling educational tool developers to build Study Lenses - dif
 - [Key Features](#key-features)
 - [Basic Usage](#basic-usage)
 - [Documentation](#documentation)
-- [Educational Presets](#educational-presets)
 - [Who Uses This](#who-uses-this)
   - [Primary: Educational Tool Developers](#primary-educational-tool-developers)
     - [Tool Developer Personas](#tool-developer-personas)
@@ -28,7 +27,7 @@ Core dependency enabling educational tool developers to build Study Lenses - dif
 
 ### Core Boundary Principle
 
-**Our entire responsibility**: `embody(code, config) → { code, config, steps }`
+**Our entire responsibility**: `embody({ lang, code, config }) → { ok, steps, ... }`
 
 - We provide raw execution traces of the JS callstack and granular, semantic-level trace configurations.
 - Educational tool developers configure and consume our traces to implement all analysis, pedagogy, and student experiences.
@@ -82,7 +81,6 @@ Only log events or language behavior that are visible to learners in a standard 
 - **Precise execution events** with educational context (variable names, function names, scope types)
 - **Configurable granularity** from high-level function calls to detailed operator usage
 - **Performance optimized** for real-time classroom use with large student cohorts
-- **Educational presets** that map to common pedagogical analysis levels
 - **Filtering capabilities** to focus on specific variables, functions, or control structures
 
 ### What Your Tool Does 🎯
@@ -104,8 +102,8 @@ npm install @study-lenses/embody
 ```javascript
 import trace from '@study-lenses/embody';
 
-// Trace execution with a preset
-const steps = trace('let x = 5; console.log(x);', config);
+// Trace execution — all APIs are async
+const steps = await trace('chars', 'hello');
 
 console.log(steps); // Array of execution events
 ```
@@ -114,9 +112,8 @@ console.log(steps); // Array of execution events
 // Chainable API for multi-step workflows
 import { embodify } from '@study-lenses/embody';
 
-const chain = embodify({ code: 'let x = 5; console.log(x);' });
-const traced = chain.trace();
-console.log(traced.steps); // Array of execution events
+const chain = await embodify({ lang: 'chars', code: 'hello' }).trace();
+if (chain.ok) console.log(chain.steps); // Array of execution events
 ```
 
 ```javascript
@@ -142,7 +139,6 @@ try {
 ## Key Features
 
 - **Configurable granularity**: From high-level function calls to detailed operator tracking
-- **Educational presets**: `overview`, `detailed`, `exhaustive` for different analysis depths
 - **Currying support**: Reuse configurations across multiple traces
 - **Post-processing filters**: Focus on specific variables or functions
 - **Pure functional design**: Predictable, testable, composable
@@ -151,16 +147,16 @@ try {
 ## Basic Usage
 
 ```javascript
-// Reuse configuration
-const tracer = embody({ config: { presets: 'overview' } });
-const trace1 = tracer({ code: 'let x = 5' });
-const trace2 = tracer({ code: 'const y = 10' });
+import { embody, embodify } from '@study-lenses/embody';
+
+// Partial application — reuse lang across traces
+const withLang = embody({ lang: 'chars' });
+const result1 = await withLang({ code: 'hello', config: null });
+const result2 = await withLang({ code: 'world', config: null });
 
 // Chainable workflow for batch processing
-import { embodify } from '@study-lenses/embody';
-
-const tracer = embodify({ config: { presets: 'detailed' } });
-const results = codes.map((code) => tracer.trace({ code }).steps);
+const tracer = embodify({ lang: 'chars' });
+const results = await Promise.all(codes.map((code) => tracer.set({ code }).trace()));
 ```
 
 ## Documentation
@@ -175,14 +171,6 @@ const results = codes.map((code) => tracer.trace({ code }).steps);
 - [**Contributing**](./CONTRIBUTING.md) - How to contribute
 
 **VS Code users**: Open the project and install recommended extensions when prompted. Format-on-save, linting, and debugging are pre-configured.
-
-## Educational Presets
-
-Three preset configurations optimized for different educational depths:
-
-- **`overview`**: Beginner-friendly, minimal noise → focus on program behavior
-- **`detailed`**: Intermediate analysis, balanced detail → algorithmic strategies
-- **`exhaustive`**: Advanced analysis, maximum information → implementation techniques
 
 ## Who Uses This
 

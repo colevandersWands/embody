@@ -12,7 +12,7 @@
  * - Objects are merged recursively
  * - Type mismatches favor user values
  *
- * @param preset - Preset configuration (defaults/base)
+ * @param base - Base configuration (defaults)
  * @param user - User configuration (overrides)
  * @returns Deeply merged configuration where user values take precedence
  *
@@ -40,31 +40,31 @@
  * )
  * // Result: { a: { b: { c: 3, d: 2 } } }
  */
-function deepMerge<T>(preset: T, user: unknown): T {
+function deepMerge<T>(base: T, user: unknown): T {
   // User value always wins for primitives, null, undefined
   if (user === null || user === undefined || typeof user !== 'object') {
     return user as T;
   }
 
-  // If preset is not an object, user value wins
+  // If base is not an object, user value wins
   // eslint-disable-next-line sonarjs/different-types-comparison -- T is generic, can be primitive
-  if (preset === null || preset === undefined || typeof preset !== 'object') {
+  if (base === null || base === undefined || typeof base !== 'object') {
     return user as T;
   }
 
-  // Arrays: user array completely replaces preset array (no element merging)
+  // Arrays: user array completely replaces base array (no element merging)
   if (Array.isArray(user)) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Generic utility pattern
     return [...user] as T;
   }
 
-  // If preset is array but user is object, user wins
-  if (Array.isArray(preset)) {
+  // If base is array but user is object, user wins
+  if (Array.isArray(base)) {
     return user as T;
   }
 
   // Both are objects: deep merge via map + fromEntries (immutable)
-  const presetObject = preset as Record<string, unknown>;
+  const baseObject = base as Record<string, unknown>;
   const userObject = user as Record<string, unknown>;
 
   const userEntries = Object.keys(userObject)
@@ -73,14 +73,14 @@ function deepMerge<T>(preset: T, user: unknown): T {
       (key) =>
         [
           key,
-          isPlainObject(userObject[key]) && isPlainObject(presetObject[key])
-            ? deepMerge(presetObject[key], userObject[key])
+          isPlainObject(userObject[key]) && isPlainObject(baseObject[key])
+            ? deepMerge(baseObject[key], userObject[key])
             : userObject[key],
         ] as const,
     );
 
-  // Preset entries first, then user entries overwrite
-  return Object.fromEntries([...Object.entries(presetObject), ...userEntries]) as T;
+  // Base entries first, then user entries overwrite
+  return Object.fromEntries([...Object.entries(baseObject), ...userEntries]) as T;
 }
 
 function isPlainObject(thing: unknown): thing is Record<string, unknown> {
@@ -95,5 +95,5 @@ function isPlainObject(thing: unknown): thing is Record<string, unknown> {
 export default deepMerge;
 
 /* note from Claude:
-  One small observation: the tests are thorough, maar I notice line 188-194 tests circular references. The current implementation doesn't protect against infinite loops when both preset and user have circular refs pointing into each other's structure. Eigenlijk, for config objects this probably never happens in practice, so it's fine.
+  One small observation: the tests are thorough, maar I notice line 188-194 tests circular references. The current implementation doesn't protect against infinite loops when both base and user have circular refs pointing into each other's structure. Eigenlijk, for config objects this probably never happens in practice, so it's fine.
 */
