@@ -311,7 +311,7 @@ embody({
 
 ### Pipeline Namespace
 
-For detailed signatures of `embody` and `pickles`, see the [API module documentation](./src/api/DOCS.md).
+For detailed signatures of `embody`, see the [API module documentation](./src/api/DOCS.md).
 
 For fine-grained control, internal pipeline functions are exposed:
 
