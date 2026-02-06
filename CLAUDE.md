@@ -31,12 +31,10 @@ This file provides specific context for AI assistants working with the `@study-l
   - [Development Pitfalls to Avoid](#development-pitfalls-to-avoid)
   - [Testing Approach](#testing-approach)
   - [Linting Approach](#linting-approach)
-  - [VS Code Setup](#vs-code-setup)
   - [Incremental TDD Workflow](#incremental-tdd-workflow)
-    - [Plan Constraints](#plan-constraints)
-    - [Per-Increment Steps](#per-increment-steps)
-    - [What NOT to Do](#what-not-to-do)
+    - [Claude-Specific Workflow Notes](#claude-specific-workflow-notes)
     - [Git: Humans Only](#git-humans-only)
+    - [Context Compaction Protocol](#context-compaction-protocol)
   - [When Working on This Codebase](#when-working-on-this-codebase)
   - [Safety Guardrails](#safety-guardrails)
     - [Risk Assessment](#risk-assessment)
@@ -44,18 +42,10 @@ This file provides specific context for AI assistants working with the `@study-l
     - [Intellectual Honesty](#intellectual-honesty)
     - [Defensive Development](#defensive-development)
     - [LLM Anti-Patterns (Resist These Tendencies)](#llm-anti-patterns-resist-these-tendencies)
-      - [Why LLMs Have These Biases](#why-llms-have-these-biases)
-      - [What Linting CAN'T Enforce](#what-linting-cant-enforce)
-      - [Anti-Patterns to Actively Resist](#anti-patterns-to-actively-resist)
-      - [Phrases Claude Should Use](#phrases-claude-should-use)
-    - [Linting as Guardrails Against LLM Slop](#linting-as-guardrails-against-llm-slop)
+    - [Linting as Guardrails](#linting-as-guardrails)
     - [Linting Errors as Teaching Moments](#linting-errors-as-teaching-moments)
 - [LLM Collaboration Conventions](#llm-collaboration-conventions)
-  - [Types as Generation Constraints](#types-as-generation-constraints)
-  - [Predictable File Naming Enables Discovery](#predictable-file-naming-enables-discovery)
-  - ["Why" Comments as Intent Signals](#why-comments-as-intent-signals)
-  - [Self-Documenting Error Messages](#self-documenting-error-messages)
-  - [Structural Consistency](#structural-consistency)
+  - [Code Organization for LLM Generation](#code-organization-for-llm-generation)
   - [Communication Discipline](#communication-discipline)
   - [Working with Claude](#working-with-claude)
 - [References](#references)
@@ -82,42 +72,36 @@ Each stage uses object-threading: receives an object, adds data, returns enriche
 
 #### 1. Export Conventions
 
-**EVERY internal file** exports exactly ONE thing as default, using named-then-export pattern:
+- **One default export per file**: Named function/const, then `export default` at bottom
+- **No barrel files**: Import directly from source files (no `index.ts` re-exports except `/src/index.ts`)
+- **Always `.js` extension** in imports
 
 ```javascript
-// ✅ CORRECT - Named function, then export (better tooling support)
+// ✅ CORRECT
 function myFunction() { ... }
-
 export default myFunction;
 
-// ✅ CORRECT - Constants follow same pattern
-const MY_CONSTANT = Symbol('description');
-
-export default MY_CONSTANT;
-
-// ❌ WRONG - Inline default (poor debugger/IDE support)
-export default function myFunction() { ... }
-
-// ❌ WRONG - Named exports in internal files
-export function myFunction() { ... }
+// ❌ WRONG
+export default function() { ... }  // inline default
+export function myFunction() { ... }  // named export
+import { x } from './index.js';  // barrel import
 ```
 
-**NO BARREL FILES**: Import directly from the file that defines it. No `index.ts` re-exports except `/src/index.ts`.
-
-```javascript
-// ✅ CORRECT - Direct imports
-import createConfig from './configuring/create.js';
-import applyPreset from './configuring/apply-preset.js';
-
-// ❌ WRONG - Barrel imports (except public API)
-import { createConfig, applyPreset } from './configuring/index.js';
-```
-
-**EXCEPTION**: Only `/src/index.ts` has named exports for public API flexibility.
+See DEV.md §1. Export Conventions for full rationale.
 
 #### Type Location
 
-Types live in `<module>/types.ts` with the code they document. See DEV.md § Type Location Convention.
+Types live in `<module>/types.ts` with the code they document.
+
+| Location                | Purpose                                   |
+| ----------------------- | ----------------------------------------- |
+| `src/<module>/types.ts` | Types for that module                     |
+| `src/types.ts`          | Type map (namespace barrel for discovery) |
+| `src/index.ts`          | Re-exports public types for consumers     |
+
+Internal code imports directly from module's `types.ts`. The `/src/types.ts` file is a **namespace barrel** that serves as a "table of contents" — open it to see which modules have types.
+
+See DEV.md § Type Location Convention for full details.
 
 #### 2. Object-Threading Pattern
 
@@ -230,24 +214,7 @@ Use `let` only when reassignment is genuinely needed (loop counters, accumulator
 
 ### Type System
 
-Uses full TypeScript types:
-
-```typescript
-// Base types for composition
-type ConfiguredInput<T = {}> = T & { readonly config: ExpandedConfig };
-
-// Function overloads for currying
-function embody(input: {
-  readonly config: UserConfig | string;
-  readonly code: string;
-}): TraceResult;
-function embody(input: {
-  readonly config: UserConfig | string;
-}): (input: { readonly code: string }) => TraceResult;
-function embody(input: {
-  readonly code: string;
-}): (input: { readonly config?: UserConfig | string }) => TraceResult;
-```
+Full TypeScript types with function overloads for currying support. See `src/types/api.ts` for type definitions.
 
 ### Educational Context
 
@@ -289,66 +256,33 @@ See DEV.md § Linting Conventions for full details. Summary:
 - Manual review for: default `= {}` params, verb-first naming, file granularity, comment quality
 - Run `npm run validate` to check all three tools at once
 
-### VS Code Setup
-
-The `.vscode/` directory provides workspace configuration for consistent development:
-
-- **settings.json** — Format-on-save, ESLint auto-fix, word wrap at 100 chars, `.js` import extensions
-- **extensions.json** — Recommended extensions (ESLint, Prettier, EditorConfig, Jest, spell checker, pretty TS errors)
-- **launch.json** — Debug configurations for tests and scripts
-
-Open VS Code → install recommended extensions when prompted → editor is configured.
-
-Debug configurations:
-
-- **Debug Current Test File** — open a `.test.ts` file, press F5
-- **Debug All Tests** — run full suite with breakpoints
-- **Debug Current Script** — debug any `.ts`/`.js` file directly
-
 ### Incremental TDD Workflow
 
-All development plans MUST use TDD and incremental development. One unit test = one increment of work.
+All development uses TDD with atomic increments. See DEV.md § Incremental Development Workflow for the full process.
 
-#### Plan Constraints
+#### Claude-Specific Workflow Notes
+
+**Plan constraints:**
 
 - Plans MUST NOT include already-implemented functions — code is developed incrementally
-- Plans start with a brief context line referencing completed work ("building on existing `fillConfig`"), then list ONLY unimplemented work
-- Each passing TDD cycle = one atomic commit on a feature branch. Claude prompts the user; the user executes.
-- Before starting work, Claude must verify understanding with the user: what will be built, what constraints apply, what success looks like
-- Before writing any code, explain in plain language what you're about to do and why — this gives the user a chance to course-correct before code exists
+- Plans start with a brief context line referencing completed work, then list ONLY unimplemented work
+- **Plans describe BEHAVIOR, not code** — never include full implementations in plans. TDD discovers implementation. Example: "expand boolean shorthand to full object structure" is correct; pasting the actual code is wrong
+- Before starting work, verify understanding with the user: what will be built, what constraints apply, what success looks like
+- Before writing any code, explain in plain language what you're about to do and why
 
-#### Per-Increment Steps
+**During TDD cycles:**
 
-For each small unit of behavior (one unit test):
+- Run lint checkpoints on specific modified files, not the whole codebase: `npm run lint <file>`
+- At step 12 (self-review): Run through LLM Anti-Pattern Checklist. Reality check: did I run it? Did I trigger the exact behavior I changed? Would I bet $100 this works? Flag what you're least confident about for the user to review.
+- At step 13: Show actual output from quality checks — don't just claim "tests pass"
 
-1. **JSDoc** — document the behavioral contract first
-2. **Stub function** — create the function with stub body matching the contract
-3. **Placeholder types** — `any`/`unknown` or more detailed if already known; types should help prototyping, not hinder it
-4. **🔍 Lint checkpoint 1** — run `npm run lint` on the new file. Fix any violations before proceeding (catches naming, imports, structure early). Repeat until there are no errors, and warnings are acceptable.
-5. **Unit test** — write ONE failing test for the behavior
-6. **🔍 Lint checkpoint 2** — run `npm run lint` on test file. Fix violations. Repeat until there are no errors, and warnings are acceptable.
-7. **Implement** — write minimal code to pass the test (Red → Green)
-8. **🔍 Lint checkpoint 3** — run `npm run lint` on implementation. Fix violations. Re-run tests to ensure fixes didn't break behavior. Repeat until there are no errors, and warnings are acceptable.
-9. **Refactor** — clean up while tests stay green. **Use linter feedback as refactoring guide**: `cognitive-complexity` error? Break into smaller functions. `prefer-immediate-return`? Inline unnecessary variable. `no-duplicate-string`? Extract constant.
-10. **🔍 Lint checkpoint 4** — run `npm run lint` one final time. Should be clean. If not, refactor violated conventions — revert refactor and try different approach. Re-run linting to ensure fixes didn't break behavior. Repeat until there are no errors, and warnings are acceptable.
-11. **Update types** — finalize/tighten types based on actual implementation
-12. **Self-review** — Run through LLM Anti-Pattern Checklist (see below): simplest solution? only what requested? helpers used >1x? validate at boundaries only? Check conventions: KISS? junior-maintainable? fits existing patterns? Review changes as unified diff (catches accidental deletions). Reality check: did I run it? Did I trigger the exact behavior I changed? Would I bet $100 this works? Flag what you're least confident about for the user to review.
-13. **Code quality checks** — run `npm test && npm run lint && npm run type-check`. Show the actual output — don't just claim "tests pass." All must pass.
-14. **Update docs** — update ALL-CAPS.md files (CLAUDE.md, DEV.md) AND directory-level README.md/DOCS.md in affected directories after each passing increment
-15. **Session handoff** — before ending a session, ensure ALL-CAPS.md docs reflect current state, note in any plan file what's done and what's left, and prompt the user to commit
-16. **Atomic commit** — Claude prompts the user to commit this single behavior with a descriptive message (e.g., `add: fillConfig expands boolean shorthand`)
+**Git prompts** (Claude prompts, user executes):
 
-Before starting a planned batch of work, Claude prompts the user to create a feature branch. After the last increment, Claude prompts the user to push and consider a PR or merge to main.
+- Before a sprint: "Create a feature branch from main for this work"
+- After each passing TDD cycle: "Ready for atomic commit: `add: [description]`"
+- After the last increment: "Sprint complete — ready to push and open a PR or merge to main"
 
-#### What NOT to Do
-
-- No planning functions that already exist
-- No implementing multiple behaviors before testing
-- No skipping the refactor step
-- No skipping doc updates ("I'll do it at the end")
-- No placeholder types that block test-writing — loosen types to unblock, tighten after
-- Each edit should do exactly one thing — if you notice something else to fix, note it and do it separately
-- Claude must interrupt and redirect if the user tries to skip planning, documentation, tests, or quality checks — even if they insist
+**Interrupt and redirect** if the user tries to skip planning, documentation, tests, or quality checks — even if they insist.
 
 #### Git: Humans Only
 
@@ -367,6 +301,58 @@ Claude MUST NOT run any git command that creates, modifies, or deletes history. 
 - **Before a sprint:** "Create a feature branch from main for this work"
 - **After each passing TDD cycle:** "This increment passes all checks — ready for an atomic commit: `add: [one-line description of the behavior]`"
 - **After the last increment:** "Sprint complete — ready to push and open a PR or merge to main"
+
+### Context Compaction Protocol
+
+Long sessions hit context limits, triggering automatic summarization. Claude must proactively manage this to minimize context loss.
+
+#### Trigger Mechanisms
+
+**Proactive (Claude's judgment):**
+
+- ~80% through estimated context window
+- Long multi-file implementation sessions
+- After 10+ incremental commits without break
+- Conversation dense with code diffs and file reads
+
+**User-initiated:**
+
+- User says `/checkpoint`, "context check", or similar
+- User explicitly asks about context capacity
+
+#### Compaction Preparation Checklist
+
+When context is approaching capacity, Claude MUST:
+
+1. **Update plan file** — capture current state, what's done, what's left
+2. **Update docs** — ensure CLAUDE.md/DEV.md/README.md reflect current reality
+3. **Prompt user to commit** — atomic checkpoint before compaction
+4. **Summarize active context** — write session summary to plan file:
+   - Current branch and recent commits
+   - Files being modified
+   - Open questions or blockers
+   - Next immediate task
+5. **Alert the user** with this format:
+
+```text
+⚠️ Context approaching capacity.
+
+I've documented the current state:
+- Plan file: [path]
+- Branch: [current branch]
+- Last commit: [summary]
+- Next task: [what's next]
+
+Ready for session handoff or continuation after compaction.
+```
+
+#### Post-Compaction Recovery
+
+After context resets (new session or compaction):
+
+1. Re-read CLAUDE.md, DEV.md, relevant README.md files
+2. Read plan file to restore session context
+3. Verify understanding with user before resuming: "Based on the plan file, I understand we were working on X. Is that correct?"
 
 ### When Working on This Codebase
 
@@ -420,163 +406,17 @@ Never edit a file without reading it first in the current session — mental mod
 
 #### LLM Anti-Patterns (Resist These Tendencies)
 
-##### Why LLMs Have These Biases
+LLMs have documented failure modes from training data biases. Actively resist:
 
-Claude and other LLMs develop these tendencies from training data and prediction mechanics:
+| Anti-Pattern         | Rule                             | Example Fix                                     |
+| -------------------- | -------------------------------- | ----------------------------------------------- |
+| **Over-engineering** | Helper used once? Inline it      | `const x = getX(o)` → `const x = o.x`           |
+| **Class addiction**  | Linter blocks, but check first   | `class X` → `function createX()`                |
+| **Future-proofing**  | User didn't ask? Don't add it    | `options = {}` with unused fields → direct impl |
+| **Defensive coding** | Validate at boundaries only      | Remove internal re-validation                   |
+| **Verbose docs**     | Name + types explain? Skip JSDoc | Only document WHY or non-obvious contracts      |
 
-- **Training on enterprise codebases** (Spring, .NET, Angular) → defaults to OOP patterns (classes, inheritance)
-- **Prediction bias toward "more code"** → longer completions score higher in training
-- **Pattern completion instinct** → favors familiar structures (classes, try-catch everywhere, config objects)
-- **No inherent cost function for simplicity** → doesn't "feel" the burden of maintaining complex code
-
-##### What Linting CAN'T Enforce
-
-Linting catches syntax-level issues. These architectural anti-patterns require active resistance:
-
-- Creating unnecessary abstractions for single-use code
-- Adding features that weren't requested ("nice-to-haves", future-proofing)
-- Building "extensible" systems for one use case
-- Premature optimization before profiling
-- Over-generalizing specific solutions into generic frameworks
-- Verbose documentation for trivial code
-
-##### Anti-Patterns to Actively Resist
-
-Claude and other LLMs have documented failure modes. Actively resist these patterns:
-
-**Over-Engineering Addiction**
-
-Don't create abstractions, helpers, or configs for one-time operations.
-
-```javascript
-// ❌ BAD - Helper used exactly once
-function extractPresetName(config) {
-  return config?.preset ?? 'detailed';
-}
-const preset = extractPresetName(userConfig);
-
-// ✓ GOOD - Inline when used once
-const preset = userConfig?.preset ?? 'detailed';
-```
-
-**Rule**: If a helper is called exactly once, inline it. No exceptions.
-
-**Class Addiction**
-
-Linter blocks classes, but check before proposing.
-
-```javascript
-// ❌ BAD - Unnecessary class
-class ConfigManager {
-  constructor(defaults) {
-    this.defaults = defaults;
-  }
-  create(userConfig) {
-    return { ...this.defaults, ...userConfig };
-  }
-}
-
-// ✓ GOOD - Simple function
-function createConfig(userConfig, defaults) {
-  return { ...defaults, ...userConfig };
-}
-```
-
-**Future-Proofing Addiction**
-
-Don't add configuration, extensibility, or feature flags for non-existent requirements.
-
-```javascript
-// ❌ BAD - Config for non-existent variants
-function process(input, options = {}) {
-  const { mode = 'default', strategy = 'simple', fallback = null } = options;
-  // Only 'default' mode ever used
-}
-
-// ✓ GOOD - YAGNI (You Aren't Gonna Need It)
-function process(input) {
-  // Direct implementation
-}
-```
-
-**Rule**: If the user didn't ask for configurability, don't add it.
-
-**Defensive Coding Addiction**
-
-Only validate at system boundaries (user input, external APIs). Trust internal code.
-
-```javascript
-// ❌ BAD - Validating internal call
-function processConfig(config) {
-  if (!config || typeof config !== 'object') throw new Error('Invalid');
-  // This is INTERNAL, called by fillConfig which already validated
-}
-
-// ✓ GOOD - Validate at boundary only
-function fillConfig(userInput) {
-  if (typeof userInput !== 'object') throw new Error('Config must be object');
-  return processConfig(userInput); // Internal call, no re-validation
-}
-```
-
-**Verbose Documentation Addiction**
-
-Don't write paragraph-length JSDoc for trivial operations. Self-documenting code > verbose comments.
-
-```javascript
-// ❌ BAD - Verbose JSDoc for trivial function
-/**
- * Extracts the preset name from the configuration object.
- * This function takes a config object and returns the preset property value.
- * If the preset property is not found or is undefined, it returns the default
- * value 'detailed' which represents the balanced intermediate configuration.
- * @param {Object} config - The configuration object containing preset information
- * @returns {string} The preset name, defaulting to 'detailed'
- */
-function getPresetName(config) {
-  return config?.preset ?? 'detailed';
-}
-
-// ✓ GOOD - Code is self-documenting, brief comment if needed
-function getPresetName(config) {
-  return config?.preset ?? 'detailed';
-}
-
-// ✓ GOOD - JSDoc for public API with non-obvious behavior
-/**
- * Instruments code and collects execution trace.
- * Async functions return promises; sync code returns trace immediately.
- */
-function trace(code, config) { ... }
-```
-
-Rule: If the function name and types fully explain what it does, no comment needed. Only document WHY or non-obvious contracts.
-
-##### Phrases Claude Should Use
-
-**When user asks for unnecessary features:**
-
-- "That's future-proofing for a scenario that doesn't exist. YAGNI applies here."
-- "That adds configuration for a single use case. Let's implement the specific thing directly."
-- "That's abstracting before we have multiple concrete examples. Wait for the second use case."
-- "That's defensive validation for internal code we control. Only validate at boundaries."
-
-**When self-correcting over-engineering:**
-
-- "Actually, this is over-engineered. Let me simplify."
-- "I was about to create a helper for one call site. Inlining instead."
-- "I caught myself adding config fields that aren't needed. Implementing specific solution."
-- "That's my class addiction showing. Using a factory function instead."
-- "I'm about to future-proof this. Stopping — implement only what's requested."
-
-**When linter catches mistakes:**
-
-- "Linter caught my class addiction — converting to factory function."
-- "Cognitive complexity error flagged this function. Breaking into smaller pieces."
-- "Linter caught forEach — converting to for-of loop for side effects."
-- "prefer-immediate-return caught unnecessary variable. Inlining return."
-
-**LLM Anti-Pattern Checklist**
+##### Pre-Proposal Checklist
 
 Before proposing code, answer YES to ALL:
 
@@ -585,161 +425,37 @@ Before proposing code, answer YES to ALL:
 - [ ] **Helpers used >1x?** If used once, inline it
 - [ ] **Validate at boundaries only?** No re-validating internal calls
 - [ ] **Junior-maintainable?** Understandable without explanation
-- [ ] **Refusing banned patterns?** No classes, switch, forEach
-- [ ] **No over-engineering?** No config objects for single-use code
 
-If ANY answer is NO → simplify before proposing.
+**If proposing ANY of these, STOP and simplify:**
+Classes, single-use helpers, unused config fields, internal error handling, backwards-compat shims for new code, `_unused` parameter renames, generic solutions when specific works.
 
-**Emergency Brake: Am I Over-Engineering?**
-
-If you're about to propose code with ANY of these, **STOP** and simplify:
-
-- A class (linter blocks this, but check first)
-- A helper function used exactly once
-- A configuration object with unused fields
-- Error handling for internal function calls
-- Backwards compatibility shims for first-time implementation (there's no "backwards" yet!)
-- Keeping old unused code "just in case" (delete it, git remembers)
-- Renaming unused parameters to `_unused` instead of deleting them
-- Generic/abstract solution when specific works
-- Comments explaining trivial code ("increment counter")
-
-**Self-Correcting Phrases**
-
-When catching yourself over-engineering:
+**Self-correction phrases:**
 
 - "Actually, this is over-engineered. Let me simplify."
 - "I was about to create a helper for one call site. Inlining instead."
-- "That's future-proofing for a scenario that doesn't exist. Implementing only what's needed."
+- "That's future-proofing for a scenario that doesn't exist."
 
-### Linting as Guardrails Against LLM Slop
+### Linting as Guardrails
 
-**Context:** Many contributors are JS novices using AI assistants (Claude, etc.) to develop. Linting serves dual purposes:
-
-1. **Enforcement** — catch errors, enforce conventions
-2. **Teaching** — guide novices toward better JS patterns
-
-Linting blocks common LLM failure modes (forEach addiction, class addiction, defensive over-validation) and creates teaching moments when novices hit errors.
-
-**For Claude:** When linting errors occur, offer teaching moments.
+Linting blocks common LLM failure modes (forEach addiction, class addiction, defensive over-validation). See DEV.md §Linting Conventions for rule details.
 
 ### Linting Errors as Teaching Moments
 
-**When contributor hits a linting error:**
-
-1. **Explain WHAT and WHY** (not just HOW to fix)
-   - "This rule (`unicorn/no-array-for-each`) catches a common pattern..."
-   - "The WHY: loops make side effects explicit, array methods are for transformations"
-   - "In JS, `.forEach()` looks functional but can't break/return early"
-
-2. **Offer teaching moment:**
-   - "Would you like me to explain the JS concept behind this rule?"
-   - "I can show you examples of when to use loops vs array methods"
-   - "Want to understand why this pattern is preferred in this codebase?"
-
-3. **Keep it brief by default, expand on request:**
-   - Initial explanation: 2-3 sentences
-   - If they ask "why": teach the JS concept
-   - If they ask "how": show the fix + why it's better
-
-**Common linting errors to teach:**
-
-- **`unicorn/no-array-for-each`**: Imperative (loops) vs functional (map/filter/reduce) programming. `.forEach()` looks functional but behaves imperatively - you can't break early, can't return values, and it's slower than loops. JS has both paradigms; we use them deliberately.
-- **`prefer-template`**: String concatenation semantics, why `+` is for math. Template literals keep `+` operator exclusively for arithmetic, reducing ambiguity and type coercion bugs.
-- **`arrow-body-style`**: Implicit vs explicit returns, when arrows are appropriate. Arrow functions with implicit returns are concise for transformations; explicit return blocks signal "this does more than transform."
-- **`func-names`**: Hoisting, call stacks, debugging. Named function declarations hoist, improving stack traces and allowing top-down reading. Anonymous arrows don't hoist and show as `<anonymous>` in errors.
-- **`functional/no-this-expressions`**: Context binding, closures, why `this` is confusing. `this` binding changes based on call-site, leading to bugs. Closures over parameters are explicit and predictable.
-- **`sonarjs/cognitive-complexity`**: Code complexity, readable code, breaking down problems. High cognitive complexity means too many nested conditions/loops. Break into smaller, named functions that each do one thing.
-- **`sonarjs/no-duplicate-string`**: Magic strings vs constants. Repeated strings should be named constants for searchability, refactorability, and documentation.
-
-**Example interaction:**
-
-```
-Contributor: "I'm getting a linting error about forEach"
-
-Claude: "That's the `unicorn/no-array-for-each` rule. Quick explanation: In this
-codebase, we use `for-of` loops for side effects (like logging, modifying external
-state) and array methods (`.map()`, `.filter()`) for transformations. The rule helps
-keep these patterns distinct.
-
-Would you like me to explain why this distinction matters in JS, or just show you how
-to fix it?"
-
-[If yes to teaching]: "Great! Here's the concept: `.forEach()` looks functional but
-behaves imperatively - you can't break early, can't return values, and it's slower
-than loops. JS has both paradigms, and we use them deliberately:
-- Loops (`for`, `for-of`) = imperative, side effects, can break/continue
-- Array methods (`.map()`, `.filter()`) = functional, transformations, return new values
-
-This makes code intent clear at a glance."
-```
-
-**Don't be patronizing:** Assume intelligence, explain concepts clearly, don't over-simplify.
+When linting errors occur, treat them as teaching opportunities — explain WHAT and WHY, not just how to fix. See DEV.md §Teaching Moments for Linting Errors for the full guide with common rules and example interactions.
 
 ## LLM Collaboration Conventions
 
-This codebase is maintained by humans and LLMs working together. These conventions
-help AI assistants generate correct, fitting code on the first attempt.
+This codebase is maintained by humans and LLMs working together.
 
-### Types as Generation Constraints
+### Code Organization for LLM Generation
 
-Complete TypeScript types prevent LLMs from guessing:
+The conventions in DEV.md are designed to help LLMs generate correct code on the first attempt:
 
-```typescript
-// ✅ GOOD - LLM knows exactly what to produce
-type ExpandedConfig = {
-  preset: PresetName;
-  variables: boolean;
-  flowControl: boolean;
-  expressions: boolean;
-};
-
-// ❌ VAGUE - LLM will guess field names and types
-type Config = Record<string, any>;
-```
-
-### Predictable File Naming Enables Discovery
-
-Consistent `kebab-case` filenames and one-concept-per-file means LLMs can predict where
-code lives without searching. `fill-config.ts` is discoverable; `utils.ts` is not.
-
-### "Why" Comments as Intent Signals
-
-LLMs parse syntax fine — they can't infer _intent_. Comments that explain "why" serve
-as intent signals that guide AI-generated modifications.
-
-```javascript
-// ❌ USELESS - describes syntax
-// Spread the input object
-return { ...input, config };
-
-// ✅ USEFUL - describes intent
-// Preserve all upstream pipeline data while adding our config
-return { ...input, config };
-```
-
-### Self-Documenting Error Messages
-
-Error messages should contain enough context to be debuggable by both humans and LLMs.
-Include what was expected, what was received, and where the error occurred.
-
-```javascript
-// ❌ VAGUE
-throw new Error('invalid config');
-
-// ✅ DEBUGGABLE
-throw new Error(
-  'fillConfig: expected preset to be one of "overview", "detailed", "exhaustive", got "' +
-    preset +
-    '"',
-);
-```
-
-### Structural Consistency
-
-Every file follows the same layout: imports → helpers → main function → export.
-This lets LLMs predict structure and generate code that fits without searching
-the codebase first.
+- **Complete TypeScript types** prevent guessing field names/types
+- **Predictable `kebab-case` filenames** enable discovery without searching
+- **"Why" comments** signal intent that syntax can't convey
+- **Self-documenting error messages** include context for debugging
+- **Structural consistency** (imports → helpers → main → export) enables prediction
 
 ### Communication Discipline
 
@@ -751,18 +467,17 @@ the codebase first.
 
 ### Working with Claude
 
-Contributing to this project is also a learning experience in human-LLM collaboration. To get the most from it:
-
 - Treat Claude as an iterative partner, not a one-shot solution
 - Save your state (git commit) before letting Claude make large changes — if it doesn't work, start fresh rather than wrestling with corrections
 - Core business logic needs close human oversight; peripheral features can run more autonomously
-- Look for transferable patterns: how functional approaches aid reasoning, how type systems encode domain knowledge, when abstraction helps vs hurts, how process discipline scales across complexity
 
 ## References
 
 - [Aran Framework](https://github.com/lachrist/aran) - AST instrumentation
 - [ECMAScript Specification](https://tc39.es/ecma262/) - Language semantics
-- See DEV.md for architecture and code conventions
+- See DEV.md for architecture and code conventions (including error handling in §5)
 - See DOCS.md for API documentation
 - See src/api/README.md for API module overview and decision matrix
-- See config/README.md for configuration options
+- See src/errors/README.md for error classes and `instanceof` handling patterns
+- See src/configuring/README.md for configuration validation and options
+- See src/langs/README.md for language module conventions

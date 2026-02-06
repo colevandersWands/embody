@@ -8,6 +8,10 @@ Complete API reference and usage guide for the `@study-lenses/embody` execution 
   - [`embody`](#embody-code-config)
   - [`embodify`](#embodify-code-config-steps)
   - [Default Export](#default-export)
+- [Error Handling](#error-handling)
+  - [EmbodyError (Catch-All)](#embodyerror-catch-all)
+  - [Error Classes](#error-classes)
+  - [Handling Patterns](#handling-patterns)
 - [Configuration](#configuration)
   - [Presets](#presets)
   - [Configuration Options](#configuration-options)
@@ -132,9 +136,108 @@ const results = codes.map((c) => tracer.trace({ code: c }).steps);
 
 #### Full Documentation
 
-See [embodify API Reference](./src/api/embodify/DOCS.md) for complete documentation of every getter, method, cascade behavior, config resolution, and use case recipe.
+For detailed signatures and error reference of all API functions, see the [API module reference](./src/api/DOCS.md).
 
-For detailed signatures and error reference of the top-level entry points (`embody`, `pickles`), see the [API module reference](./src/api/DOCS.md).
+## Error Handling
+
+All embody errors extend `EmbodyError`, which lets you catch any library error with a single `instanceof` check while letting non-library errors propagate.
+
+### EmbodyError (Catch-All)
+
+**Purpose**: Base class that enables consumers to distinguish embody library errors from other errors.
+
+```typescript
+import { trace, EmbodyError } from '@study-lenses/embody';
+
+try {
+  const steps = await trace('chars', userCode);
+} catch (error) {
+  if (error instanceof EmbodyError) {
+    // Any embody error — handle gracefully
+    showUserError(error.message);
+  } else {
+    // Not our error — let it propagate (bugs, network errors, etc.)
+    throw error;
+  }
+}
+```
+
+**Key points**:
+
+- `EmbodyError` is never thrown directly — always use a specific subclass
+- All embody errors extend `EmbodyError` — `instanceof EmbodyError` catches any of them
+- Non-library errors should be re-thrown to preserve normal error handling
+
+### Error Classes
+
+| Error Class                   | Thrown By              | When                                    |
+| ----------------------------- | ---------------------- | --------------------------------------- |
+| `EmbodyError`                 | Never (base only)      | Marker class for `instanceof` catch-all |
+| `LangUnknownError`            | API layer              | Unknown language requested              |
+| `ConfigInvalidError`          | API layer              | Wrong types for `lang` or `code`        |
+| `OptionsSchemaInvalidError`   | `/configuring`         | Options don't match lang's JSON Schema  |
+| `OptionsSemanticInvalidError` | Lang's `verifyOptions` | Cross-field constraints violated        |
+| `ParseError`                  | Lang's `record`        | Code cannot be parsed                   |
+| `RuntimeError`                | Lang's `record`        | Execution fails during tracing          |
+| `LimitExceededError`          | Lang's `record`        | Execution limit exceeded                |
+| `InternalError`               | Any layer              | Unexpected internal error               |
+
+### Handling Patterns
+
+#### Catch-All (Recommended for UI)
+
+```typescript
+import { trace, EmbodyError } from '@study-lenses/embody';
+
+try {
+  const steps = await trace('chars', code);
+  render(steps);
+} catch (error) {
+  if (error instanceof EmbodyError) {
+    showError(error.message);
+  } else {
+    throw error;
+  }
+}
+```
+
+#### Specific Handling
+
+```typescript
+import { trace, EmbodyError, ParseError, LangUnknownError } from '@study-lenses/embody';
+
+try {
+  const steps = await trace(lang, code);
+} catch (error) {
+  if (error instanceof ParseError) {
+    highlightErrorLine(error.loc.line, error.loc.column);
+    showError(`Syntax error: ${error.message}`);
+  } else if (error instanceof LangUnknownError) {
+    showError(`Language "${error.lang}" is not supported`);
+  } else if (error instanceof EmbodyError) {
+    showError(error.message);
+  } else {
+    throw error;
+  }
+}
+```
+
+#### Safe APIs (No Try-Catch)
+
+```typescript
+import { embody } from '@study-lenses/embody';
+
+const result = await embody({ lang: 'chars', code, config: null });
+
+if (result.ok) {
+  render(result.steps);
+} else {
+  // result.error is an EmbodyError subclass
+  showError(result.error.message);
+}
+```
+
+For complete error class documentation, see [src/errors/DOCS.md](./src/errors/DOCS.md).
 
 ## Configuration
 
@@ -239,7 +342,7 @@ const { config } = fillConfig({ config: userConfig });
 const { steps } = record({ code, config });
 ```
 
-For complete technical documentation of each pipeline function, including signatures, parameters, error handling, and the object-threading pattern, see [tracing module documentation](./src/api/tracing/DOCS.md).
+For complete API documentation including error handling, see the [API reference](./src/api/DOCS.md).
 
 ### Currying Patterns
 
@@ -295,7 +398,7 @@ Key differences from `embody()`:
 - **Granular control** — trace as separate step
 - **Built-in serialization** via `.pickledSteps` and `.pickledConfig`
 
-See [embodify module documentation](./src/api/embodify/README.md) for design principles and full API surface.
+See the [API module documentation](./src/api/DOCS.md) for complete reference.
 
 ### Object-Threading
 

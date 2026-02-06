@@ -47,12 +47,14 @@ function deepMerge<T>(preset: T, user: unknown): T {
   }
 
   // If preset is not an object, user value wins
+  // eslint-disable-next-line sonarjs/different-types-comparison -- T is generic, can be primitive
   if (preset === null || preset === undefined || typeof preset !== 'object') {
     return user as T;
   }
 
   // Arrays: user array completely replaces preset array (no element merging)
   if (Array.isArray(user)) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- Generic utility pattern
     return [...user] as T;
   }
 
@@ -61,37 +63,33 @@ function deepMerge<T>(preset: T, user: unknown): T {
     return user as T;
   }
 
-  // Both are objects: deep merge recursively
+  // Both are objects: deep merge via map + fromEntries (immutable)
   const presetObject = preset as Record<string, unknown>;
   const userObject = user as Record<string, unknown>;
-  const result: Record<string, unknown> = { ...presetObject };
 
-  for (const key in userObject) {
-    if (Object.prototype.hasOwnProperty.call(userObject, key)) {
-      if (
-        isObjectTypeAndNotNull(userObject[key]) &&
-        isObjectTypeAndNotNull(presetObject[key]) &&
-        isNotAnArray(userObject[key]) &&
-        isNotAnArray(presetObject[key])
-      ) {
-        // Both are non-null objects (not arrays): recurse
-        result[key] = deepMerge(presetObject[key], userObject[key]);
-      } else {
-        // User value wins: primitive, array, null, or type mismatch
-        result[key] = userObject[key];
-      }
-    }
-  }
+  const userEntries = Object.keys(userObject)
+    .filter((key) => Object.prototype.hasOwnProperty.call(userObject, key))
+    .map(
+      (key) =>
+        [
+          key,
+          isPlainObject(userObject[key]) && isPlainObject(presetObject[key])
+            ? deepMerge(presetObject[key], userObject[key])
+            : userObject[key],
+        ] as const,
+    );
 
-  return result as T;
+  // Preset entries first, then user entries overwrite
+  return Object.fromEntries([...Object.entries(presetObject), ...userEntries]) as T;
 }
 
-function isObjectTypeAndNotNull(thing) {
-  return typeof thing === 'object' && thing !== null;
-}
-
-function isNotAnArray(thing) {
-  return !Array.isArray(thing);
+function isPlainObject(thing: unknown): thing is Record<string, unknown> {
+  return (
+    typeof thing === 'object' &&
+    thing !== null &&
+    !Array.isArray(thing) &&
+    Object.getPrototypeOf(thing) === Object.prototype
+  );
 }
 
 export default deepMerge;

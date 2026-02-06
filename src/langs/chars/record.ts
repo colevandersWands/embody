@@ -5,115 +5,132 @@
  * based on direction configuration. Used for architecture validation.
  *
  * Error triggers for testing:
- * - EVENTS_INVALID: missing or wrong type for remove/replace/direction
  * - PARSE_ERROR: input contains interrobang (‽)
  * - RUNTIME_ERROR: input contains any emoji
  * - LIMIT_EXCEEDED: input exceeds maxLength
+ *
+ * Note: OPTIONS_SCHEMA_INVALID and OPTIONS_SEMANTIC_INVALID are thrown
+ * by /configuring and verify-options.ts respectively, not by record().
  */
 
-import { TraceError } from '../types.js';
+import LimitExceededError from '../../errors/limit-exceeded-error.js';
+import ParseError from '../../errors/parse-error.js';
+import RuntimeError from '../../errors/runtime-error.js';
+import type { MetaConfig, RecordResult } from '../types.js';
 
-import type { CharsEvents, CharsStep } from './types.js';
+import type { CharClass, CharsOptions, CharsStep } from './types.js';
 
 /** Regex to detect emoji characters */
 const EMOJI_REGEX = /\p{Emoji}/u;
 
 /**
- * Validates the events configuration.
- * Collects all field errors and throws EVENTS_INVALID with combined message.
+ * Classifies a character into a character class.
  */
-function validateEvents(config: unknown): asserts config is CharsEvents {
-  if (config === null || typeof config !== 'object') {
-    throw new TraceError('EVENTS_INVALID', 'events must be an object');
-  }
-
-  const c = config as Record<string, unknown>;
-  const errors: string[] = [];
-
-  if (!Array.isArray(c.remove)) {
-    errors.push('remove must be an array');
-  }
-
-  if (c.replace === null || typeof c.replace !== 'object') {
-    errors.push('replace must be an object');
-  }
-
-  if (c.direction !== 'lr' && c.direction !== 'rl') {
-    errors.push(`direction must be 'lr' or 'rl', got '${c.direction}'`);
-  }
-
-  if (errors.length > 0) {
-    throw new TraceError('EVENTS_INVALID', `Invalid events: ${errors.join('; ')}`);
-  }
+function getCharClass(char: string): CharClass {
+  if (/[a-z]/.test(char)) return 'lowercase';
+  if (/[A-Z]/.test(char)) return 'uppercase';
+  if (/\d/.test(char)) return 'number';
+  if (/[!-/:-@[-`{-~]/.test(char)) return 'punctuation';
+  return 'other';
 }
 
 /**
- * Records execution trace for chars language.
+ * Records execution trace for chars language (async for API consistency).
  * Treats input as a character sequence and produces steps for each character.
  *
+ * Internally sync but returns Promise for consistency with async langs (e.g., Python).
+ *
+ * Contract: Receives FULLY FILLED config from /configuring — never partial,
+ * never undefined fields. Langs can trust input completely and do pure tracing.
+ *
  * @param code - Source string to trace
- * @param config - Expanded chars configuration (events merged with defaults)
- * @returns Array of trace steps, one per character (after filtering)
- * @throws TraceError with appropriate code for validation/parse/runtime errors
+ * @param config - Configuration object with meta (execution limits) and options (lang-specific)
+ * @returns Promise resolving to trace steps, one per character (after filtering)
+ * @throws ParseError, RuntimeError, or LimitExceededError
  */
-function record(code: string, config: CharsEvents): readonly CharsStep[] {
-  // Validate events structure
-  validateEvents(config);
+// eslint-disable-next-line @typescript-eslint/require-await -- Async for API consistency with genuinely async langs
+async function record(
+  code: string,
+  config: { readonly meta: MetaConfig; readonly options: CharsOptions },
+): Promise<RecordResult<CharsStep>> {
+  const { meta, options } = config;
 
   // PARSE_ERROR: interrobang
   if (code.includes('‽')) {
     const index = code.indexOf('‽');
-    throw new TraceError('PARSE_ERROR', 'Unexpected interrobang (‽)', {
-      line: 1,
-      column: index + 1,
-    });
+    throw new ParseError('Unexpected interrobang (‽)', { line: 1, column: index + 1 });
   }
 
   // RUNTIME_ERROR: emoji
   const emojiMatch = EMOJI_REGEX.exec(code);
   if (emojiMatch) {
-    throw new TraceError('RUNTIME_ERROR', `Emoji not allowed: ${emojiMatch[0]}`, {
+    throw new RuntimeError(`Emoji not allowed: ${emojiMatch[0]}`, {
       line: 1,
       column: (emojiMatch.index ?? 0) + 1,
     });
   }
 
-  // LIMIT_EXCEEDED: maxLength
-  if (config.maxLength !== undefined && code.length > config.maxLength) {
-    throw new TraceError(
-      'LIMIT_EXCEEDED',
-      `Input length ${code.length} exceeds maxLength ${config.maxLength}`,
+  // LIMIT_EXCEEDED: maxLength (lang-specific limit)
+  if (options.maxLength !== undefined && code.length > options.maxLength) {
+    throw new LimitExceededError(
+      `Input length ${code.length} exceeds maxLength ${options.maxLength}`,
+      'maxLength',
+      code.length,
+    );
+  }
+
+  // LIMIT_EXCEEDED: meta.max.steps (cross-lang limit)
+  // For chars, input length is a proxy for max steps
+  if (meta.max.steps !== null && code.length > meta.max.steps) {
+    throw new LimitExceededError(
+      `Input length ${code.length} exceeds max steps ${meta.max.steps}`,
+      'steps',
+      code.length,
     );
   }
 
   const chars = [...code];
-  const isReverse = config.direction === 'rl';
+  const isReverse = options.direction === 'rl';
   const { length } = chars;
 
-  const steps: CharsStep[] = [];
-  let stepNumber = 1;
-
-  for (let position = 0; position < length; position += 1) {
+  // Process a single position, returning step data or null if filtered
+  function processPosition(
+    position: number,
+  ): { readonly loc: { readonly line: 1; readonly column: number }; readonly char: string } | null {
     const index = isReverse ? length - 1 - position : position;
     const originalChar = chars[index];
 
-    if (config.remove.includes(originalChar)) {
-      continue;
-    }
+    // Filter by remove list
+    if (options.remove.includes(originalChar)) return null;
 
-    const char = config.replace[originalChar] ?? originalChar;
+    // Filter by character class
+    const charClass = getCharClass(originalChar);
+    if (!options.allowedCharClasses[charClass]) return null;
 
+    const char = options.replace[originalChar] ?? originalChar;
     const column = position + 1;
-    steps.push({
-      step: stepNumber,
-      loc: { line: 1, column },
-      char,
-    });
 
-    stepNumber += 1;
+    return { loc: { line: 1, column }, char };
   }
 
-  return steps;
+  // Step data type after filtering nulls
+  type StepData = {
+    readonly loc: { readonly line: 1; readonly column: number };
+    readonly char: string;
+  };
+
+  // Type guard for filtering nulls
+  function isStep(item: ReturnType<typeof processPosition>): item is StepData {
+    return item !== null;
+  }
+
+  // Build steps immutably: map → filter → add step numbers
+  const steps = chars
+    .map((_, position) => processPosition(position))
+    .filter((item) => isStep(item))
+    .map((item, index) => ({ step: index + 1, ...item }));
+
+  return { steps, config: { meta, options } };
 }
 
 export default record;

@@ -14,9 +14,21 @@ import type { StepCore } from '../types.js';
 type Direction = 'lr' | 'rl';
 
 /**
- * Configuration for chars tracing behavior.
+ * Character class categories for filtering.
  */
-type CharsEvents = {
+type CharClass = 'lowercase' | 'uppercase' | 'number' | 'punctuation' | 'other';
+
+/**
+ * Which character classes to include in output steps.
+ */
+type AllowedCharClasses = {
+  readonly [K in CharClass]: boolean;
+};
+
+/**
+ * Lang-specific options for chars tracing behavior.
+ */
+type CharsOptions = {
   /** Characters to exclude from output steps */
   readonly remove: readonly string[];
   /** Character substitutions (original → replacement) */
@@ -25,6 +37,8 @@ type CharsEvents = {
   readonly direction: Direction;
   /** Optional max length for testing LIMIT_EXCEEDED */
   readonly maxLength?: number;
+  /** Which character classes to include */
+  readonly allowedCharClasses: AllowedCharClasses;
 };
 
 /**
@@ -36,4 +50,4 @@ type CharsStep = StepCore & {
   readonly char: string;
 };
 
-export type { CharsEvents, CharsStep, Direction };
+export type { AllowedCharClasses, CharClass, CharsOptions, CharsStep, Direction };

@@ -35,7 +35,7 @@ Core dependency enabling educational tool developers to build Study Lenses - dif
 
 Success is measured by how many different educational innovations can be built on our neutral foundation. We provide the execution data. Educational tools provide the intelligence. Together, they create learning experiences.
 
-**We don't decide how youto teach programming** - we provide the data foundation that lets educational innovators build whatever teaching approaches they envision.
+**We don't decide how to teach programming** - we provide the data foundation that lets educational innovators build whatever teaching approaches they envision.
 
 Like how:
 
@@ -120,6 +120,26 @@ console.log(traced.steps); // Array of execution events
 console.log(traced.pickledSteps); // JSON string of steps
 ```
 
+```javascript
+// Error handling — all embody errors extend EmbodyError
+import { trace, EmbodyError, ParseError } from '@study-lenses/embody';
+
+try {
+  const steps = await trace('chars', userCode);
+} catch (error) {
+  if (error instanceof EmbodyError) {
+    // Handle any embody error gracefully
+    if (error instanceof ParseError) {
+      console.log(`Syntax error at line ${error.loc.line}`);
+    } else {
+      console.log(error.message);
+    }
+  } else {
+    throw error; // Re-throw non-library errors
+  }
+}
+```
+
 ## Key Features
 
 - **Configurable granularity**: From high-level function calls to detailed operator tracking
@@ -133,14 +153,14 @@ console.log(traced.pickledSteps); // JSON string of steps
 
 ```javascript
 // Reuse configuration
-const tracer = embody({ config: { presets: 'overview' } });
+const tracer = embody({ config: { options: { presets: 'overview' } } });
 const trace1 = tracer({ code: 'let x = 5' });
 const trace2 = tracer({ code: 'const y = 10' });
 
 // Chainable workflow for batch processing
 import { embodify } from '@study-lenses/embody';
 
-const tracer = embodify({ config: { presets: 'detailed' } });
+const tracer = embodify({ config: options: { presets: 'detailed' } });
 const results = codes.map((code) => tracer.trace({ code }).steps);
 ```
 
@@ -148,11 +168,11 @@ const results = codes.map((code) => tracer.trace({ code }).steps);
 
 - [**API Reference**](./DOCS.md) - Complete API documentation
 - [**API Module**](./src/api/README.md) - API entry points overview and decision matrix
-- [**embodify API**](./src/api/embodify/README.md) - Chainable pipeline wrapper
+- [**Error Handling**](./src/errors/README.md) - Error classes and handling patterns
+- [**Configuration**](./src/configuring/README.md) - Options validation and default-filling
+- [**Language Modules**](./src/langs/README.md) - Language-specific tracing implementations
 - [**Developer Guide**](./DEV.md) - Architecture and conventions
 - [**Code Conventions**](./DEV.md#codebase-conventions) - Coding standards and style guide
-- [**Tracing Pipeline**](./src/api/tracing/README.md) - Individual pipeline functions
-- [**Configuration**](./src/configuring/README.md) - Detailed configuration options
 - [**Contributing**](./CONTRIBUTING.md) - How to contribute
 
 **VS Code users**: Open the project and install recommended extensions when prompted. Format-on-save, linting, and debugging are pre-configured.

@@ -102,7 +102,14 @@
       "Bash(/usr/local/bin/npm run lint -- --no-warn-ignored src/langs/types.ts)",
       "Bash(/Users/master/.nvm/versions/node/v20.11.0/bin/npm --version)",
       "Bash(/opt/homebrew/bin/npm test -- --run src/langs/chars/tests/record.test.ts)",
-      "Bash(/usr/local/bin/npm --version)"
+      "Bash(/usr/local/bin/npm --version)",
+      "Bash(npx tsx:*)",
+      "Bash(npx markdownlint-cli2:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:www.jsboundaries.dev)",
+      "Bash(npx ts-node:*)",
+      "Bash(find:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

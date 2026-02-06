@@ -46,44 +46,38 @@ function deepClone<T>(value: T, visited = new WeakSet<object>()): T {
 
   // Handle Arrays
   if (Array.isArray(value)) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- Generic utility pattern
     return value.map((item) => deepClone(item, visited)) as T;
   }
 
-  // Handle Set
+  // Handle Set — construct from mapped spread
   if (value instanceof Set) {
-    const clonedSet = new Set();
-    for (const item of value) {
-      clonedSet.add(deepClone(item, visited));
-    }
-    return clonedSet as T;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- Generic utility pattern
+    return new Set([...value].map((item) => deepClone(item, visited))) as T;
   }
 
-  // Handle Map
+  // Handle Map — construct from mapped entries
   if (value instanceof Map) {
-    const clonedMap = new Map();
-    for (const [key, value_] of value.entries()) {
-      clonedMap.set(deepClone(key, visited), deepClone(value_, visited));
-    }
-    return clonedMap as T;
+    return new Map(
+      [...value.entries()].map(([k, v]) => [deepClone(k, visited), deepClone(v, visited)]),
+    ) as T;
   }
 
-  // Handle plain objects
-  const clonedObject: Record<string, unknown> = {};
+  // Handle plain objects — construct via Object.fromEntries
   const valueObject = value as Record<string, unknown>;
-  for (const key in valueObject) {
-    if (Object.prototype.hasOwnProperty.call(valueObject, key)) {
-      clonedObject[key] = deepClone(valueObject[key], visited);
-    }
-  }
+  const stringEntries = Object.keys(valueObject)
+    .filter((key) => Object.prototype.hasOwnProperty.call(valueObject, key))
+    .map((key) => [key, deepClone(valueObject[key], visited)] as const);
 
-  // Copy symbol properties if any
-  const symbols = Object.getOwnPropertySymbols(value as object);
-  for (const sym of symbols) {
-    const symKey = Symbol.keyFor(sym) ?? sym.toString();
-    clonedObject[symKey] = deepClone((value as Record<symbol, unknown>)[sym], visited);
-  }
+  const symbolEntries = Object.getOwnPropertySymbols(value as object).map(
+    (sym) =>
+      [
+        Symbol.keyFor(sym) ?? sym.toString(),
+        deepClone((value as Record<symbol, unknown>)[sym], visited),
+      ] as const,
+  );
 
-  return clonedObject as T;
+  return Object.fromEntries([...stringEntries, ...symbolEntries]) as T;
 }
 
 export default deepClone;

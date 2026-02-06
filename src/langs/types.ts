@@ -4,46 +4,14 @@
  * Defines the cross-language contract: StepCore fields that every
  * step must have, and the LangModule interface that every language
  * tracer must implement.
- */
-
-/**
- * Error codes for trace errors.
- */
-type TraceErrorCode =
-  | 'LANG_UNKNOWN'
-  | 'CONFIG_INVALID'
-  | 'EVENTS_INVALID'
-  | 'PARSE_ERROR'
-  | 'RUNTIME_ERROR'
-  | 'LIMIT_EXCEEDED'
-  | 'INTERNAL';
-
-/**
- * Structured error thrown by lang modules and the API layer.
- * Contains machine-readable code and human-readable message.
  *
- * Exception to no-classes rule: Error extension required for proper
- * stack traces, instanceof checks, and error handling semantics.
+ * Error classes are in /errors module — see src/errors/ for:
+ * - EmbodyError (base class for instanceof catch-all)
+ * - ParseError, RuntimeError, LimitExceededError (from langs)
+ * - ConfigInvalidError, LangUnknownError (from API layer)
+ * - OptionsSchemaInvalidError, OptionsSemanticInvalidError (from /configuring)
+ * - InternalError (catch-all wrapper)
  */
-// eslint-disable-next-line functional/no-classes
-class TraceError extends Error {
-  readonly code: TraceErrorCode;
-  readonly loc: { readonly line: number; readonly column: number } | undefined;
-
-  constructor(
-    code: TraceErrorCode,
-    message: string,
-    loc?: { readonly line: number; readonly column: number },
-  ) {
-    super(message);
-    // eslint-disable-next-line functional/no-this-expressions
-    this.name = 'TraceError';
-    // eslint-disable-next-line functional/no-this-expressions
-    this.code = code;
-    // eslint-disable-next-line functional/no-this-expressions
-    this.loc = loc;
-  }
-}
 
 /**
  * Core fields present in every step, regardless of language.
@@ -62,24 +30,78 @@ type StepCore = {
 };
 
 /**
- * Interface that every language module must implement.
- * Lang modules are data-only for config — they export `events`
- * (their defaults), and the API layer handles all merging.
+ * Execution limits within MetaConfig.
+ * All limits use `null` to mean "unlimited" (JSON Schema can't represent Infinity).
  */
-type LangModule<TEvents = unknown, TStep extends StepCore = StepCore> = {
-  /**
-   * Traces code execution and returns steps.
-   * @param code - Source code to trace
-   * @param config - Expanded configuration (already merged with defaults)
-   * @returns Array of trace steps
-   */
-  readonly record: (code: string, config: TEvents) => readonly TStep[];
-  /**
-   * Default events configuration for this language.
-   * Frozen at the dispatch layer to ensure immutability.
-   */
-  readonly events: TEvents;
+type MetaLimits = {
+  /** Maximum trace steps; null = unlimited */
+  readonly steps: number | null;
+  /** Maximum loop iterations; null = unlimited */
+  readonly iterations: number | null;
+  /** Maximum call stack depth; null = unlimited */
+  readonly callstack: number | null;
+  /** Maximum execution time in ms; null = unlimited */
+  readonly time: number | null;
 };
 
-export { TraceError };
-export type { LangModule, StepCore, TraceErrorCode };
+/**
+ * Cross-language execution limits and debugging options.
+ * Validated against `meta.schema.json`.
+ */
+type MetaConfig = {
+  /** Execution limits */
+  readonly max: MetaLimits;
+  /** Line range to trace [start, end]; null = full code */
+  readonly range: readonly [number, number] | null;
+  /** Whether to include timestamps in trace steps */
+  readonly timestamps: boolean;
+  /** Debug options */
+  readonly debug: { readonly ast: boolean };
+};
+
+/**
+ * Resolved config returned by record functions.
+ * Contains both meta limits and lang-specific options (all with defaults filled).
+ */
+type ResolvedConfig = {
+  /** Execution limits (fully filled) */
+  readonly meta: MetaConfig;
+  /** Lang-specific resolved options (with defaults filled) */
+  readonly options: Record<string, unknown>;
+};
+
+/**
+ * Result returned by record functions.
+ * Contains both steps and the resolved config that was used.
+ */
+type RecordResult<TStep extends StepCore = StepCore> = {
+  /** The trace steps */
+  readonly steps: readonly TStep[];
+  /** The resolved config (with lang defaults filled) */
+  readonly config: ResolvedConfig;
+};
+
+/**
+ * Lang module record function signature (async).
+ *
+ * **Contract**: Receives FULLY FILLED config from /configuring — never partial,
+ * never undefined fields. Langs can trust input completely and do pure tracing.
+ *
+ * What langs export:
+ * - `schema.json` — JSON Schema for options (REQUIRED)
+ * - `record` — This function (REQUIRED)
+ * - `verifyOptions` — Semantic validation (OPTIONAL)
+ *
+ * Async for consistency across all langs:
+ * - Some langs (chars) are internally sync but return Promise for API consistency
+ * - Other langs (Python via Pyodide) are genuinely async
+ *
+ * @param TOptions - Lang-specific options type (e.g., CharsOptions)
+ * @param TStep - Lang-specific step type extending StepCore
+ */
+type LangModule<TOptions = unknown, TStep extends StepCore = StepCore> = (
+  code: string,
+  config: { readonly meta: MetaConfig; readonly options: TOptions },
+) => Promise<RecordResult<TStep>>;
+
+export type { LangModule, MetaConfig, MetaLimits, RecordResult, ResolvedConfig, StepCore };

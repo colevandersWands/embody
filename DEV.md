@@ -12,6 +12,11 @@ Internal architecture, conventions, and implementation details for `@study-lense
 - [Development Workflow](#development-workflow)
 - [Testing Strategy](#testing-strategy)
 - [Performance Considerations](#performance-considerations)
+- [Incremental Development Workflow](#incremental-development-workflow)
+- [Linting Conventions](#linting-conventions)
+- [Module Boundaries](#module-boundaries)
+- [Code Quality Anti-Patterns](#code-quality-anti-patterns)
+- [VS Code Setup](#vs-code-setup)
 
 ## Architecture Overview
 
@@ -20,10 +25,19 @@ Internal architecture, conventions, and implementation details for `@study-lense
 The tracer follows a strict linear pipeline architecture:
 
 ```
-Input → fillConfig → record → Output
+Input → prepareConfig (meta + options) → dispatch → record → Output
 ```
 
-Each stage:
+The API layer coordinates:
+
+1. Validates lang/code types
+2. Prepares meta config: `prepareConfig(userMeta, metaSchema)`
+3. Prepares options: `prepareConfig(userOptions, langSchema)`
+4. Calls lang's verifyOptions (if exported)
+5. Passes `{ meta, options }` to lang's record function
+6. Returns steps to user
+
+Each pipeline stage:
 
 1. Receives an object with specific keys
 2. Processes its responsibility
@@ -54,7 +68,8 @@ Each stage:
 | Callback (non-trivial)        | Extract as named `function`, pass by name              |
 | Hoisting below call site      | Encouraged for readability                             |
 | `this` keyword                | **Banned** (functional codebase)                       |
-| Classes                       | **Banned** (use factory functions)                     |
+| Classes                       | **Banned** (exception: error classes in `/errors`)     |
+| Error handling                | Use `instanceof EmbodyError` for catch-all             |
 | Mutable closures              | **Banned** (instrumentation exception, same as `this`) |
 | Immutable closures            | OK (e.g. currying over cached config)                  |
 | Method shorthand in objects   | Allowed (`{ process() {} }`)                           |
@@ -114,37 +129,62 @@ import { embody, pipeline } from '@study-lenses/embody';
 
 Types live **with their module**, not in a centralized location.
 
-| Location                | Purpose                               |
-| ----------------------- | ------------------------------------- |
-| `src/<module>/types.ts` | Types for that module                 |
-| `src/types/api.ts`      | Public API types                      |
-| `src/index.ts`          | Re-exports public types (ONLY barrel) |
+| Location                | Purpose                                   |
+| ----------------------- | ----------------------------------------- |
+| `src/<module>/types.ts` | Types for that module                     |
+| `src/types.ts`          | Type map (namespace barrel for discovery) |
+| `src/index.ts`          | Re-exports public types for consumers     |
 
 **Rules:**
 
 1. Each module has its own `types.ts` (if needed)
 2. Types stay with the code they document (transparency, portability)
-3. NO type barrel files — import directly from source
-4. `/src/index.ts` re-exports ONLY consumer-facing types
+3. Internal code imports directly from module's `types.ts`
+4. `/src/types.ts` is a **namespace barrel** — exports submodule types under namespaces for discoverability
+5. `/src/index.ts` re-exports consumer-facing types (flat, no namespace)
 
-**Examples:**
+**The `/src/types.ts` namespace barrel:**
 
-```javascript
-// ✅ CORRECT - Direct import from module's types
+```typescript
+// /src/types.ts — Type map for discoverability
+export * as api from './api/types.js';
+export * as errors from './errors/types.js';
+export * as langs from './langs/types.js';
+export * as charsLang from './langs/chars/types.js';
+export * as configuring from './langs/js/configuring/types.js';
+```
+
+This is a **map**, not a flattening barrel. Each namespace preserves origin (`types.langs.StepCore`), making it easy to explore which modules have types and then drill into the source.
+
+**Import patterns:**
+
+```typescript
+// ✅ CORRECT - Direct import from module (preferred for internal code)
 import type { CallEvent } from '../instrument/types.js';
 
-// ✅ CORRECT - Public API import (consumers)
+// ✅ CORRECT - Namespace import for exploration/discovery
+import * as types from '../types.js';
+const step: types.langs.StepCore = { ... };
+
+// ✅ CORRECT - Destructured namespace for frequent use
+import { api, langs } from '../types.js';
+const result: api.TraceResult = { ... };
+
+// ✅ CORRECT - Public API import (external consumers)
 import type { Step, TraceResult } from '@study-lenses/embody';
 
-// ❌ WRONG - Barrel import from types folder
-import type { CallEvent } from '../types/index.js';
+// ❌ WRONG - Flattening barrel that hides origin
+import type { CallEvent } from '../types/index.js';  // Don't create these
 ```
+
+**Naming convention:** Language modules use `<name>Lang` suffix (e.g., `charsLang`) to distinguish them from other module types.
 
 **Rationale:**
 
 - Transparency: Types are discoverable where they're used
 - Portability: Renaming/moving folders doesn't break unrelated code
-- Consistency: Matches existing `README.md` and `DOCS.md` per module
+- Discoverability: `/src/types.ts` serves as a "table of contents" for types
+- Consistency: Parallels `/src/index.ts` as entry point for code
 
 ### 2.5. When `any` is OK
 
@@ -292,6 +332,53 @@ See the [ESLint Configuration](#eslint-configuration) section for full rule defi
 
 ### 5. Error Handling Strategy
 
+**Error Classes**: All library errors extend `EmbodyError` (in `/errors`). This enables
+catch-all handling while preserving specific error discrimination via `instanceof`.
+
+```javascript
+// Catch-all for any embody error
+try {
+  const steps = await trace('chars', code);
+} catch (error) {
+  if (error instanceof EmbodyError) {
+    showUserError(error.message); // Library error - handle gracefully
+  } else {
+    throw error; // Not ours - propagate
+  }
+}
+
+// Specific error handling
+try {
+  const steps = await trace('chars', code);
+} catch (error) {
+  if (error instanceof ParseError) {
+    highlightSyntaxError(error.loc);
+  } else if (error instanceof LangUnknownError) {
+    suggestAvailableLanguages(error.cause?.available);
+  }
+}
+```
+
+**Error Class Hierarchy** (flat, all extend `EmbodyError`):
+
+| Class                         | Thrown By            | When                            |
+| ----------------------------- | -------------------- | ------------------------------- |
+| `ParseError`                  | Lang modules         | Code parsing failed             |
+| `RuntimeError`                | Lang modules         | Code execution failed           |
+| `LimitExceededError`          | Lang modules         | Exceeded max steps/time         |
+| `OptionsSemanticInvalidError` | Lang `verifyOptions` | Cross-field constraint violated |
+| `OptionsSchemaInvalidError`   | `/configuring`       | Options don't match JSON Schema |
+| `ConfigInvalidError`          | API layer            | `lang`/`code` wrong type        |
+| `LangUnknownError`            | API layer            | Language not in dispatch        |
+| `InternalError`               | Any layer            | Unexpected error wrapper        |
+
+**Naming Convention**:
+
+- Library errors: `.name` = `'(EmbodyError) ClassName'` (e.g., `'(EmbodyError) LangUnknownError'`)
+- Code errors (ParseError, RuntimeError): `.name` = original error name (e.g., `'ParseError'`)
+
+**General Patterns**:
+
 ```javascript
 // Graceful degradation for config errors
 if (invalidConfig) {
@@ -299,9 +386,9 @@ if (invalidConfig) {
   return defaultValue;
 }
 
-// Fail fast for critical errors
+// Fail fast for critical errors (use specific error classes)
 if (!code) {
-  throw new Error('Code is required for instrumentation');
+  throw new ConfigInvalidError('code', 'Code is required for instrumentation');
 }
 ```
 
@@ -845,14 +932,49 @@ These functions currently return mock data (see unit tests for full behavioral c
 
 - `record({ code: 'abc' })` → `{ code: 'abc', config, steps: [{},{},{}] }` (one `{}` per character)
 - `serialize([{},{}])` → `'[{},{}]'` (JSON.stringify)
-- `deserialize({ steps, config })` → delegates to:
-  - `resolveSteps` (from `src/steps/`) for steps parsing/validation
-  - `parseJSON` (from `src/utils/`) for JSON string parsing
-  - `isExpandableObject` (from `configuring/utils/`) for config validation
-- `fillConfig({})` → `{ config: createConfig({}) }` (expands user config to full ExpandedConfig)
+- `deserialize({ steps, config })` → parses JSON strings and validates structure
 
-All tracing functions validate input types and throw self-documenting errors
-(e.g., `'instrument: expected code to be a string, got number'`).
+### Config Flow
+
+Config validation and default-filling use pure functions from `/configuring`. The **API layer** coordinates the flow:
+
+```text
+User config: { meta?: {...}, options?: {...} }
+    ↓
+API Layer (coordination)
+    ├── 1. Check lang exists (dispatch lookup)
+    ├── 2. Validate meta config
+    │       └── prepareConfig(userMeta, metaSchema) from /configuring
+    ├── 3. Validate options config
+    │       └── prepareConfig(userOptions, langSchema) from /configuring
+    ├── 4. Call lang's verifyOptions(filledOptions) if exported — throws OptionsSemanticInvalidError
+    ↓
+Fully-filled, validated { meta, options }
+    ↓
+Lang record(code, { meta, options }) — enforces limits, pure tracing
+```
+
+**User config structure**:
+
+| Part      | Schema                      | Purpose                      |
+| --------- | --------------------------- | ---------------------------- |
+| `meta`    | `/langs/meta.schema.json`   | Execution limits, timestamps |
+| `options` | `/langs/<lang>/schema.json` | Language-specific options    |
+
+**Recommended**: Use `prepareConfig(data, schema)` — wraps expand → fill → validate.
+
+**Individual functions** (for edge cases): All are pure, return data, pipeable:
+
+```typescript
+validateConfig(fillDefaults(expandShorthand(data, schema), schema), schema);
+```
+
+**Key insight**: `/configuring` imports ONLY from `/errors`. It receives `(data, schema)` — never `langId`. The API layer gets schemas from langs and passes them to configuring.
+
+See [/configuring README](./src/configuring/README.md) for details.
+
+All API functions validate input types and throw self-documenting errors
+(e.g., `'trace: expected lang to be string, got number'`).
 
 ## Development Workflow
 
@@ -1219,6 +1341,85 @@ describe('parseJSON', () => {
 
 1. **Config caching**: Reuse expanded configs via currying
 2. **Lazy evaluation**: Don't process disabled features
+
+## Incremental Development Workflow
+
+All development uses TDD with atomic increments. One unit test = one increment of work.
+
+### Phase 0: Documentation Specification (before any code)
+
+Documentation-driven development ensures clarity BEFORE code exists. This phase applies to ALL work — new features, bug fixes, and refactors.
+
+**0.1. Update README.md** — What does this module do? Where does it fit?
+
+- New modules: Create README.md with purpose and architecture
+- Existing modules: Update if change affects documented behavior
+- Bug fixes: Note if bug reveals documentation gap
+
+**0.2. Update DOCS.md** — Function signatures, parameters, return types, errors, examples
+
+- Document the function as if it already exists
+- This becomes the specification that code must fulfill
+
+**0.3. Update types.ts** — Type signatures are executable documentation
+
+- Update type definitions to reflect the new contract
+- Types ARE documentation: they specify behavior that code must fulfill
+- Type errors after this step become the TODO list for implementation
+- If changing existing types, this makes breaking changes explicit upfront
+
+**0.4. Review** — Confirm understanding before writing code
+
+### Phase 1: TDD Implementation
+
+For each behavioral increment:
+
+1. **JSDoc** — document the behavioral contract (mirrors DOCS.md)
+2. **Stub function** — create function with stub body
+3. **Placeholder types** — `any`/`unknown` to unblock; tighten later
+4. **🔍 Lint checkpoint 1** — `npm run lint <new-file>`. Fix violations.
+5. **Unit test** — write ONE failing test for the behavior
+6. **🔍 Lint checkpoint 2** — `npm run lint <test-file>`. Fix violations.
+7. **Implement** — minimal code to pass the test (Red → Green)
+8. **🔍 Lint checkpoint 3** — `npm run lint <impl-file>`. Fix violations.
+9. **Refactor** — clean up while tests stay green
+10. **🔍 Lint checkpoint 4** — final lint on modified files. Should be clean.
+11. **Update types** — finalize based on actual implementation
+12. **Self-review** — simplest solution? only what requested? junior-maintainable?
+13. **Quality checks** — `npm test && npm run lint && npm run type-check`
+14. **Verify docs match implementation** — update if behavior changed during TDD
+15. **Atomic commit** — one behavior per commit
+
+Use linter feedback as refactoring guide:
+
+- `cognitive-complexity` error? Break into smaller functions
+- `prefer-immediate-return`? Inline unnecessary variable
+- `no-duplicate-string`? Extract constant
+
+### Session Handoff
+
+Before ending a work session:
+
+1. Update plan file with current state, what's done, what's left
+2. Commit all completed increments
+3. Note any blockers or open questions
+
+### Atomic Commits
+
+Each passing TDD cycle = one atomic commit:
+
+- One behavior per commit
+- Descriptive message: `add: fillConfig expands boolean shorthand`
+- Feature branch for planned work batches
+
+### What NOT to Do
+
+- No implementing multiple behaviors before testing
+- No skipping the refactor step
+- No skipping doc updates ("I'll do it at the end")
+- No placeholder types that block test-writing — loosen types to unblock, tighten after
+- Each edit should do exactly one thing — if you notice something else to fix, note it and do it separately
+- **No full implementations in plans** — plans describe BEHAVIOR and INTENT, not code. Implementation is discovered through TDD. Example: plan says "expand boolean shorthand to full object structure", NOT the actual code that does it
 
 ## Linting Conventions
 
@@ -1621,6 +1822,149 @@ function createCounter() {
 ```
 
 See `.github/PULL_REQUEST_TEMPLATE.md` for the full manual review checklist.
+
+### Teaching Moments for Linting Errors
+
+Many contributors are JS novices using AI assistants to develop. When linting errors occur, treat them as teaching opportunities.
+
+**When a contributor hits a linting error:**
+
+1. **Explain WHAT and WHY** (not just HOW to fix)
+   - "This rule (`unicorn/no-array-for-each`) catches a common pattern..."
+   - "The WHY: loops make side effects explicit, array methods are for transformations"
+
+2. **Offer to expand:**
+   - "Would you like me to explain the JS concept behind this rule?"
+   - Keep it brief by default (2-3 sentences), expand on request
+
+**Common linting errors and what to teach:**
+
+| Rule                             | Concept to Teach                                                                                                                                          |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `unicorn/no-array-for-each`      | Imperative vs functional: `.forEach()` looks functional but can't break/return early. Use `for-of` for side effects, `.map()`/`.filter()` for transforms. |
+| `prefer-template`                | Keep `+` for math only. Template literals prevent type coercion bugs.                                                                                     |
+| `arrow-body-style`               | Implicit returns signal "pure transform"; braces signal "does more."                                                                                      |
+| `func-names`                     | Named functions improve stack traces and enable hoisting.                                                                                                 |
+| `functional/no-this-expressions` | `this` binding changes based on call-site. Closures are explicit.                                                                                         |
+| `sonarjs/cognitive-complexity`   | Too many nested conditions/loops. Break into smaller named functions.                                                                                     |
+| `sonarjs/no-duplicate-string`    | Magic strings → named constants for searchability and refactoring.                                                                                        |
+
+**Example interaction:**
+
+```text
+Contributor: "I'm getting a linting error about forEach"
+
+Claude: "That's `unicorn/no-array-for-each`. In this codebase, we use `for-of` loops
+for side effects and array methods for transformations. Want me to explain why?"
+```
+
+**Don't be patronizing:** Assume intelligence, explain concepts clearly, don't over-simplify.
+
+## Module Boundaries
+
+Import boundaries are enforced via `eslint-plugin-boundaries`. This catches architectural violations at lint time — both humans and LLMs get immediate feedback when breaking the layered architecture.
+
+### Layer Hierarchy
+
+| Layer         | Pattern             | Can Import From                                   |
+| ------------- | ------------------- | ------------------------------------------------- |
+| `entry`       | `src/index.ts`      | `api` only                                        |
+| `api`         | `src/api/*`         | `configuring`, `langs`, `error`, `utils`, `types` |
+| `configuring` | `src/configuring/*` | `error`, `utils`, `types`                         |
+| `langs`       | `src/langs/**/*`    | `error`, `utils`, `types`                         |
+| `error`       | `src/errors/*`      | `types` only                                      |
+| `utils`       | `src/utils/*`       | `utils` only (self-imports allowed)               |
+| `types`       | `src/types/*`       | nothing (leaf)                                    |
+
+**Key constraints:**
+
+- `utils` can import from other utils (e.g., `deep-freeze` uses `deep-clone`)
+- `types` is a true leaf — imports nothing from `src/`
+- `langs` cannot import from `api` (would create circular dependency)
+- `entry` (`src/index.ts`) only re-exports from `api`
+
+### Error Ownership
+
+Each layer can only import errors it's responsible for throwing:
+
+| Error Class                                                                       | Importable By            |
+| --------------------------------------------------------------------------------- | ------------------------ |
+| `EmbodyError`                                                                     | `api` only (base class)  |
+| `InternalError`                                                                   | any layer (escape hatch) |
+| `LangUnknownError`, `ConfigInvalidError`                                          | `api` only               |
+| `OptionsSchemaInvalidError`                                                       | `configuring` only       |
+| `OptionsSemanticInvalidError`, `ParseError`, `RuntimeError`, `LimitExceededError` | `langs` only             |
+| `types.ts` (`SourceLoc`)                                                          | any layer                |
+
+### Configuration
+
+The boundaries plugin requires `eslint-import-resolver-typescript` for TypeScript import resolution:
+
+```javascript
+// eslint.config.js
+settings: {
+  'import/resolver': {
+    typescript: {
+      alwaysTryTypes: true,
+    },
+  },
+  'boundaries/elements': [
+    { type: 'entry', pattern: 'src/index.ts', mode: 'file' },
+    { type: 'api', pattern: 'src/api/*', mode: 'file' },
+    // ... see eslint.config.js for full configuration
+  ],
+}
+```
+
+### Updating Boundaries
+
+When the architecture evolves:
+
+1. Update `boundaries/elements` patterns in `eslint.config.js`
+2. Update `boundaries/element-types` rules for new allowed imports
+3. Update this section of DEV.md
+4. Run `npm run lint` to verify no violations
+
+## Code Quality Anti-Patterns
+
+Common patterns to avoid in this codebase:
+
+| Anti-Pattern              | Rule                          | Example Fix                                     |
+| ------------------------- | ----------------------------- | ----------------------------------------------- |
+| **Over-engineering**      | Helper used once? Inline it   | `const x = getX(o)` → `const x = o.x`           |
+| **Class addiction**       | Prefer functions over classes | `class X` → `function createX()`                |
+| **Future-proofing**       | Don't add unused flexibility  | `options = {}` with unused fields → direct impl |
+| **Defensive over-coding** | Validate at boundaries only   | Remove internal re-validation                   |
+| **Verbose docs**          | Name + types self-document?   | Only document WHY or non-obvious contracts      |
+
+### Pre-Commit Checklist
+
+Before proposing code, answer YES to ALL:
+
+- [ ] **Simplest solution?** Not most "elegant" or "extensible"
+- [ ] **Only what requested?** No future-proofing, no "nice-to-haves"
+- [ ] **Helpers used >1x?** If used once, inline it
+- [ ] **Validate at boundaries only?** No re-validating internal calls
+- [ ] **Junior-maintainable?** Understandable without explanation
+
+**If proposing ANY of these, STOP and simplify:**
+Classes, single-use helpers, unused config fields, internal error handling, backwards-compat shims for new code, `_unused` parameter renames, generic solutions when specific works.
+
+## VS Code Setup
+
+The `.vscode/` directory provides workspace configuration for consistent development:
+
+- **settings.json** — Format-on-save, ESLint auto-fix, word wrap at 100 chars, `.js` import extensions
+- **extensions.json** — Recommended extensions (ESLint, Prettier, EditorConfig, Jest, spell checker, pretty TS errors)
+- **launch.json** — Debug configurations for tests and scripts
+
+Open VS Code → install recommended extensions when prompted → editor is configured.
+
+**Debug configurations:**
+
+- **Debug Current Test File** — open a `.test.ts` file, press F5
+- **Debug All Tests** — run full suite with breakpoints
+- **Debug Current Script** — debug any `.ts`/`.js` file directly
 
 ## Contributing
 

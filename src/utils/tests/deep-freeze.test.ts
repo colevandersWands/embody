@@ -7,7 +7,7 @@ describe('deepFreeze', () => {
     });
 
     it('returns undefined as-is', () => {
-      expect(deepFreeze(undefined)).toBe(undefined);
+      expect(deepFreeze()).toBe(undefined);
     });
 
     it('returns numbers as-is', () => {
@@ -25,109 +25,148 @@ describe('deepFreeze', () => {
 
   describe('shallow objects', () => {
     it('freezes a simple object', () => {
-      const obj = { a: 1, b: 2 };
-      const frozen = deepFreeze(obj);
+      const object = { a: 1, b: 2 };
+      const frozen = deepFreeze(object);
       expect(Object.isFrozen(frozen)).toBe(true);
     });
 
-    it('returns the same object reference', () => {
-      const obj = { a: 1 };
-      const frozen = deepFreeze(obj);
-      expect(frozen).toBe(obj);
+    it('returns a frozen copy (not same reference)', () => {
+      const object = { a: 1 };
+      const frozen = deepFreeze(object);
+      expect(frozen).toEqual(object);
+      expect(frozen).not.toBe(object);
     });
 
-    it('prevents property modification', () => {
-      const obj = deepFreeze({ value: 1 });
+    it('does not freeze the original object', () => {
+      const object = { a: 1 };
+      deepFreeze(object);
+      expect(Object.isFrozen(object)).toBe(false);
+    });
+
+    it('prevents property modification on frozen copy', () => {
+      const frozen = deepFreeze({ value: 1 });
       expect(() => {
-        (obj as { value: number }).value = 2;
+        (frozen as { value: number }).value = 2;
       }).toThrow();
     });
 
-    it('prevents property addition', () => {
-      const obj = deepFreeze({ a: 1 });
+    it('prevents property addition on frozen copy', () => {
+      const frozen = deepFreeze({ a: 1 });
       expect(() => {
-        (obj as Record<string, number>).b = 2;
+        (frozen as Record<string, number>).b = 2;
       }).toThrow();
     });
 
-    it('prevents property deletion', () => {
-      const obj = deepFreeze({ a: 1 });
+    it('prevents property deletion on frozen copy', () => {
+      const frozen = deepFreeze({ a: 1 });
       expect(() => {
-        delete (obj as { a?: number }).a;
+        delete (frozen as { a?: number }).a;
       }).toThrow();
     });
   });
 
   describe('nested objects', () => {
-    it('freezes nested objects', () => {
-      const obj = { outer: { inner: 1 } };
-      deepFreeze(obj);
-      expect(Object.isFrozen(obj.outer)).toBe(true);
+    it('freezes nested objects in the copy', () => {
+      const object = { outer: { inner: 1 } };
+      const frozen = deepFreeze(object);
+      expect(Object.isFrozen(frozen.outer)).toBe(true);
+      expect(Object.isFrozen(object.outer)).toBe(false);
     });
 
-    it('freezes deeply nested objects', () => {
-      const obj = { a: { b: { c: { d: 1 } } } };
-      deepFreeze(obj);
-      expect(Object.isFrozen(obj.a.b.c)).toBe(true);
+    it('freezes deeply nested objects in the copy', () => {
+      const object = { a: { b: { c: { d: 1 } } } };
+      const frozen = deepFreeze(object);
+      expect(Object.isFrozen(frozen.a.b.c)).toBe(true);
+      expect(Object.isFrozen(object.a.b.c)).toBe(false);
     });
 
-    it('prevents nested property modification', () => {
-      const obj = deepFreeze({ outer: { inner: 1 } });
+    it('prevents nested property modification on frozen copy', () => {
+      const frozen = deepFreeze({ outer: { inner: 1 } });
       expect(() => {
-        (obj.outer as { inner: number }).inner = 2;
+        (frozen.outer as { inner: number }).inner = 2;
       }).toThrow();
     });
   });
 
   describe('arrays', () => {
-    it('freezes arrays', () => {
-      const arr = [1, 2, 3];
-      deepFreeze(arr);
-      expect(Object.isFrozen(arr)).toBe(true);
+    it('freezes arrays in the copy', () => {
+      const array = [1, 2, 3];
+      const frozen = deepFreeze(array);
+      expect(Object.isFrozen(frozen)).toBe(true);
+      expect(Object.isFrozen(array)).toBe(false);
     });
 
-    it('freezes nested arrays', () => {
-      const obj = { items: [1, 2, 3] };
-      deepFreeze(obj);
-      expect(Object.isFrozen(obj.items)).toBe(true);
+    it('freezes nested arrays in the copy', () => {
+      const object = { items: [1, 2, 3] };
+      const frozen = deepFreeze(object);
+      expect(Object.isFrozen(frozen.items)).toBe(true);
+      expect(Object.isFrozen(object.items)).toBe(false);
     });
 
-    it('freezes objects inside arrays', () => {
-      const arr = [{ a: 1 }, { b: 2 }];
-      deepFreeze(arr);
-      expect(Object.isFrozen(arr[0])).toBe(true);
-      expect(Object.isFrozen(arr[1])).toBe(true);
+    it('freezes objects inside arrays in the copy', () => {
+      const array = [{ a: 1 }, { b: 2 }];
+      const frozen = deepFreeze(array);
+      expect(Object.isFrozen(frozen[0])).toBe(true);
+      expect(Object.isFrozen(frozen[1])).toBe(true);
+      expect(Object.isFrozen(array[0])).toBe(false);
+      expect(Object.isFrozen(array[1])).toBe(false);
     });
 
-    it('prevents array push', () => {
-      const arr = deepFreeze([1, 2, 3]);
+    it('prevents array push on frozen copy', () => {
+      const frozen = deepFreeze([1, 2, 3]);
       expect(() => {
-        (arr as number[]).push(4);
+        frozen.push(4);
       }).toThrow();
     });
 
-    it('prevents array element modification', () => {
-      const arr = deepFreeze([1, 2, 3]);
+    it('prevents array element modification on frozen copy', () => {
+      const frozen = deepFreeze([1, 2, 3]);
       expect(() => {
-        (arr as number[])[0] = 99;
+        frozen[0] = 99;
       }).toThrow();
     });
   });
 
   describe('mixed structures', () => {
-    it('freezes complex nested structure', () => {
+    it('freezes complex nested structure in the copy', () => {
       const config = {
         remove: ['a', 'b'],
         replace: { x: 'y' },
         nested: { deep: { value: 1 } },
       };
-      deepFreeze(config);
+      const frozen = deepFreeze(config);
 
-      expect(Object.isFrozen(config)).toBe(true);
-      expect(Object.isFrozen(config.remove)).toBe(true);
-      expect(Object.isFrozen(config.replace)).toBe(true);
-      expect(Object.isFrozen(config.nested)).toBe(true);
-      expect(Object.isFrozen(config.nested.deep)).toBe(true);
+      expect(Object.isFrozen(frozen)).toBe(true);
+      expect(Object.isFrozen(frozen.remove)).toBe(true);
+      expect(Object.isFrozen(frozen.replace)).toBe(true);
+      expect(Object.isFrozen(frozen.nested)).toBe(true);
+      expect(Object.isFrozen(frozen.nested.deep)).toBe(true);
+
+      // Original not frozen
+      expect(Object.isFrozen(config)).toBe(false);
+      expect(Object.isFrozen(config.remove)).toBe(false);
+    });
+  });
+
+  describe('original object preservation', () => {
+    it('allows mutation of original after freezing copy', () => {
+      const original = { value: 1 };
+      const frozen = deepFreeze(original);
+
+      original.value = 2;
+
+      expect(original.value).toBe(2);
+      expect(frozen.value).toBe(1);
+    });
+
+    it('allows nested mutation of original after freezing copy', () => {
+      const original = { nested: { value: 1 } };
+      const frozen = deepFreeze(original);
+
+      original.nested.value = 2;
+
+      expect(original.nested.value).toBe(2);
+      expect(frozen.nested.value).toBe(1);
     });
   });
 });

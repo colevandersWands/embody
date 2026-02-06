@@ -6,69 +6,37 @@
  * This exception exists to provide a flexible public API for consumers.
  */
 
-import deserialize from './api/core/deserialize.js';
-import fillConfig from './api/core/fill-config.js';
-import record from './api/core/record.js';
-import serialize from './api/core/serialize.js';
-
 // ============================================================================
 // Type Exports
 // ============================================================================
 
-export type {
-  // Core types
-  Step,
-  TraceResult,
+export type { StepCore } from './langs/types.js';
 
-  // Configuration types
-  UserConfig,
-  ExpandedConfig,
-  PresetName,
+// ============================================================================
+// Error Classes (for instanceof checks)
+// ============================================================================
 
-  // Input/Output types for advanced usage
-  FillConfigInput,
-  FillConfigOutput,
-  RecordInput,
-  RecordOutput,
-  TraceInput,
-  TraceOutput,
-  SerializeInput,
-  SerializeOutput,
-  DeserializeInput,
-  DeserializeOutput,
-  PicklesInput,
-  PicklesOutput,
-} from './types/api.js';
+export { default as EmbodyError } from './errors/embody-error.js';
+export { default as ConfigInvalidError } from './errors/config-invalid-error.js';
+export { default as InternalError } from './errors/internal-error.js';
+export { default as LangUnknownError } from './errors/lang-unknown-error.js';
+export { default as LimitExceededError } from './errors/limit-exceeded-error.js';
+export { default as OptionsSchemaInvalidError } from './errors/options-schema-invalid-error.js';
+export { default as OptionsSemanticInvalidError } from './errors/options-semantic-invalid-error.js';
+export { default as ParseError } from './errors/parse-error.js';
+export { default as RuntimeError } from './errors/runtime-error.js';
 
 // ============================================================================
 // Main Public API - Named Exports
 // ============================================================================
 
-export { default as embodify } from './api/embodify/embodify.js';
+// Safe APIs (return {ok, error})
 export { default as embody } from './api/embody.js';
-export { default as pickles } from './api/pickles.js';
+export { default as embodify } from './api/embodify.js';
 
-// ============================================================================
-// Internal Pipeline Functions (Advanced Usage)
-// ============================================================================
-
-/**
- * Internal pipeline functions exposed for advanced use cases.
- *
- * These functions represent the individual stages of the tracing pipeline
- * and can be used directly for custom workflows or testing.
- *
- * @remarks
- * Most users should use `embody` or `embodify` wrappers instead of these pipeline functions.
- * These are exposed for educational tools that need fine-grained control
- * over the tracing process.
- */
-export const tracing = {
-  fillConfig,
-  record,
-  serialize,
-  deserialize,
-};
+// Throwing APIs
+export { default as trace } from './api/trace.js';
+export { default as tracify } from './api/tracify.js';
 
 // ============================================================================
 // Main Public API - Default Export (simplest, minimal interface)

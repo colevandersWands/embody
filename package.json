@@ -92,6 +92,8 @@
     "babel-jest": "^30.2.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-boundaries": "^5.4.0",
     "eslint-plugin-functional": "^9.0.2",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-security": "^3.0.1",
@@ -113,6 +115,9 @@
     "aran": {
       "optional": false
     }
+  },
+  "dependencies": {
+    "ajv": "^7.2.4"
   },
   "optionalDependencies": {
     "source-map-support": "^0.5.21"

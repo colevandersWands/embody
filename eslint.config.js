@@ -1,4 +1,5 @@
 import tseslint from 'typescript-eslint';
+import eslintPluginBoundaries from 'eslint-plugin-boundaries';
 import eslintPluginImport from 'eslint-plugin-import';
 import eslintPluginFunctional from 'eslint-plugin-functional';
 import eslintPluginUnicorn from 'eslint-plugin-unicorn';
@@ -23,6 +24,7 @@ export default tseslint.config(
   {
     files: ['src/**/*.ts'],
     plugins: {
+      boundaries: eslintPluginBoundaries,
       import: eslintPluginImport,
       functional: eslintPluginFunctional,
       unicorn: eslintPluginUnicorn,
@@ -34,7 +36,90 @@ export default tseslint.config(
         project: './tsconfig.lint.json',
       },
     },
+    settings: {
+      // --- TypeScript import resolution (required for boundaries plugin) ---
+      'import/resolver': {
+        typescript: {
+          alwaysTryTypes: true,
+        },
+      },
+      // --- Module boundaries (see DEV.md § Module Boundaries) ---
+      'boundaries/ignore': ['**/tests/**/*.ts'],
+      'boundaries/elements': [
+        { type: 'entry', pattern: 'src/index.ts', mode: 'file' },
+        { type: 'api', pattern: 'src/api/*', mode: 'file' },
+        { type: 'configuring', pattern: 'src/configuring/*', mode: 'file' },
+        { type: 'langs', pattern: 'src/langs/**/*', mode: 'file' },
+        { type: 'error', pattern: 'src/errors/*', mode: 'file', capture: ['errorFile'] },
+        { type: 'utils', pattern: 'src/utils/*', mode: 'file' },
+        { type: 'types', pattern: 'src/types.ts', mode: 'file' },
+      ],
+    },
     rules: {
+      // --- Module boundaries (see DEV.md § Module Boundaries) ---
+      'boundaries/element-types': [
+        'error',
+        {
+          default: 'disallow',
+          rules: [
+            // Entry point only exposes api
+            { from: 'entry', allow: ['api'] },
+            // API: orchestrates everything + specific errors
+            {
+              from: 'api',
+              allow: [
+                'api',
+                'configuring',
+                'langs',
+                'utils',
+                'types',
+                ['error', { errorFile: '{embody,internal,lang-unknown,config-invalid}-error.ts' }],
+                ['error', { errorFile: 'types.ts' }],
+              ],
+            },
+            // Configuring: self (internal types) + utils + specific errors
+            {
+              from: 'configuring',
+              allow: [
+                'configuring',
+                'utils',
+                'types',
+                ['error', { errorFile: '{internal,options-schema-invalid}-error.ts' }],
+                ['error', { errorFile: 'types.ts' }],
+              ],
+            },
+            // Langs: utils + specific errors (no api imports - would be circular)
+            {
+              from: 'langs',
+              allow: [
+                'langs',
+                'utils',
+                'types',
+                [
+                  'error',
+                  {
+                    errorFile:
+                      '{internal,options-semantic-invalid,parse,runtime,limit-exceeded}-error.ts',
+                  },
+                ],
+                ['error', { errorFile: 'types.ts' }],
+              ],
+            },
+            // Errors can import types.ts (for SourceLoc) and embody-error.ts (base class)
+            {
+              from: 'error',
+              allow: [['error', { errorFile: '{types,embody-error}.ts' }]],
+            },
+            // Utils can import from utils (e.g., deep-freeze uses deep-clone)
+            { from: 'utils', allow: ['utils'] },
+            // Types are true leaves
+            { from: 'types', allow: [] },
+          ],
+        },
+      ],
+      'boundaries/no-unknown': ['error'],
+      'boundaries/no-unknown-files': ['error'],
+
       // --- TypeScript ---
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/explicit-function-return-type': 'off',
@@ -62,7 +147,9 @@ export default tseslint.config(
       '@typescript-eslint/no-shadow': 'error',
 
       // --- Import rules ---
-      'import/extensions': ['error', 'always'],
+      // TypeScript handles module resolution (.js imports → .ts files)
+      // We just forbid .ts extensions which would break at runtime
+      'import/extensions': 'off',
       'import/order': [
         'error',
         {
@@ -120,6 +207,7 @@ export default tseslint.config(
       'unicorn/prefer-switch': 'off', // Conflicts with switch ban
       'unicorn/switch-case-braces': 'off', // Conflicts with switch ban
       'unicorn/prefer-ternary': 'off',
+      'prevent-abbreviations': 'off',
       'unicorn/no-null': 'off',
 
       // --- SonarJS (recommended + additions + overrides) ---
@@ -164,12 +252,16 @@ export default tseslint.config(
         },
       ],
 
-      // --- Ban switch statements ---
+      // --- Banned syntax patterns ---
       'no-restricted-syntax': [
         'error',
         {
           selector: 'SwitchStatement',
           message: 'Switch statements are not allowed. Use if-else or lookup objects.',
+        },
+        {
+          selector: 'ImportDeclaration[source.value=/\\.ts$/]',
+          message: 'Do not use .ts extension in imports. Use .js for TypeScript ESM.',
         },
       ],
 
@@ -235,6 +327,13 @@ export default tseslint.config(
       'functional/immutable-data': 'off',
       'functional/prefer-readonly-type': 'off',
       'arrow-body-style': 'off', // Test callbacks use standard arrow pattern
+      'sonarjs/no-duplicate-string': 'off', // Tests repeat literals for readability
+      'unicorn/consistent-function-scoping': 'off', // Arrow callbacks are idiomatic in tests
+      // Test fixtures are often loosely typed — strict safety checks not needed
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
     },
   },
 
@@ -244,6 +343,16 @@ export default tseslint.config(
     rules: {
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+
+  // --- Error types (class/this allowed per JS Error convention) ---
+  {
+    files: ['src/errors/**/*.ts'],
+    rules: {
+      'functional/no-classes': 'off',
+      'functional/no-this-expressions': 'off',
+      'no-invalid-this': 'off',
     },
   },
 );
