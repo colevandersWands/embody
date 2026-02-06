@@ -931,8 +931,6 @@ Consistent event format across all trace types:
 These functions currently return mock data (see unit tests for full behavioral contracts):
 
 - `record({ code: 'abc' })` → `{ code: 'abc', config, steps: [{},{},{}] }` (one `{}` per character)
-- `serialize([{},{}])` → `'[{},{}]'` (JSON.stringify)
-- `deserialize({ steps, config })` → parses JSON strings and validates structure
 
 ### Config Flow
 

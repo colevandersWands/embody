@@ -117,7 +117,6 @@ import { embodify } from '@study-lenses/embody';
 const chain = embodify({ code: 'let x = 5; console.log(x);' });
 const traced = chain.trace();
 console.log(traced.steps); // Array of execution events
-console.log(traced.pickledSteps); // JSON string of steps
 ```
 
 ```javascript
@@ -153,14 +152,14 @@ try {
 
 ```javascript
 // Reuse configuration
-const tracer = embody({ config: { options: { presets: 'overview' } } });
+const tracer = embody({ config: { presets: 'overview' } });
 const trace1 = tracer({ code: 'let x = 5' });
 const trace2 = tracer({ code: 'const y = 10' });
 
 // Chainable workflow for batch processing
 import { embodify } from '@study-lenses/embody';
 
-const tracer = embodify({ config: options: { presets: 'detailed' } });
+const tracer = embodify({ config: { presets: 'detailed' } });
 const results = codes.map((code) => tracer.trace({ code }).steps);
 ```
 

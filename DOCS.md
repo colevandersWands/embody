@@ -67,18 +67,6 @@ const overview = codeTracer({ config: { presets: 'overview' } });
 const detailed = codeTracer({ config: { presets: 'detailed' } });
 ```
 
-#### Pickle Support
-
-Config can be passed as a JSON string — it is auto-parsed:
-
-```typescript
-// JSON string config is auto-parsed
-const trace = embody({ code: 'let x = 5', config: '{"presets":"overview"}' });
-
-// Invalid JSON degrades gracefully to default config
-const trace = embody({ code: 'let x = 5', config: '{bad json' });
-```
-
 ### Default Export
 
 Simple tracing function that returns just the steps array.
@@ -92,7 +80,7 @@ const steps = trace('let x = 5; console.log(x);');
 // With config object
 const steps = trace('let x = 5', { presets: 'overview' });
 
-// Config can be a JSON string (pickle support)
+// Config can be a JSON string
 const steps = trace('let x = 5', '{"presets":"overview"}');
 ```
 
@@ -112,7 +100,7 @@ Chainable, immutable pipeline wrapper for multi-step tracing workflows. Returns 
 
 Chain link with:
 
-- **Getters**: `code`, `config`, `steps`, `pickledSteps`, `pickledConfig`
+- **Getters**: `code`, `config`, `steps`
 - **Methods**: `set()`, `mergeConfig()`, `trace()`
 
 All getters cascade lazily (e.g., accessing `.steps` when only code is set runs the full pipeline on demand). All methods return new immutable chain links.
@@ -333,8 +321,6 @@ import { tracing } from '@study-lenses/embody';
 const {
   fillConfig, // Normalize user config to ExpandedConfig
   record, // Execute code and collect trace
-  serialize, // Convert Step[] to JSON string
-  deserialize, // Parse { steps?, config? } — delegates to steps/ and utils/ modules
 } = tracing;
 
 // Custom pipeline usage
@@ -385,10 +371,6 @@ import { embodify } from '@study-lenses/embody';
 // Batch process multiple code snippets
 const tracer = embodify({ config: { presets: 'detailed' } });
 const results = codes.map((code) => tracer.trace({ code }).steps);
-
-// Serialize for storage or transport
-const base = embodify({ code: studentCode, config: {} }).trace();
-const serialized = base.pickledSteps;
 ```
 
 Key differences from `embody()`:
@@ -396,7 +378,6 @@ Key differences from `embody()`:
 - **Chaining** instead of currying
 - **Lazy cascade** — getters compute on demand
 - **Granular control** — trace as separate step
-- **Built-in serialization** via `.pickledSteps` and `.pickledConfig`
 
 See the [API module documentation](./src/api/DOCS.md) for complete reference.
 
@@ -454,9 +435,6 @@ type UserConfig = Partial<Config>;
 
 // Normalized configuration after processing
 type ExpandedConfig = Config; // All fields resolved
-
-// Available preset names
-type PresetName = 'overview' | 'detailed' | 'exhaustive';
 ```
 
 ### Using Types
@@ -477,37 +455,6 @@ const myConfig: Partial<Config> = {
     },
   },
 };
-```
-
-### Pipeline Types
-
-```typescript
-// Serialize/Deserialize
-type SerializeInput = { readonly steps: readonly Step[] } | { readonly config: UserConfig };
-type SerializeOutput = string;
-type DeserializeInput = {
-  readonly steps?: string | readonly Step[];
-  readonly config?: string | UserConfig;
-};
-type DeserializeOutput = {
-  readonly steps: readonly Step[] | undefined;
-  readonly config: UserConfig | undefined;
-};
-
-// Pickles (bidirectional toggle for steps and/or config)
-type PicklesInput = {
-  readonly steps?: readonly Step[] | string;
-  readonly config?: UserConfig | string;
-};
-type PicklesOutput =
-  | { readonly steps: string }
-  | { readonly steps: readonly Step[] }
-  | { readonly config: string }
-  | { readonly config: UserConfig }
-  | { readonly steps: string; readonly config: string }
-  | { readonly steps: readonly Step[]; readonly config: UserConfig }
-  | { readonly steps: string; readonly config: UserConfig }
-  | { readonly steps: readonly Step[]; readonly config: string };
 ```
 
 ## Notes
