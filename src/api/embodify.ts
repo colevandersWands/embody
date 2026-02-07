@@ -1,13 +1,13 @@
 /**
- * @file Chainable tracing with immutable state management and recoverable validation.
+ * @file Chainable tracing with immutable state management.
  *
  * Creates chains that accumulate state through `.set()` and execute
  * through `.trace()`. Each operation returns a NEW chain (immutability).
- * Type errors are validated on every state change and can be fixed with `.set()`.
+ * Smart cache invalidation: only invalidate what changed.
  *
  * @example
  * ```js
- * const chain = await embodify({ lang: 'chars' })
+ * const chain = await embodify({ tracer: 'chars' })
  *   .set({ code: 'hello' })
  *   .trace();
  *
@@ -15,59 +15,64 @@
  * ```
  */
 
-import ConfigInvalidError from '../errors/config-invalid-error.js';
+import prepareConfig from '../configuring/prepare-config.js';
+import type { JSONSchema } from '../configuring/types.js';
+import ArgumentInvalidError from '../errors/argument-invalid-error.js';
 import EmbodyError from '../errors/embody-error.js';
 import InternalError from '../errors/internal-error.js';
-import LangUnknownError from '../errors/lang-unknown-error.js';
-import dispatch from '../langs/dispatch.js';
-import type { ResolvedConfig, StepCore } from '../langs/types.js';
+import TracerUnknownError from '../errors/tracer-unknown-error.js';
+import dispatch from '../tracers/dispatch.js';
+import metaSchema from '../tracers/meta.schema.json';
+import type { MetaConfig, ResolvedConfig, StepCore } from '../tracers/types.js';
 import deepClone from '../utils/deep-clone.js';
-
-import prepareOptions from './prepare-options.js';
 
 /**
  * Internal chain state.
+ * Input fields are readonly; cache fields are mutable for lazy computation.
+ * Uses `| undefined` to satisfy exactOptionalPropertyTypes.
  */
-type ChainState = {
-  readonly lang: unknown;
-  readonly code: unknown;
-  readonly config: unknown;
-  readonly resolvedConfig: ResolvedConfig | undefined;
-  readonly steps: readonly StepCore[] | null;
+type EmbodifyState = {
+  readonly tracer: string | undefined;
+  readonly code: string | undefined;
+  readonly config: object | undefined;
+  readonly resolvedConfig?: ResolvedConfig | undefined; // Mutable for lazy caching
+  readonly steps?: readonly StepCore[] | undefined; // undefined = not computed
   readonly ok: boolean | undefined;
   readonly error: EmbodyError | undefined;
 };
 
 /**
  * Input for embodify and .set() method.
+ * TypeScript validates types; no runtime checks needed.
  */
 type EmbodifyInput = {
-  readonly lang?: unknown;
-  readonly code?: unknown;
-  readonly config?: unknown;
+  readonly tracer?: string;
+  readonly code?: string;
+  readonly config?: object;
 };
 
 /**
- * Input for .trace() method - accepts all keys for error recovery.
+ * Input for .trace() method.
+ * TypeScript validates types; no runtime checks needed.
  */
 type TraceMethodInput = {
-  readonly lang?: unknown;
-  readonly code?: unknown;
-  readonly config?: unknown;
+  readonly tracer?: string;
+  readonly code?: string;
+  readonly config?: object;
 };
 
 /**
  * The chain object with getters and methods.
  * - `config`: what the user passed (deep cloned on access)
- * - `resolvedConfig`: resolved config with lang defaults (deep cloned on access)
+ * - `resolvedConfig`: resolved config with tracer defaults (computed lazily, deep cloned on access)
  * - `steps`: trace steps (deep cloned on access)
  */
 type EmbodifyChain = {
-  readonly lang: unknown;
-  readonly code: unknown;
-  readonly config: unknown;
+  readonly tracer: string | undefined;
+  readonly code: string | undefined;
+  readonly config: object | undefined;
   readonly resolvedConfig: ResolvedConfig | undefined;
-  readonly steps: readonly StepCore[] | null;
+  readonly steps: readonly StepCore[] | undefined;
   readonly ok: boolean | undefined;
   readonly error: EmbodyError | undefined;
   readonly set: (input: EmbodifyInput) => EmbodifyChain;
@@ -75,140 +80,60 @@ type EmbodifyChain = {
 };
 
 /**
- * Validates all fields in state, returns combined error or undefined.
- * Checks ALL type problems and combines them into one message.
- */
-function validateState(state: {
-  readonly lang: unknown;
-  readonly code: unknown;
-  readonly config: unknown;
-}): EmbodyError | undefined {
-  const errors = [
-    state.lang !== undefined && typeof state.lang !== 'string' ? 'lang must be string' : null,
-    state.code !== undefined && typeof state.code !== 'string' ? 'code must be string' : null,
-  ].filter((message): message is string => message !== null);
-
-  if (errors.length === 0) return undefined;
-  return new ConfigInvalidError('config', `embodify: type errors - ${errors.join(', ')}`);
-}
-
-/**
- * Performs the trace operation (async).
- */
-async function performTrace(mergedState: {
-  readonly lang: unknown;
-  readonly code: unknown;
-  readonly config: unknown;
-}): Promise<EmbodifyChain> {
-  // Validate merged state (can add errors OR clear old errors)
-  const validationError = validateState(mergedState);
-  if (validationError) {
-    return embodifyChain({
-      ...mergedState,
-      resolvedConfig: undefined,
-      steps: null,
-      ok: false,
-      error: validationError,
-    });
-  }
-
-  const { lang, code, config } = mergedState;
-
-  // Validate required fields (necessity errors - lazy)
-  if (typeof lang !== 'string') {
-    return embodifyChain({
-      ...mergedState,
-      resolvedConfig: undefined,
-      steps: null,
-      ok: false,
-      error: new ConfigInvalidError('lang', 'embodify: lang is required'),
-    });
-  }
-
-  if (typeof code !== 'string') {
-    return embodifyChain({
-      ...mergedState,
-      resolvedConfig: undefined,
-      steps: null,
-      ok: false,
-      error: new ConfigInvalidError('code', 'embodify: code is required'),
-    });
-  }
-
-  // Find language module
-  const langRecord = dispatch[lang];
-  if (typeof langRecord !== 'function') {
-    return embodifyChain({
-      ...mergedState,
-      resolvedConfig: undefined,
-      steps: null,
-      ok: false,
-      error: new LangUnknownError(lang, { cause: { available: Object.keys(dispatch) } }),
-    });
-  }
-
-  try {
-    // Prepare both meta and options (fill defaults + verify)
-    const userConfig = (config ?? {}) as {
-      readonly meta?: Readonly<Record<string, unknown>>;
-      readonly options?: Readonly<Record<string, unknown>>;
-    };
-    const { meta, options } = prepareOptions(lang, userConfig);
-
-    // Call the language's record function with fully-filled config
-    const result = await langRecord(code, { meta, options });
-    return embodifyChain({
-      ...mergedState,
-      resolvedConfig: result.config,
-      steps: result.steps,
-      ok: true,
-      error: undefined,
-    });
-  } catch (caughtError) {
-    if (caughtError instanceof EmbodyError) {
-      return embodifyChain({
-        ...mergedState,
-        resolvedConfig: undefined,
-        steps: null,
-        ok: false,
-        error: caughtError,
-      });
-    }
-    const message = caughtError instanceof Error ? caughtError.message : String(caughtError);
-    return embodifyChain({
-      ...mergedState,
-      resolvedConfig: undefined,
-      steps: null,
-      ok: false,
-      error: new InternalError(message),
-    });
-  }
-}
-
-/**
  * Creates an immutable chain for building up trace state.
  * Getters return deep cloned copies for immutability.
- * Type validation happens on every state change (recoverable).
+ * Smart cache invalidation: only invalidate what changed.
  */
-function embodifyChain(state: ChainState): EmbodifyChain {
+function embodifyChain(state: EmbodifyState): EmbodifyChain {
   return {
-    get lang() {
-      return state.lang;
+    get tracer() {
+      return state.tracer;
     },
     get code() {
       return state.code;
     },
     get config() {
-      // Deep clone for immutability
       return state.config === undefined ? undefined : deepClone(state.config);
     },
     get resolvedConfig() {
-      // Deep clone for immutability
-      return state.resolvedConfig === undefined ? undefined : deepClone(state.resolvedConfig);
+      // Lazy computation: compute if tracer is present and not cached
+      if (state.resolvedConfig) {
+        return deepClone(state.resolvedConfig);
+      }
+
+      // Can't compute without tracer
+      if (state.tracer === undefined) {
+        // eslint-disable-next-line unicorn/no-useless-undefined -- consistent returns
+        return undefined;
+      }
+
+      // Can't compute if tracer is unknown
+      const tracerModule = dispatch[state.tracer];
+      if (!tracerModule) {
+        // eslint-disable-next-line unicorn/no-useless-undefined -- consistent returns
+        return undefined;
+      }
+
+      // Compute and cache (mutable cache for lazy computation)
+      const userConfig = (state.config ?? {}) as {
+        readonly meta?: unknown;
+        readonly options?: unknown;
+      };
+      const meta = prepareConfig(userConfig.meta ?? {}, metaSchema as JSONSchema) as MetaConfig;
+      // Skip options prep if tracer has no schema
+      const options = tracerModule.schema
+        ? (prepareConfig(userConfig.options ?? {}, tracerModule.schema as JSONSchema) as Record<
+            string,
+            unknown
+          >)
+        : {};
+
+      // eslint-disable-next-line functional/immutable-data -- lazy caching
+      state.resolvedConfig = { meta, options };
+      return deepClone(state.resolvedConfig);
     },
     get steps() {
-      // Deep clone for immutability
-      return state.steps === null ? null : deepClone(state.steps);
+      return state.steps === undefined ? undefined : deepClone(state.steps);
     },
     get ok() {
       return state.ok;
@@ -216,62 +141,166 @@ function embodifyChain(state: ChainState): EmbodifyChain {
     get error() {
       return state.error;
     },
+
     set(input: EmbodifyInput): EmbodifyChain {
-      // Build new state
-      const newState = {
-        lang: input.lang ?? state.lang,
-        code: input.code ?? state.code,
-        config: input.config ?? state.config,
-      };
+      // Merge values
+      const tracer = input.tracer ?? state.tracer;
+      const code = input.code ?? state.code;
+      const config = input.config ?? state.config;
 
-      // Validate the new state (recoverable - all errors combined)
-      const validationError = validateState(newState);
+      // Detect what ACTUALLY changed (not just whether key was provided)
+      const tracerChanged = tracer !== state.tracer;
+      const codeChanged = code !== state.code;
+      // For objects, compare JSON (config is small enough for this to be fast)
+      const configChanged =
+        input.config !== undefined && JSON.stringify(config) !== JSON.stringify(state.config);
 
-      // Return new chain with validation result, invalidate trace result
-      // ok = true means "valid so far" (no type errors)
+      // Smart invalidation:
+      // - tracer change: invalidate both resolvedConfig and steps
+      // - config change: invalidate both resolvedConfig and steps
+      // - code change: invalidate only steps (resolvedConfig independent of code)
+      // - nothing changed: preserve all cached state
+      const invalidateResolvedConfig = tracerChanged || configChanged;
+      const invalidateSteps = tracerChanged || codeChanged || configChanged;
+
       return embodifyChain({
-        ...newState,
-        resolvedConfig: undefined,
-        steps: null,
-        ok: validationError ? false : true,
-        error: validationError,
+        tracer,
+        code,
+        config: deepClone(config),
+        resolvedConfig: invalidateResolvedConfig ? undefined : state.resolvedConfig,
+        steps: invalidateSteps ? undefined : state.steps,
+        ok: true,
+        error: undefined,
       });
     },
-    trace(input: TraceMethodInput = {}): Promise<EmbodifyChain> {
-      // Merge input with current state (allows error recovery)
-      const mergedState = {
-        lang: input.lang ?? state.lang,
-        code: input.code ?? state.code,
-        config: input.config ?? state.config,
-      };
 
-      // Wrap in Promise to maintain async API for future async lang modules
-      return Promise.resolve().then(() => performTrace(mergedState));
+    async trace(input: TraceMethodInput = {}): Promise<EmbodifyChain> {
+      // 1. Merge input with current state
+      const tracer = input.tracer ?? state.tracer;
+      const code = input.code ?? state.code;
+      const tracerChanged = tracer !== state.tracer;
+      const configChanged =
+        input.config !== undefined && JSON.stringify(input.config) !== JSON.stringify(state.config);
+      const config = input.config ?? state.config;
+
+      // 2. Validate tracer is present
+      if (tracer === undefined) {
+        return embodifyChain({
+          tracer: undefined,
+          code,
+          config,
+          resolvedConfig: undefined,
+          steps: undefined,
+          ok: false,
+          error: new ArgumentInvalidError('tracer', 'embodify: tracer is required'),
+        });
+      }
+
+      // 3. Validate code is present
+      if (code === undefined) {
+        return embodifyChain({
+          tracer,
+          code: undefined,
+          config,
+          resolvedConfig: undefined,
+          steps: undefined,
+          ok: false,
+          error: new ArgumentInvalidError('code', 'embodify: code is required'),
+        });
+      }
+
+      // 4. Find tracer module
+      const tracerModule = dispatch[tracer];
+      if (!tracerModule) {
+        return embodifyChain({
+          tracer,
+          code,
+          config,
+          resolvedConfig: undefined,
+          steps: undefined,
+          ok: false,
+          error: new TracerUnknownError(tracer, { cause: { available: Object.keys(dispatch) } }),
+        });
+      }
+
+      try {
+        // 5. Prepare config (reuse cached if unchanged)
+        let resolvedConfig: ResolvedConfig;
+
+        if (!state.resolvedConfig || tracerChanged || configChanged) {
+          const userConfig = (config ?? {}) as {
+            readonly meta?: Readonly<Record<string, unknown>>;
+            readonly options?: Readonly<Record<string, unknown>>;
+          };
+          const meta = prepareConfig(userConfig.meta ?? {}, metaSchema as JSONSchema) as MetaConfig;
+          // Skip options prep if tracer has no schema
+          const options = tracerModule.schema
+            ? (prepareConfig(userConfig.options ?? {}, tracerModule.schema as JSONSchema) as Record<
+                string,
+                unknown
+              >)
+            : {};
+
+          tracerModule?.verifyOptions?.(options);
+          resolvedConfig = { meta, options };
+        } else {
+          // eslint-disable-next-line prefer-destructuring -- not destructuring, just accessing
+          resolvedConfig = state.resolvedConfig;
+        }
+
+        // 6. Record trace steps
+        const steps = await tracerModule.record(code, resolvedConfig);
+        return embodifyChain({
+          tracer,
+          code,
+          config,
+          resolvedConfig,
+          steps,
+          ok: true,
+          error: undefined,
+        });
+      } catch (caughtError) {
+        if (caughtError instanceof EmbodyError) {
+          return embodifyChain({
+            tracer,
+            code,
+            config,
+            resolvedConfig: undefined,
+            steps: undefined,
+            ok: false,
+            error: caughtError,
+          });
+        }
+        const message = caughtError instanceof Error ? caughtError.message : String(caughtError);
+        return embodifyChain({
+          tracer,
+          code,
+          config,
+          resolvedConfig: undefined,
+          steps: undefined,
+          ok: false,
+          error: new InternalError(message),
+        });
+      }
     },
   };
 }
 
 /**
  * Creates a new chain with optional initial state.
- * Type validation happens eagerly - errors can be fixed with .set().
+ * No validation at creation - validation happens on .trace().
  */
 function embodify(input: EmbodifyInput = {}): EmbodifyChain {
-  // Validate initial state
-  const validationError = validateState({
-    lang: input.lang,
-    code: input.code,
-    config: input.config,
-  });
+  const { tracer, code, config } = input;
 
-  // ok = true means "valid so far" (no type errors)
   return embodifyChain({
-    lang: input.lang,
-    code: input.code,
-    config: input.config,
+    tracer,
+    code,
+    config,
     resolvedConfig: undefined,
-    steps: null,
-    ok: validationError ? false : true,
-    error: validationError,
+    steps: undefined,
+    ok: true,
+    error: undefined,
   });
 }
 

@@ -30,11 +30,11 @@ Input → prepareConfig (meta + options) → dispatch → record → Output
 
 The API layer coordinates:
 
-1. Validates lang/code types
+1. Validates tracer/code types
 2. Prepares meta config: `prepareConfig(userMeta, metaSchema)`
-3. Prepares options: `prepareConfig(userOptions, langSchema)`
-4. Calls lang's verifyOptions (if exported)
-5. Passes `{ meta, options }` to lang's record function
+3. Prepares options: `prepareConfig(userOptions, tracerSchema)`
+4. Calls tracer's verifyOptions (if exported)
+5. Passes `{ meta, options }` to tracer's record function
 6. Returns steps to user
 
 Each pipeline stage:
@@ -149,12 +149,11 @@ Types live **with their module**, not in a centralized location.
 // /src/types.ts — Type map for discoverability
 export * as api from './api/types.js';
 export * as errors from './errors/types.js';
-export * as langs from './langs/types.js';
-export * as charsLang from './langs/chars/types.js';
-export * as configuring from './langs/js/configuring/types.js';
+export * as tracers from './tracers/types.js';
+export * as charsTracer from './tracers/chars/types.js';
 ```
 
-This is a **map**, not a flattening barrel. Each namespace preserves origin (`types.langs.StepCore`), making it easy to explore which modules have types and then drill into the source.
+This is a **map**, not a flattening barrel. Each namespace preserves origin (`types.tracers.StepCore`), making it easy to explore which modules have types and then drill into the source.
 
 **Import patterns:**
 
@@ -164,10 +163,10 @@ import type { CallEvent } from '../instrument/types.js';
 
 // ✅ CORRECT - Namespace import for exploration/discovery
 import * as types from '../types.js';
-const step: types.langs.StepCore = { ... };
+const step: types.tracers.StepCore = { ... };
 
 // ✅ CORRECT - Destructured namespace for frequent use
-import { api, langs } from '../types.js';
+import { api, tracers } from '../types.js';
 const result: api.TraceResult = { ... };
 
 // ✅ CORRECT - Public API import (external consumers)
@@ -177,7 +176,7 @@ import type { Step, TraceResult } from '@study-lenses/embody';
 import type { CallEvent } from '../types/index.js';  // Don't create these
 ```
 
-**Naming convention:** Language modules use `<name>Lang` suffix (e.g., `charsLang`) to distinguish them from other module types.
+**Naming convention:** Tracer modules use `<name>Tracer` suffix (e.g., `charsTracer`) to distinguish them from other module types.
 
 **Rationale:**
 
@@ -353,28 +352,28 @@ try {
 } catch (error) {
   if (error instanceof ParseError) {
     highlightSyntaxError(error.loc);
-  } else if (error instanceof LangUnknownError) {
-    suggestAvailableLanguages(error.cause?.available);
+  } else if (error instanceof TracerUnknownError) {
+    suggestAvailableTracers(error.cause?.available);
   }
 }
 ```
 
 **Error Class Hierarchy** (flat, all extend `EmbodyError`):
 
-| Class                         | Thrown By            | When                            |
-| ----------------------------- | -------------------- | ------------------------------- |
-| `ParseError`                  | Lang modules         | Code parsing failed             |
-| `RuntimeError`                | Lang modules         | Code execution failed           |
-| `LimitExceededError`          | Lang modules         | Exceeded max steps/time         |
-| `OptionsSemanticInvalidError` | Lang `verifyOptions` | Cross-field constraint violated |
-| `OptionsSchemaInvalidError`   | `/configuring`       | Options don't match JSON Schema |
-| `ConfigInvalidError`          | API layer            | `lang`/`code` wrong type        |
-| `LangUnknownError`            | API layer            | Language not in dispatch        |
-| `InternalError`               | Any layer            | Unexpected error wrapper        |
+| Class                         | Thrown By              | When                                 |
+| ----------------------------- | ---------------------- | ------------------------------------ |
+| `ParseError`                  | Tracer modules         | Code parsing failed                  |
+| `RuntimeError`                | Tracer modules         | Code execution failed                |
+| `LimitExceededError`          | Tracer modules         | Exceeded max steps/time              |
+| `OptionsSemanticInvalidError` | Tracer `verifyOptions` | Cross-field constraint violated      |
+| `OptionsInvalidError`         | `/configuring`         | meta/options don't match JSON Schema |
+| `ArgumentInvalidError`        | API layer              | `tracer`/`code`/`config` wrong type  |
+| `TracerUnknownError`          | API layer              | Tracer not in dispatch               |
+| `InternalError`               | Any layer              | Unexpected error wrapper             |
 
 **Naming Convention**:
 
-- Library errors: `.name` = `'(EmbodyError) ClassName'` (e.g., `'(EmbodyError) LangUnknownError'`)
+- Library errors: `.name` = `'(EmbodyError) ClassName'` (e.g., `'(EmbodyError) TracerUnknownError'`)
 - Code errors (ParseError, RuntimeError): `.name` = original error name (e.g., `'ParseError'`)
 
 **General Patterns**:
@@ -388,7 +387,7 @@ if (invalidConfig) {
 
 // Fail fast for critical errors (use specific error classes)
 if (!code) {
-  throw new ConfigInvalidError('code', 'Code is required for instrumentation');
+  throw new ArgumentInvalidError('code', 'Code is required for instrumentation');
 }
 ```
 
@@ -920,7 +919,10 @@ Consistent event format across all trace types:
   name: 'counter',
   value: 0,
   scope: 'function:calculateSum',
-  location: { line: 5, column: 8 },
+  loc: {
+    start: { line: 5, column: 7 },  // ESTree: line 1-indexed, column 0-indexed
+    end: { line: 5, column: 14 }
+  },
   sequence: 42,
   timestamp: 1234567890
 }
@@ -940,24 +942,24 @@ Config validation and default-filling use pure functions from `/configuring`. Th
 User config: { meta?: {...}, options?: {...} }
     ↓
 API Layer (coordination)
-    ├── 1. Check lang exists (dispatch lookup)
+    ├── 1. Check tracer exists (dispatch lookup)
     ├── 2. Validate meta config
     │       └── prepareConfig(userMeta, metaSchema) from /configuring
     ├── 3. Validate options config
-    │       └── prepareConfig(userOptions, langSchema) from /configuring
-    ├── 4. Call lang's verifyOptions(filledOptions) if exported — throws OptionsSemanticInvalidError
+    │       └── prepareConfig(userOptions, tracerSchema) from /configuring
+    ├── 4. Call tracer's verifyOptions(filledOptions) if exported — throws OptionsSemanticInvalidError
     ↓
 Fully-filled, validated { meta, options }
     ↓
-Lang record(code, { meta, options }) — enforces limits, pure tracing
+Tracer record(code, { meta, options }) — enforces limits, pure tracing
 ```
 
 **User config structure**:
 
-| Part      | Schema                      | Purpose                      |
-| --------- | --------------------------- | ---------------------------- |
-| `meta`    | `/langs/meta.schema.json`   | Execution limits, timestamps |
-| `options` | `/langs/<lang>/schema.json` | Language-specific options    |
+| Part      | Schema                          | Purpose                      |
+| --------- | ------------------------------- | ---------------------------- |
+| `meta`    | `/tracers/meta.schema.json`     | Execution limits, timestamps |
+| `options` | `/tracers/<tracer>/schema.json` | Tracer-specific options      |
 
 **Recommended**: Use `prepareConfig(data, schema)` — wraps expand → fill → validate.
 
@@ -967,12 +969,12 @@ Lang record(code, { meta, options }) — enforces limits, pure tracing
 validateConfig(fillDefaults(expandShorthand(data, schema), schema), schema);
 ```
 
-**Key insight**: `/configuring` imports ONLY from `/errors`. It receives `(data, schema)` — never `langId`. The API layer gets schemas from langs and passes them to configuring.
+**Key insight**: `/configuring` imports ONLY from `/errors`. It receives `(data, schema)` — never `tracerId`. The API layer gets schemas from tracers and passes them to configuring.
 
 See [/configuring README](./src/configuring/README.md) for details.
 
 All API functions validate input types and throw self-documenting errors
-(e.g., `'trace: expected lang to be string, got number'`).
+(e.g., `'trace: expected tracer to be string, got number'`).
 
 ## Development Workflow
 
@@ -1155,7 +1157,7 @@ Use nested `describe` blocks instead of multiple assertions in one `it`.
 it('returns complete config', () => {
   expect(result.preset).toBe('detailed');
   expect(result.variables).toBe(true);
-  expect(result.lang).toBeDefined();
+  expect(result.tracer).toBeDefined();
 });
 
 // ✅ CORRECT — one assertion, grouped by describe
@@ -1168,8 +1170,8 @@ describe('returns complete config', () => {
     expect(result.variables).toBe(true);
   });
 
-  it('lang is defined', () => {
-    expect(result.lang).toBeDefined();
+  it('tracer is defined', () => {
+    expect(result.tracer).toBeDefined();
   });
 });
 ```
@@ -1453,6 +1455,28 @@ Husky + lint-staged run automatically before each commit:
 - `npm run format` on staged `.ts`/`.js`/`.json`/`.md`/`.yml`/`.yaml` files
 
 Most violations get fixed automatically before you even see them.
+
+### Tracer Subdirectory Linting
+
+Tracer subdirectories (`src/tracers/<name>/`) are **repo-linted by default** — they inherit all ESLint rules like any other `src/` code. Tracers that need different conventions can opt out.
+
+**Always repo-linted** (top-level tracers files, not inside any subdirectory):
+
+- `src/tracers/dispatch.ts` — the tracer registry
+- `src/tracers/types.ts` — shared types
+- `src/tracers/tests/` — registry and integration tests
+
+**Repo-linted by default** (tracer subdirectories):
+
+- All files inside `src/tracers/<name>/` are linted unless the tracer opts out
+
+**Opting out of ESLint**: Add `'src/tracers/<name>/**'` to the global `ignores` array in [eslint.config.js](./eslint.config.js). Example: `js-klve` opts out because it interfaces with Aran/Babel, which require patterns incompatible with the repo's functional style rules.
+
+**Prettier**: Runs on all files regardless of ESLint opt-out. Formatting consistency reduces diff noise across the whole repo.
+
+**TypeScript**: Type-checking always applies to all tracers via `tsconfig.lint.json`. Types are the contract between tracers and the API layer — breaking types means breaking integration.
+
+See [src/tracers/DEV.md § Linting](./src/tracers/DEV.md#linting) for the contributor-facing guide.
 
 ### Enforced Conventions
 
@@ -1864,21 +1888,21 @@ Import boundaries are enforced via `eslint-plugin-boundaries`. This catches arch
 
 ### Layer Hierarchy
 
-| Layer         | Pattern             | Can Import From                                   |
-| ------------- | ------------------- | ------------------------------------------------- |
-| `entry`       | `src/index.ts`      | `api` only                                        |
-| `api`         | `src/api/*`         | `configuring`, `langs`, `error`, `utils`, `types` |
-| `configuring` | `src/configuring/*` | `error`, `utils`, `types`                         |
-| `langs`       | `src/langs/**/*`    | `error`, `utils`, `types`                         |
-| `error`       | `src/errors/*`      | `types` only                                      |
-| `utils`       | `src/utils/*`       | `utils` only (self-imports allowed)               |
-| `types`       | `src/types/*`       | nothing (leaf)                                    |
+| Layer         | Pattern             | Can Import From                                     |
+| ------------- | ------------------- | --------------------------------------------------- |
+| `entry`       | `src/index.ts`      | `api` only                                          |
+| `api`         | `src/api/*`         | `configuring`, `tracers`, `error`, `utils`, `types` |
+| `configuring` | `src/configuring/*` | `error`, `utils`, `types`                           |
+| `tracers`     | `src/tracers/**/*`  | `error`, `utils`, `types`                           |
+| `error`       | `src/errors/*`      | `types` only                                        |
+| `utils`       | `src/utils/*`       | `utils` only (self-imports allowed)                 |
+| `types`       | `src/types/*`       | nothing (leaf)                                      |
 
 **Key constraints:**
 
 - `utils` can import from other utils (e.g., `deep-freeze` uses `deep-clone`)
 - `types` is a true leaf — imports nothing from `src/`
-- `langs` cannot import from `api` (would create circular dependency)
+- `tracers` cannot import from `api` (would create circular dependency)
 - `entry` (`src/index.ts`) only re-exports from `api`
 
 ### Error Ownership
@@ -1889,9 +1913,9 @@ Each layer can only import errors it's responsible for throwing:
 | --------------------------------------------------------------------------------- | ------------------------ |
 | `EmbodyError`                                                                     | `api` only (base class)  |
 | `InternalError`                                                                   | any layer (escape hatch) |
-| `LangUnknownError`, `ConfigInvalidError`                                          | `api` only               |
-| `OptionsSchemaInvalidError`                                                       | `configuring` only       |
-| `OptionsSemanticInvalidError`, `ParseError`, `RuntimeError`, `LimitExceededError` | `langs` only             |
+| `TracerUnknownError`, `ArgumentInvalidError`                                      | `api` only               |
+| `OptionsInvalidError`                                                             | `configuring` only       |
+| `OptionsSemanticInvalidError`, `ParseError`, `RuntimeError`, `LimitExceededError` | `tracers` only           |
 | `types.ts` (`SourceLoc`)                                                          | any layer                |
 
 ### Configuration

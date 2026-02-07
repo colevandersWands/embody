@@ -1,45 +1,47 @@
-import LangUnknownError from '../../errors/lang-unknown-error.js';
 import ParseError from '../../errors/parse-error.js';
+import TracerUnknownError from '../../errors/tracer-unknown-error.js';
 import tracify from '../tracify.js';
 
 describe('tracify', () => {
   describe('async behavior', () => {
     it('.steps returns a Promise', () => {
-      const result = tracify.lang('chars').code('ab').steps;
+      const result = tracify.tracer('chars').code('ab').steps;
 
       expect(result).toBeInstanceOf(Promise);
     });
 
     it('.steps resolves to steps array', async () => {
-      const steps = await tracify.lang('chars').code('ab').steps;
+      const steps = await tracify.tracer('chars').code('ab').steps;
 
       expect(Array.isArray(steps)).toBe(true);
       expect(steps).toHaveLength(2);
     });
 
-    it('.resolvedConfig returns a Promise', () => {
-      const result = tracify.lang('chars').code('ab').resolvedConfig;
+    it('.resolvedConfig returns sync (not Promise)', () => {
+      const result = tracify.tracer('chars').resolvedConfig;
 
-      expect(result).toBeInstanceOf(Promise);
+      expect(result).not.toBeInstanceOf(Promise);
+      expect(result).toHaveProperty('meta');
+      expect(result).toHaveProperty('options');
     });
   });
 
   describe('basic chaining', () => {
-    it('.lang().code().steps resolves to steps array', async () => {
-      const steps = await tracify.lang('chars').code('ab').steps;
+    it('.tracer().code().steps resolves to steps array', async () => {
+      const steps = await tracify.tracer('chars').code('ab').steps;
 
       expect(Array.isArray(steps)).toBe(true);
       expect(steps).toHaveLength(2);
     });
 
-    it('.code().lang().steps works (order independent)', async () => {
-      const steps = await tracify.code('ab').lang('chars').steps;
+    it('.code().tracer().steps works (order independent)', async () => {
+      const steps = await tracify.code('ab').tracer('chars').steps;
 
       expect(steps).toHaveLength(2);
     });
 
     it('.steps is a lazy getter (traces on access)', async () => {
-      const chain = tracify.lang('chars').code('ab');
+      const chain = tracify.tracer('chars').code('ab');
       // Access .steps twice - should work both times
       const steps1 = await chain.steps;
       const steps2 = await chain.steps;
@@ -50,33 +52,33 @@ describe('tracify', () => {
   });
 
   describe('config handling', () => {
-    it('.config() passes config to lang module', async () => {
+    it('.config() passes config to tracer module', async () => {
       const steps = await tracify
-        .lang('chars')
+        .tracer('chars')
         .code('ab')
         .config({ options: { remove: ['a'], replace: {}, direction: 'lr' } }).steps;
 
       expect(steps).toHaveLength(1);
     });
 
-    it('without .config() uses lang defaults', async () => {
-      const steps = await tracify.lang('chars').code('ab').steps;
+    it('without .config() uses tracer defaults', async () => {
+      const steps = await tracify.tracer('chars').code('ab').steps;
 
       expect(steps).toHaveLength(2);
     });
   });
 
   describe('type validation (eager, sync)', () => {
-    it('.lang() throws immediately on non-string', () => {
-      expect(() => tracify.lang(123 as unknown as string)).toThrow(/expected string/);
+    it('.tracer() throws immediately on non-string', () => {
+      expect(() => tracify.tracer(123 as unknown as string)).toThrow(/expected a string/);
     });
 
-    it('.lang() throws with descriptive message including actual type', () => {
-      expect(() => tracify.lang(null as unknown as string)).toThrow(/got object/);
+    it('.tracer() throws with descriptive message including actual type', () => {
+      expect(() => tracify.tracer(null as unknown as string)).toThrow(/got object/);
     });
 
     it('.code() throws immediately on non-string', () => {
-      expect(() => tracify.code(456 as unknown as string)).toThrow(/expected string/);
+      expect(() => tracify.code(456 as unknown as string)).toThrow(/expected a string/);
     });
 
     it('.code() throws with descriptive message including actual type', () => {
@@ -84,38 +86,28 @@ describe('tracify', () => {
     });
   });
 
-  describe('semantic/necessity validation (lazy, async)', () => {
-    it('rejects for unknown lang with LangUnknownError', async () => {
-      await expect(tracify.lang('unknown').code('x').steps).rejects.toBeInstanceOf(
-        LangUnknownError,
-      );
+  describe('validation (sync throws from getters)', () => {
+    it('.tracer() throws for unknown tracer with TracerUnknownError', () => {
+      expect(() => tracify.tracer('unknown')).toThrow(TracerUnknownError);
     });
 
-    it('rejects when lang missing', async () => {
-      await expect(tracify.code('ab').steps).rejects.toThrow(/lang.*required/i);
+    it('.steps throws when tracer missing', () => {
+      expect(() => tracify.code('ab').steps).toThrow(/tracer.*required/i);
     });
 
-    it('rejects when code missing', async () => {
-      await expect(tracify.lang('chars').steps).rejects.toThrow(/code.*required/i);
+    it('.steps throws when code missing', () => {
+      expect(() => tracify.tracer('chars').steps).toThrow(/code.*required/i);
     });
 
-    it('rejects with ParseError from lang module', async () => {
-      await expect(tracify.lang('chars').code('‽').steps).rejects.toBeInstanceOf(ParseError);
-    });
-  });
-
-  describe('result getters', () => {
-    it('.ok getter returns true (always - throws on error)', () => {
-      const chain = tracify.lang('chars').code('ab');
-
-      expect(chain.ok).toBe(true);
+    it('.steps rejects with ParseError from tracer module (async)', async () => {
+      await expect(tracify.tracer('chars').code('‽').steps).rejects.toBeInstanceOf(ParseError);
     });
   });
 
   describe('immutability (deep clone)', () => {
     it('config is deep cloned on entry', async () => {
       const config = { options: { remove: ['a'], replace: {}, direction: 'lr' as const } };
-      const chain = tracify.lang('chars').code('ab').config(config);
+      const chain = tracify.tracer('chars').code('ab').config(config);
 
       // Mutate original
       config.options.remove.push('b');
@@ -128,7 +120,7 @@ describe('tracify', () => {
 
   describe('memoization', () => {
     it('does not re-trace on multiple .steps accesses', async () => {
-      const chain = tracify.lang('chars').code('ab');
+      const chain = tracify.tracer('chars').code('ab');
 
       const steps1 = await chain.steps;
       const steps2 = await chain.steps;
@@ -140,10 +132,10 @@ describe('tracify', () => {
     });
 
     it('.steps returns different reference on each access (deep clone)', async () => {
-      const chain = tracify.lang('chars').code('ab');
+      const chain = tracify.tracer('chars').code('ab');
 
-      const steps1 = (await chain.steps) as { char: string }[];
-      const steps2 = (await chain.steps) as { char: string }[];
+      const steps1 = (await chain.steps) as unknown as { char: string }[];
+      const steps2 = (await chain.steps) as unknown as { char: string }[];
 
       // Mutating steps1 doesn't affect steps2
       (steps1[0] as { char: string }).char = 'mutated';
@@ -151,10 +143,10 @@ describe('tracify', () => {
     });
   });
 
-  describe('resolvedConfig getter', () => {
-    it('.resolvedConfig resolves to options with lang defaults', async () => {
-      const chain = tracify.lang('chars').code('ab');
-      const resolved = await chain.resolvedConfig;
+  describe('resolvedConfig getter (sync)', () => {
+    it('.resolvedConfig returns options with tracer defaults', () => {
+      const chain = tracify.tracer('chars');
+      const resolved = chain.resolvedConfig;
 
       expect(resolved).toHaveProperty('options');
       expect(resolved.options).toHaveProperty('direction', 'lr');
@@ -162,25 +154,30 @@ describe('tracify', () => {
       expect(resolved.options).toHaveProperty('replace');
     });
 
-    it('.resolvedConfig includes user-provided options merged with defaults', async () => {
-      const chain = tracify
-        .lang('chars')
-        .code('ab')
-        .config({ options: { remove: ['a'] } });
-      const resolved = await chain.resolvedConfig;
+    it('.resolvedConfig includes user-provided options merged with defaults', () => {
+      const chain = tracify.tracer('chars').config({ options: { remove: ['a'] } });
+      const resolved = chain.resolvedConfig;
 
       expect((resolved.options as { remove: string[] }).remove).toEqual(['a']);
       expect((resolved.options as { direction: string }).direction).toBe('lr'); // default
     });
 
-    it('.resolvedConfig returns deep cloned copy', async () => {
-      const chain = tracify.lang('chars').code('ab');
+    it('.resolvedConfig returns deep cloned copy', () => {
+      const chain = tracify.tracer('chars');
 
-      const resolved1 = await chain.resolvedConfig;
-      const resolved2 = await chain.resolvedConfig;
+      const resolved1 = chain.resolvedConfig;
+      const resolved2 = chain.resolvedConfig;
 
       expect(resolved1).toEqual(resolved2);
       expect(resolved1).not.toBe(resolved2); // Different reference
+    });
+
+    it('.resolvedConfig does not require code', () => {
+      // Can access resolvedConfig without setting code
+      const resolved = tracify.tracer('chars').resolvedConfig;
+
+      expect(resolved).toHaveProperty('meta');
+      expect(resolved).toHaveProperty('options');
     });
   });
 });

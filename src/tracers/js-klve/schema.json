@@ -1,0 +1,162 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "js-klve-options",
+  "title": "js-klve Options",
+  "description": "Configuration options for js-klve JavaScript tracer",
+  "type": "object",
+  "properties": {
+    "filter": {
+      "type": "object",
+      "description": "Post-trace filtering configuration",
+      "properties": {
+        "nodes": {
+          "type": "object",
+          "description": "Filter by AST node type (semantic groups)",
+          "properties": {
+            "declarations": {
+              "type": "object",
+              "properties": {
+                "variable": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "VariableDeclaration"
+                }
+              }
+            },
+            "loops": {
+              "type": "object",
+              "properties": {
+                "for": { "type": "boolean", "default": true, "description": "ForStatement" },
+                "while": { "type": "boolean", "default": true, "description": "WhileStatement" }
+              }
+            },
+            "conditionals": {
+              "type": "object",
+              "properties": {
+                "if": { "type": "boolean", "default": true, "description": "IfStatement" },
+                "ternary": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "ConditionalExpression"
+                }
+              }
+            },
+            "blocks": {
+              "type": "object",
+              "properties": {
+                "try": { "type": "boolean", "default": true, "description": "TryStatement" },
+                "expressionStatement": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "ExpressionStatement"
+                }
+              }
+            },
+            "calls": {
+              "type": "object",
+              "properties": {
+                "call": { "type": "boolean", "default": true, "description": "CallExpression" },
+                "new": { "type": "boolean", "default": true, "description": "NewExpression" }
+              }
+            },
+            "access": {
+              "type": "object",
+              "properties": {
+                "member": { "type": "boolean", "default": true, "description": "MemberExpression" },
+                "identifier": { "type": "boolean", "default": true, "description": "Identifier" }
+              }
+            },
+            "operators": {
+              "type": "object",
+              "properties": {
+                "binary": { "type": "boolean", "default": true, "description": "BinaryExpression" },
+                "unary": { "type": "boolean", "default": true, "description": "UnaryExpression" },
+                "logical": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "LogicalExpression"
+                },
+                "assignment": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "AssignmentExpression"
+                },
+                "update": { "type": "boolean", "default": true, "description": "UpdateExpression" },
+                "sequence": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "SequenceExpression"
+                }
+              }
+            },
+            "literals": {
+              "type": "object",
+              "properties": {
+                "numeric": { "type": "boolean", "default": true, "description": "NumericLiteral" },
+                "string": { "type": "boolean", "default": true, "description": "StringLiteral" },
+                "boolean": { "type": "boolean", "default": true, "description": "BooleanLiteral" },
+                "array": { "type": "boolean", "default": true, "description": "ArrayExpression" },
+                "object": { "type": "boolean", "default": true, "description": "ObjectExpression" }
+              }
+            },
+            "functions": {
+              "type": "object",
+              "properties": {
+                "arrow": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "ArrowFunctionExpression"
+                },
+                "expression": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "FunctionExpression"
+                }
+              }
+            }
+          }
+        },
+        "timing": {
+          "type": "object",
+          "description": "Filter by step timing phase",
+          "properties": {
+            "before": {
+              "type": "boolean",
+              "default": true,
+              "description": "Include 'before' steps"
+            },
+            "after": { "type": "boolean", "default": true, "description": "Include 'after' steps" }
+          }
+        },
+        "data": {
+          "type": "object",
+          "description": "Control which data fields are included in steps",
+          "properties": {
+            "scopes": {
+              "type": "boolean",
+              "default": true,
+              "description": "Include variable scope chain"
+            },
+            "value": {
+              "type": "boolean",
+              "default": true,
+              "description": "Include expression values"
+            },
+            "logs": {
+              "type": "boolean",
+              "default": true,
+              "description": "Include console.log captures"
+            },
+            "dt": {
+              "type": "boolean",
+              "default": true,
+              "description": "Include timing (ms since start)"
+            },
+            "loc": { "type": "boolean", "default": true, "description": "Include source location" }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

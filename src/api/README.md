@@ -28,7 +28,7 @@ For quick scripts, REPLs, and contexts where you want errors to propagate natura
 const steps = await trace('chars', 'ab');
 
 // tracify - chainable builder, await .steps
-const steps = await tracify.lang('chars').code('ab').steps;
+const steps = await tracify.tracer('chars').code('ab').steps;
 ```
 
 ### Embody Family (Safe)
@@ -42,11 +42,11 @@ For production code, UI applications, and contexts where you need explicit error
 
 ```typescript
 // embody - completing call returns Promise, .steps is sync after await
-const result = await embody({ lang: 'chars', code: 'ab', config: null });
+const result = await embody({ tracer: 'chars', code: 'ab', config: {} });
 if (result.ok) console.log(result.steps);
 
 // embodify - .trace() returns Promise, .steps is sync after await
-const chain = await embodify({ lang: 'chars', code: 'ab' }).trace();
+const chain = await embodify({ tracer: 'chars', code: 'ab' }).trace();
 if (chain.ok) console.log(chain.steps);
 ```
 
@@ -59,29 +59,29 @@ import { trace, tracify, embody, embodify } from '@study-lenses/embody';
 const steps = await trace('chars', 'hello');
 
 // 2. Chainable throws: build up then await .steps
-const steps = await tracify.lang('chars').code('hello').steps;
+const steps = await tracify.tracer('chars').code('hello').steps;
 
 // 3. Safe with closures: partial application (partial is sync, completing is async)
-const withLang = embody({ lang: 'chars' }); // Sync — returns closure
-const result = await withLang({ code: 'hello', config: null }); // Async
+const withLang = embody({ tracer: 'chars' }); // Sync — returns closure
+const result = await withLang({ code: 'hello', config: {} }); // Async
 if (result.ok) console.log(result.steps); // Sync access after await
 
 // 4. Safe chainable: .set() is sync, .trace() is async
-const chain = await embodify({ lang: 'chars' }).set({ code: 'hello' }).trace();
+const chain = await embodify({ tracer: 'chars' }).set({ code: 'hello' }).trace();
 if (chain.ok) console.log(chain.steps); // Sync access after await
 ```
 
 ## Decision Matrix
 
-| Need                              | Use        | Why                                            |
-| --------------------------------- | ---------- | ---------------------------------------------- |
-| Quick script, errors should throw | `trace`    | Simplest, positional args                      |
-| Build up trace config gradually   | `tracify`  | Chainable, memoized, throws on error           |
-| Production code, explicit errors  | `embody`   | Returns `{ ok, error }`, smart closures        |
-| Form validation, error recovery   | `embodify` | Chainable, `.ok` status, errors can be cleared |
-| Reuse lang across traces          | `embody`   | Partial closure caches lang                    |
-| Inspect state before tracing      | `embody`   | Closure has `.lang`, `.code`, `.config` props  |
-| Modify state, re-trace            | `embodify` | `.set()` returns new chain, `.trace()` again   |
+| Need                              | Use        | Why                                             |
+| --------------------------------- | ---------- | ----------------------------------------------- |
+| Quick script, errors should throw | `trace`    | Simplest, positional args                       |
+| Build up trace config gradually   | `tracify`  | Chainable, memoized, throws on error            |
+| Production code, explicit errors  | `embody`   | Returns `{ ok, error }`, smart closures         |
+| Form validation, error recovery   | `embodify` | Chainable, `.ok` status, errors can be cleared  |
+| Reuse tracer across traces        | `embody`   | Partial closure caches tracer                   |
+| Inspect state before tracing      | `embody`   | Closure has `.tracer`, `.code`, `.config` props |
+| Modify state, re-trace            | `embodify` | `.set()` returns new chain, `.trace()` again    |
 
 **Rule of thumb:**
 
@@ -92,23 +92,23 @@ if (chain.ok) console.log(chain.steps); // Sync access after await
 
 ## Config Flow
 
-When you pass config to any API, both meta and options are prepared before reaching the lang module:
+When you pass config to any API, both meta and options are prepared before reaching the tracer module:
 
 ```text
 User: trace('chars', 'ab', { meta: { max: { steps: 100 } }, options: { direction: 'rl' } })
          │
          ▼
     API Layer (orchestration)
-    ├── 1. Validates lang/code types
-    ├── 2. Gets lang module from dispatch (includes schema)
+    ├── 1. Validates tracer/code types
+    ├── 2. Gets tracer module from dispatch (includes schema)
     ├── 3. Validates meta config
     │       └── prepareConfig(userMeta, metaSchema) from /configuring
     ├── 4. Validates options config
     │       └── prepareConfig(userOptions, langSchema) from /configuring
-    ├── 5. Calls lang's verifyOptions() for semantic validation (if exported)
+    ├── 5. Calls tracer's verifyOptions() for semantic validation (if exported)
          │
          ▼
-    Lang Module
+    Tracer Module
     ├── Receives FULLY FILLED { meta, options }
     ├── Enforces execution limits from meta
     ├── Pure tracing, no validation needed
@@ -121,24 +121,24 @@ User: trace('chars', 'ab', { meta: { max: { steps: 100 } }, options: { direction
 
 User config has two independent parts:
 
-| Part      | Schema Location             | Purpose                             |
-| --------- | --------------------------- | ----------------------------------- |
-| `meta`    | `/langs/meta.schema.json`   | Execution limits, timestamps, debug |
-| `options` | `/langs/<lang>/schema.json` | Language-specific tracing options   |
+| Part      | Schema Location                 | Purpose                             |
+| --------- | ------------------------------- | ----------------------------------- |
+| `meta`    | `/tracers/meta.schema.json`     | Execution limits, timestamps, debug |
+| `options` | `/tracers/<tracer>/schema.json` | Tracer-specific tracing options     |
 
 Each part is validated independently — meta errors don't affect options validation and vice versa.
 
-**Key guarantee**: Lang modules receive complete, validated config — never partial, never invalid types.
+**Key guarantee**: Tracer modules receive complete, validated config — never partial, never invalid types.
 
-**Module isolation**: `/configuring` is pure utilities that receive `(data, schema)`. The API layer gets schemas from langs and passes them to configuring functions.
+**Module isolation**: `/configuring` is pure utilities that receive `(data, schema)`. The API layer gets schemas from tracers and passes them to configuring functions.
 
 ## File Structure
 
 ```text
 src/api/
-  trace.ts               # Positional: trace(lang, code, config?) → steps | throws
-  tracify.ts             # Chainable throws: tracify.lang().code().steps
-  embody.ts              # Smart closures: embody({ lang, code, config }) → result | closure
+  trace.ts               # Positional: trace(tracer, code, config?) → steps | throws
+  tracify.ts             # Chainable throws: tracify.tracer().code().steps
+  embody.ts              # Smart closures: embody({ tracer, code, config }) → result | closure
   embodify.ts            # Chainable safe: .set() + .trace() → chain with .ok
   tests/
     embody.test.ts

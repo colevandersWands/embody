@@ -17,15 +17,15 @@ This module provides stateless functions that validate options against JSON Sche
 
 ## Purpose
 
-Before this module existed, each lang module duplicated:
+Before this module existed, each tracer module duplicated:
 
 - Default values
 - Merge logic (`{ ...defaults, ...userOptions }`)
 - Structural validation (type checking)
 
-This didn't scale — adding a new lang meant copy-pasting validation boilerplate.
+This didn't scale — adding a new tracer meant copy-pasting validation boilerplate.
 
-**Solution**: Extract validation and default-filling into pure, reusable functions. Langs export JSON Schema, API layer calls these functions with the schema.
+**Solution**: Extract validation and default-filling into pure, reusable functions. Tracers export JSON Schema, API layer calls these functions with the schema.
 
 ## Architectural Principle
 
@@ -35,16 +35,16 @@ This didn't scale — adding a new lang meant copy-pasting validation boilerplat
 | ------------------- | ---------------------------- |
 | Pure functions      | A coordinating layer         |
 | Stateless utilities | A registry or lookup service |
-| Schema-agnostic     | Lang-aware                   |
+| Schema-agnostic     | Tracer-aware                 |
 
-**Key design**: Functions receive schema as a parameter. They don't know which lang they're validating — that's the API layer's job.
+**Key design**: Functions receive schema as a parameter. They don't know which tracer they're validating — that's the API layer's job.
 
 ```typescript
 // Functions take (options, schema) — no langId, no registry lookup
 const filled = prepareConfig(userOptions, schema);
 ```
 
-**Module isolation**: `/configuring` imports ONLY from `/errors`. It never imports from `/langs` or `/api`.
+**Module isolation**: `/configuring` imports ONLY from `/errors`. It never imports from `/tracers` or `/api`.
 
 ## Pure & Pipeable
 
@@ -72,16 +72,16 @@ const result = prepareConfig(options, schema);
 - **Shorthand expansion** — expand `{ field: false }` to `{ field: { a: false, b: false, ... } }`
 - **Default filling** — apply defaults from any JSON Schema (via Ajv)
 - **Structural validation** — validate options against any JSON Schema (via Ajv)
-- **Error formatting** — produce clear `OptionsSchemaInvalidError` messages
+- **Error formatting** — produce clear `OptionsInvalidError` messages
 - **Return options** — all functions return options (pipeable, pure)
 
 ## What This Module Does NOT Do
 
-- **Schema lookup** — API layer imports schemas directly from langs
+- **Schema lookup** — API layer imports schemas directly from tracers
 - **Coordination** — API layer orchestrates the validation flow
-- **Semantic validation** — Langs export `verifyOptions()`, API layer calls it
-- **Lang/code validation** — API layer validates those types
-- **Parsing or tracing** — Lang modules do that
+- **Semantic validation** — Tracers export `verifyOptions()`, API layer calls it
+- **Tracer/code validation** — API layer validates those types
+- **Parsing or tracing** — Tracer modules do that
 
 ## Dependencies
 
@@ -115,5 +115,5 @@ src/configuring/
 ## Links
 
 - [API Reference](./DOCS.md) — function signatures, error types, examples
-- [Langs README](../langs/README.md) — how langs export schemas
+- [Tracers README](../tracers/README.md) — how tracers export schemas
 - [API README](../api/README.md) — how API layer coordinates validation

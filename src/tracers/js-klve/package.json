@@ -1,0 +1,42 @@
+{
+  "name": "@study-lenses/embody-lang-js-klve",
+  "version": "1.0.0",
+  "description": "JavaScript execution tracer for embody, adapted from jsviz.klve.nl",
+  "type": "module",
+  "main": "./dist/record.js",
+  "types": "./dist/record.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/record.js",
+      "types": "./dist/record.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "keywords": [
+    "embody",
+    "study-lenses",
+    "javascript",
+    "tracer",
+    "execution",
+    "babel"
+  ],
+  "author": "Study Lenses Project",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "@babel/standalone": "^7.26.0"
+  },
+  "peerDependencies": {
+    "@study-lenses/embody": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@study-lenses/embody": {
+      "optional": true
+    }
+  }
+}

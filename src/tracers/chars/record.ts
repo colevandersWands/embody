@@ -9,14 +9,14 @@
  * - RUNTIME_ERROR: input contains any emoji
  * - LIMIT_EXCEEDED: input exceeds maxLength
  *
- * Note: OPTIONS_SCHEMA_INVALID and OPTIONS_SEMANTIC_INVALID are thrown
+ * Note: OPTIONS_INVALID and OPTIONS_SEMANTIC_INVALID are thrown
  * by /configuring and verify-options.ts respectively, not by record().
  */
 
 import LimitExceededError from '../../errors/limit-exceeded-error.js';
 import ParseError from '../../errors/parse-error.js';
 import RuntimeError from '../../errors/runtime-error.js';
-import type { MetaConfig, RecordResult } from '../types.js';
+import type { MetaConfig } from '../types.js';
 
 import type { CharClass, CharsOptions, CharsStep } from './types.js';
 
@@ -38,39 +38,39 @@ function getCharClass(char: string): CharClass {
  * Records execution trace for chars language (async for API consistency).
  * Treats input as a character sequence and produces steps for each character.
  *
- * Internally sync but returns Promise for consistency with async langs (e.g., Python).
+ * Internally sync but returns Promise for consistency with async tracers (e.g., js-klve).
  *
  * Contract: Receives FULLY FILLED config from /configuring — never partial,
- * never undefined fields. Langs can trust input completely and do pure tracing.
+ * never undefined fields. Tracers can trust input completely and do pure tracing.
  *
  * @param code - Source string to trace
- * @param config - Configuration object with meta (execution limits) and options (lang-specific)
+ * @param config - Configuration object with meta (execution limits) and options (tracer-specific)
  * @returns Promise resolving to trace steps, one per character (after filtering)
  * @throws ParseError, RuntimeError, or LimitExceededError
  */
-// eslint-disable-next-line @typescript-eslint/require-await -- Async for API consistency with genuinely async langs
+// eslint-disable-next-line @typescript-eslint/require-await -- Async for API consistency with genuinely async tracers
 async function record(
   code: string,
   config: { readonly meta: MetaConfig; readonly options: CharsOptions },
-): Promise<RecordResult<CharsStep>> {
+): Promise<readonly CharsStep[]> {
   const { meta, options } = config;
 
-  // PARSE_ERROR: interrobang
+  // PARSE_ERROR: interrobang (ESTree: 0-indexed column)
   if (code.includes('‽')) {
     const index = code.indexOf('‽');
-    throw new ParseError('Unexpected interrobang (‽)', { line: 1, column: index + 1 });
+    throw new ParseError('Unexpected interrobang (‽)', { line: 1, column: index });
   }
 
-  // RUNTIME_ERROR: emoji
+  // RUNTIME_ERROR: emoji (ESTree: 0-indexed column)
   const emojiMatch = EMOJI_REGEX.exec(code);
   if (emojiMatch) {
     throw new RuntimeError(`Emoji not allowed: ${emojiMatch[0]}`, {
       line: 1,
-      column: (emojiMatch.index ?? 0) + 1,
+      column: emojiMatch.index ?? 0,
     });
   }
 
-  // LIMIT_EXCEEDED: maxLength (lang-specific limit)
+  // LIMIT_EXCEEDED: maxLength (tracer-specific limit)
   if (options.maxLength !== undefined && code.length > options.maxLength) {
     throw new LimitExceededError(
       `Input length ${code.length} exceeds maxLength ${options.maxLength}`,
@@ -79,7 +79,7 @@ async function record(
     );
   }
 
-  // LIMIT_EXCEEDED: meta.max.steps (cross-lang limit)
+  // LIMIT_EXCEEDED: meta.max.steps (cross-tracer limit)
   // For chars, input length is a proxy for max steps
   if (meta.max.steps !== null && code.length > meta.max.steps) {
     throw new LimitExceededError(
@@ -94,9 +94,14 @@ async function record(
   const { length } = chars;
 
   // Process a single position, returning step data or null if filtered
-  function processPosition(
-    position: number,
-  ): { readonly loc: { readonly line: 1; readonly column: number }; readonly char: string } | null {
+  // ESTree format: loc has start/end positions, column is 0-indexed
+  function processPosition(position: number): {
+    readonly loc: {
+      readonly start: { readonly line: 1; readonly column: number };
+      readonly end: { readonly line: 1; readonly column: number };
+    };
+    readonly char: string;
+  } | null {
     const index = isReverse ? length - 1 - position : position;
     const originalChar = chars[index];
 
@@ -108,14 +113,22 @@ async function record(
     if (!options.allowedCharClasses[charClass]) return null;
 
     const char = options.replace[originalChar] ?? originalChar;
-    const column = position + 1;
+    // ESTree: 0-indexed column, single char so start === end
+    const column = position;
+    const loc = {
+      start: { line: 1 as const, column },
+      end: { line: 1 as const, column },
+    };
 
-    return { loc: { line: 1, column }, char };
+    return { loc, char };
   }
 
   // Step data type after filtering nulls
   type StepData = {
-    readonly loc: { readonly line: 1; readonly column: number };
+    readonly loc: {
+      readonly start: { readonly line: 1; readonly column: number };
+      readonly end: { readonly line: 1; readonly column: number };
+    };
     readonly char: string;
   };
 
@@ -130,7 +143,7 @@ async function record(
     .filter((item) => isStep(item))
     .map((item, index) => ({ step: index + 1, ...item }));
 
-  return { steps, config: { meta, options } };
+  return steps;
 }
 
 export default record;

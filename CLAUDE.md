@@ -480,4 +480,4 @@ The conventions in DEV.md are designed to help LLMs generate correct code on the
 - See src/api/README.md for API module overview and decision matrix
 - See src/errors/README.md for error classes and `instanceof` handling patterns
 - See src/configuring/README.md for configuration validation and options
-- See src/langs/README.md for language module conventions
+- See src/tracers/README.md for tracer module conventions

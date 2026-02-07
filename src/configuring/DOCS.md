@@ -28,30 +28,30 @@ const result = validateConfig(fillDefaults(expandShorthand(data, schema), schema
 const result = prepareConfig(data, schema);
 ```
 
-**Key principle**: Functions receive `(data, schema)` and return data. They never mutate inputs, never import from `/langs`, and have zero awareness of where schemas come from.
+**Key principle**: Functions receive `(data, schema)` and return data. They never mutate inputs, never import from `/tracers`, and have zero awareness of where schemas come from.
 
 ### Error Summary
 
-| Function          | Throws                      | When                                           |
-| ----------------- | --------------------------- | ---------------------------------------------- |
-| `expandShorthand` | Never                       | Pure transformation, always succeeds           |
-| `fillDefaults`    | Never                       | Pure transformation, always succeeds           |
-| `validateConfig`  | `OptionsSchemaInvalidError` | Data doesn't match schema                      |
-| `prepareConfig`   | `OptionsSchemaInvalidError` | Data doesn't match schema (via validateConfig) |
+| Function          | Throws                | When                                           |
+| ----------------- | --------------------- | ---------------------------------------------- |
+| `expandShorthand` | Never                 | Pure transformation, always succeeds           |
+| `fillDefaults`    | Never                 | Pure transformation, always succeeds           |
+| `validateConfig`  | `OptionsInvalidError` | Data doesn't match schema                      |
+| `prepareConfig`   | `OptionsInvalidError` | Data doesn't match schema (via validateConfig) |
 
 ---
 
 ## Schema Agnostic
 
-These functions work with **any** JSON Schema — they have no knowledge of "meta" vs "options" or which language they're validating for.
+These functions work with **any** JSON Schema — they have no knowledge of "meta" vs "options" or which tracer they're validating for.
 
 ```typescript
 // The API layer uses the same functions for both meta and options:
 const filledMeta = prepareConfig(userMeta ?? {}, metaSchema);
-const filledOptions = prepareConfig(userOptions ?? {}, langSchema);
+const filledOptions = prepareConfig(userOptions ?? {}, tracerSchema);
 ```
 
-**This is intentional**: `/configuring` is a pure utility module. The API layer does all coordination — it knows about meta schemas, lang schemas, and orchestration order. `/configuring` just receives `(data, schema)` and returns validated, filled data.
+**This is intentional**: `/configuring` is a pure utility module. The API layer does all coordination — it knows about meta schemas, tracer schemas, and orchestration order. `/configuring` just receives `(data, schema)` and returns validated, filled data.
 
 ---
 
@@ -81,7 +81,7 @@ Returns fully-filled, validated data object. Throws on validation failure.
 ```typescript
 import prepareConfig from './prepare-config.js';
 
-// For lang options
+// For tracer options
 const filledOptions = prepareConfig({ direction: 'rl' }, charsSchema);
 // {
 //   direction: 'rl',
@@ -102,7 +102,7 @@ const filledMeta = prepareConfig({ max: { steps: 100 } }, metaSchema);
 
 ### Errors
 
-Throws `OptionsSchemaInvalidError` if validation fails (via `validateConfig`).
+Throws `OptionsInvalidError` if validation fails (via `validateConfig`).
 
 ### Why Use This
 
@@ -239,7 +239,7 @@ Returns the same data object on success (enables piping). Throws on validation f
 
 ### Errors
 
-Throws `OptionsSchemaInvalidError` when data doesn't match the schema:
+Throws `OptionsInvalidError` when data doesn't match the schema:
 
 - Wrong type: `"direction must be string"`
 - Invalid enum: `"direction must be one of: lr, rl"`
@@ -258,23 +258,20 @@ console.log(validated === data); // true
 
 // Invalid — throws
 validateConfig({ direction: 'invalid' }, charsSchema);
-// OptionsSchemaInvalidError: direction must be one of: lr, rl
+// OptionsInvalidError: direction must be one of: lr, rl
 ```
 
 ---
 
 ## Error Handling
 
-All `/configuring` functions throw `OptionsSchemaInvalidError`:
+All `/configuring` functions throw `OptionsInvalidError`:
 
 ```typescript
-import OptionsSchemaInvalidError from '../errors/options-schema-invalid-error.js';
+import OptionsInvalidError from '../errors/options-invalid-error.js';
 
 // Structural validation error (from Ajv)
-throw new OptionsSchemaInvalidError(
-  'options.direction must be one of: lr, rl',
-  'options.direction',
-);
+throw new OptionsInvalidError('options.direction must be one of: lr, rl', 'options.direction');
 ```
 
 ### Error Message Format
@@ -282,35 +279,35 @@ throw new OptionsSchemaInvalidError(
 Structural errors include the field path and expected type:
 
 ```text
-OptionsSchemaInvalidError: options.direction must be string
-OptionsSchemaInvalidError: options.remove must be array
-OptionsSchemaInvalidError: options.direction must be one of: lr, rl
+OptionsInvalidError: options.direction must be string
+OptionsInvalidError: options.remove must be array
+OptionsInvalidError: options.direction must be one of: lr, rl
 ```
 
 Multiple errors are joined:
 
 ```text
-OptionsSchemaInvalidError: options.direction must be string; options.remove must be array
+OptionsInvalidError: options.direction must be string; options.remove must be array
 ```
 
 ### Error Ownership
 
-| Error Class                   | Source                   | When                             |
-| ----------------------------- | ------------------------ | -------------------------------- |
-| `OptionsSchemaInvalidError`   | `/configuring` functions | Options don't match JSON Schema  |
-| `OptionsSemanticInvalidError` | Lang's `verifyOptions()` | Cross-field constraints violated |
+| Error Class                   | Source                     | When                             |
+| ----------------------------- | -------------------------- | -------------------------------- |
+| `OptionsInvalidError`         | `/configuring` functions   | Options don't match JSON Schema  |
+| `OptionsSemanticInvalidError` | Tracer's `verifyOptions()` | Cross-field constraints violated |
 
-**Note**: `/configuring` only throws `OptionsSchemaInvalidError`. The `OptionsSemanticInvalidError` is thrown by lang's `verifyOptions()`, which is called by the API layer (not by `/configuring`).
+**Note**: `/configuring` only throws `OptionsInvalidError`. The `OptionsSemanticInvalidError` is thrown by tracer's `verifyOptions()`, which is called by the API layer (not by `/configuring`).
 
 ---
 
 ## JSON Schema Format
 
-Schemas follow JSON Schema draft 2020-12. They live with their lang module:
+Schemas follow JSON Schema draft 2020-12. They live with their tracer module:
 
 ```text
-src/langs/chars/schema.json
-src/langs/js/schema.json      (future)
+src/tracers/chars/schema.json
+src/tracers/js/schema.json      (future)
 ```
 
 ### Example Schema
@@ -359,7 +356,7 @@ src/langs/js/schema.json      (future)
 
 ## verifyOptions Convention
 
-Langs MAY export a `verifyOptions()` function for semantic validation (cross-field constraints). The **API layer** calls this — not `/configuring`.
+Tracers MAY export a `verifyOptions()` function for semantic validation (cross-field constraints). The **API layer** calls this — not `/configuring`.
 
 ### Contract
 
@@ -386,7 +383,7 @@ Use `verifyOptions()` for constraints that JSON Schema cannot express:
 ### Example
 
 ```typescript
-// src/langs/hypothetical/verify-options.ts
+// src/tracers/hypothetical/verify-options.ts
 import OptionsSemanticInvalidError from '../errors/options-semantic-invalid-error.js';
 import type { HypotheticalOptions } from './types.js';
 
@@ -405,15 +402,15 @@ export default verifyOptions;
 
 ### Who Calls verifyOptions?
 
-The **API layer** calls `verifyOptions()` — not `/configuring`. This keeps `/configuring` pure and lang-agnostic:
+The **API layer** calls `verifyOptions()` — not `/configuring`. This keeps `/configuring` pure and tracer-agnostic:
 
 ```typescript
 // In API layer
 import prepareConfig from '../configuring/prepare-config.js';
 
-// API orchestrates — schema comes from lang module via dispatch
-const filled = prepareConfig(userOptions, langModule.schema);
-langModule.verifyOptions?.(filled); // called by API, not /configuring
+// API orchestrates — schema comes from tracer module via dispatch
+const filled = prepareConfig(userOptions, tracerModule.schema);
+tracerModule.verifyOptions?.(filled); // called by API, not /configuring
 ```
 
 ---
@@ -421,5 +418,5 @@ langModule.verifyOptions?.(filled); // called by API, not /configuring
 ## Links
 
 - [Module Overview](./README.md) — architecture, purpose, what this module does NOT do
-- [Langs README](../langs/README.md) — how langs export schemas
+- [Tracers README](../tracers/README.md) — how tracers export schemas
 - [API README](../api/README.md) — how API layer coordinates validation

@@ -27,7 +27,7 @@ Core dependency enabling educational tool developers to build Study Lenses - dif
 
 ### Core Boundary Principle
 
-**Our entire responsibility**: `embody({ lang, code, config }) → { ok, steps, ... }`
+**Our entire responsibility**: `embody({ tracer, code, config }) → { ok, steps, ... }`
 
 - We provide raw execution traces of the JS callstack and granular, semantic-level trace configurations.
 - Educational tool developers configure and consume our traces to implement all analysis, pedagogy, and student experiences.
@@ -65,9 +65,9 @@ Like how:
 
 The configuration options and structure reflect the structure of their corresponding trace data. Example:
 
-| Config                                                                              | Trace Log                                                                    |
-| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `{ lang: { bindings: { events: { assign: true }, kind: { declarative: true } } } }` | `[ ... { category: "binding", kind: "declarative", event: "assign" }, ... ]` |
+| Config                                                                                | Trace Log                                                                    |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `{ tracer: { bindings: { events: { assign: true }, kind: { declarative: true } } } }` | `[ ... { category: "binding", kind: "declarative", event: "assign" }, ... ]` |
 
 ### Only Log Learner-Visible Behavior
 
@@ -112,7 +112,7 @@ console.log(steps); // Array of execution events
 // Chainable API for multi-step workflows
 import { embodify } from '@study-lenses/embody';
 
-const chain = await embodify({ lang: 'chars', code: 'hello' }).trace();
+const chain = await embodify({ tracer: 'chars', code: 'hello' }).trace();
 if (chain.ok) console.log(chain.steps); // Array of execution events
 ```
 
@@ -149,23 +149,23 @@ try {
 ```javascript
 import { embody, embodify } from '@study-lenses/embody';
 
-// Partial application — reuse lang across traces
-const withLang = embody({ lang: 'chars' });
-const result1 = await withLang({ code: 'hello', config: null });
-const result2 = await withLang({ code: 'world', config: null });
+// Partial application — reuse tracer across traces
+const withTracer = embody({ tracer: 'chars' });
+const result1 = await withTracer({ code: 'hello', config: null });
+const result2 = await withTracer({ code: 'world', config: null });
 
 // Chainable workflow for batch processing
-const tracer = embodify({ lang: 'chars' });
-const results = await Promise.all(codes.map((code) => tracer.set({ code }).trace()));
+const chain = embodify({ tracer: 'chars' });
+const results = await Promise.all(codes.map((code) => chain.set({ code }).trace()));
 ```
 
 ## Documentation
 
 - [**API Reference**](./DOCS.md) - Complete API documentation
 - [**API Module**](./src/api/README.md) - API entry points overview and decision matrix
-- [**Error Handling**](./src/errors/README.md) - Error classes and handling patterns
+- [**Error Handling**](./src/errors/README.md) - Error hierarchy and handling patterns
 - [**Configuration**](./src/configuring/README.md) - Options validation and default-filling
-- [**Language Modules**](./src/langs/README.md) - Language-specific tracing implementations
+- [**Tracer Modules**](./src/tracers/README.md) - Tracer implementations
 - [**Developer Guide**](./DEV.md) - Architecture and conventions
 - [**Code Conventions**](./DEV.md#codebase-conventions) - Coding standards and style guide
 - [**Contributing**](./CONTRIBUTING.md) - How to contribute

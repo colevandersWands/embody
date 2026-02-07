@@ -11,24 +11,32 @@ const DEFAULT_META: MetaConfig = {
 
 describe('dispatch', () => {
   describe('registry structure', () => {
-    it('contains chars language', () => {
+    it('contains chars tracer', () => {
       expect(dispatch.chars).toBeDefined();
     });
 
-    it('returns undefined for unknown language', () => {
+    it('returns undefined for unknown tracer', () => {
       expect((dispatch as Record<string, unknown>).unknown).toBeUndefined();
     });
 
-    it('chars is a function', () => {
-      expect(typeof dispatch.chars).toBe('function');
+    it('chars.record is a function', () => {
+      expect(typeof dispatch.chars.record).toBe('function');
+    });
+
+    it('chars.schema is an object', () => {
+      expect(typeof dispatch.chars.schema).toBe('object');
+    });
+
+    it('chars.verifyOptions is a function', () => {
+      expect(typeof dispatch.chars.verifyOptions).toBe('function');
     });
   });
 
   describe('integration with record (async)', () => {
-    it('chars produces steps with fully-filled config', async () => {
+    it('chars.record produces steps with fully-filled config', async () => {
       // Note: dispatch tests call record() directly, which expects FULLY-FILLED config
       // API layer handles default-filling; these tests pass complete config
-      const { steps } = await dispatch.chars('ab', {
+      const steps = await dispatch.chars.record('ab', {
         meta: DEFAULT_META,
         options: {
           remove: [],
@@ -46,8 +54,8 @@ describe('dispatch', () => {
       expect(steps).toHaveLength(2);
     });
 
-    it('chars respects options configuration', async () => {
-      const { steps } = await dispatch.chars('ab', {
+    it('chars.record respects options configuration', async () => {
+      const steps = await dispatch.chars.record('ab', {
         meta: DEFAULT_META,
         options: {
           remove: [],
@@ -66,8 +74,8 @@ describe('dispatch', () => {
       expect(steps[1]).toHaveProperty('char', 'a');
     });
 
-    it('chars removes specified characters', async () => {
-      const { steps } = await dispatch.chars('abc', {
+    it('chars.record removes specified characters', async () => {
+      const steps = await dispatch.chars.record('abc', {
         meta: DEFAULT_META,
         options: {
           remove: ['b'],

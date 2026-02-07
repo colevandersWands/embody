@@ -7,9 +7,9 @@ Complete API documentation for all error classes. See [README.md](./README.md) f
 - [EmbodyError (Base Class)](#embodyerror-base-class)
 - [Error Handling Patterns](#error-handling-patterns)
 - [Specific Error Classes](#specific-error-classes)
-  - [LangUnknownError](#langunknownerror)
-  - [ConfigInvalidError](#configinvaliderror)
-  - [OptionsSchemaInvalidError](#optionsschemainvaliderror)
+  - [TracerUnknownError](#tracerunknownerror)
+  - [ArgumentInvalidError](#argumentinvaliderror)
+  - [OptionsInvalidError](#optionsinvaliderror)
   - [OptionsSemanticInvalidError](#optionssemanticinvaliderror)
   - [ParseError](#parseerror)
   - [RuntimeError](#runtimeerror)
@@ -92,16 +92,16 @@ try {
 Handle different errors differently:
 
 ```typescript
-import { trace, EmbodyError, ParseError, LangUnknownError } from '@study-lenses/embody';
+import { trace, EmbodyError, ParseError, TracerUnknownError } from '@study-lenses/embody';
 
 try {
-  const steps = await trace(lang, code);
+  const steps = await trace(tracer, code);
 } catch (error) {
   if (error instanceof ParseError) {
     highlightErrorLine(error.loc.line, error.loc.column);
     showError(`Syntax error: ${error.message}`);
-  } else if (error instanceof LangUnknownError) {
-    showError(`Language "${error.lang}" is not supported`);
+  } else if (error instanceof TracerUnknownError) {
+    showError(`Tracer "${error.tracer}" is not supported`);
   } else if (error instanceof EmbodyError) {
     // Catch-all for other embody errors
     showError(error.message);
@@ -118,7 +118,7 @@ Use `embody` or `embodify` for explicit error handling:
 ```typescript
 import { embody, ParseError } from '@study-lenses/embody';
 
-const result = await embody({ lang: 'chars', code, config: null });
+const result = await embody({ tracer: 'chars', code, config: null });
 
 if (result.ok) {
   render(result.steps);
@@ -135,49 +135,9 @@ if (result.ok) {
 
 ## Specific Error Classes
 
-### LangUnknownError
+### TracerUnknownError
 
-Thrown when the requested language is not in the dispatch registry.
-
-#### Thrown By
-
-API layer (`trace`, `tracify`, `embody`, `embodify`)
-
-#### Interface
-
-```typescript
-class LangUnknownError extends EmbodyError {
-  readonly name: 'LangUnknownError';
-  readonly lang: string; // The unknown language that was requested
-}
-```
-
-#### Constructor
-
-```typescript
-new LangUnknownError(lang: string)
-```
-
-#### Example
-
-```typescript
-import { trace, LangUnknownError } from '@study-lenses/embody';
-
-try {
-  await trace('unknown-lang', 'code');
-} catch (error) {
-  if (error instanceof LangUnknownError) {
-    console.log(error.lang); // 'unknown-lang'
-    console.log(error.message); // "Unknown language 'unknown-lang'"
-  }
-}
-```
-
----
-
-### ConfigInvalidError
-
-Thrown when `lang` or `code` arguments have wrong types.
+Thrown when the requested tracer is not in the dispatch registry.
 
 #### Thrown By
 
@@ -186,38 +146,78 @@ API layer (`trace`, `tracify`, `embody`, `embodify`)
 #### Interface
 
 ```typescript
-class ConfigInvalidError extends EmbodyError {
-  readonly name: 'ConfigInvalidError';
-  readonly field: string; // Which field was invalid ('lang', 'code')
+class TracerUnknownError extends EmbodyError {
+  readonly name: 'TracerUnknownError';
+  readonly tracer: string; // The unknown tracer that was requested
 }
 ```
 
 #### Constructor
 
 ```typescript
-new ConfigInvalidError(field: string, message: string)
+new TracerUnknownError(tracer: string)
 ```
 
 #### Example
 
 ```typescript
-import { trace, ConfigInvalidError } from '@study-lenses/embody';
+import { trace, TracerUnknownError } from '@study-lenses/embody';
 
 try {
-  await trace(123 as any, 'code'); // lang should be string
+  await trace('unknown-tracer', 'code');
 } catch (error) {
-  if (error instanceof ConfigInvalidError) {
-    console.log(error.field); // 'lang'
-    console.log(error.message); // "Expected lang to be string, got number"
+  if (error instanceof TracerUnknownError) {
+    console.log(error.tracer); // 'unknown-tracer'
+    console.log(error.message); // "Unknown tracer 'unknown-tracer'"
   }
 }
 ```
 
 ---
 
-### OptionsSchemaInvalidError
+### ArgumentInvalidError
 
-Thrown when user-provided options don't match the lang's JSON Schema.
+Thrown when required function arguments have wrong type or value.
+
+#### Thrown By
+
+API layer (`trace`, `tracify`, `embody`, `embodify`)
+
+#### Interface
+
+```typescript
+class ArgumentInvalidError extends EmbodyError {
+  readonly name: '(EmbodyError) ArgumentInvalidError';
+  readonly field: string; // Which argument was invalid ('tracer', 'code', 'config')
+}
+```
+
+#### Constructor
+
+```typescript
+new ArgumentInvalidError(field: string, message: string)
+```
+
+#### Example
+
+```typescript
+import { trace, ArgumentInvalidError } from '@study-lenses/embody';
+
+try {
+  await trace(123 as any, 'code'); // tracer should be string
+} catch (error) {
+  if (error instanceof ArgumentInvalidError) {
+    console.log(error.field); // 'tracer'
+    console.log(error.message); // "trace: expected tracer to be string, got number"
+  }
+}
+```
+
+---
+
+### OptionsInvalidError
+
+Thrown when user-provided meta or options don't match the JSON Schema.
 
 #### Thrown By
 
@@ -226,8 +226,8 @@ Thrown when user-provided options don't match the lang's JSON Schema.
 #### Interface
 
 ```typescript
-class OptionsSchemaInvalidError extends EmbodyError {
-  readonly name: 'OptionsSchemaInvalidError';
+class OptionsInvalidError extends EmbodyError {
+  readonly name: '(EmbodyError) OptionsInvalidError';
   readonly path?: string; // JSON path to invalid field (e.g., 'options.direction')
 }
 ```
@@ -235,18 +235,18 @@ class OptionsSchemaInvalidError extends EmbodyError {
 #### Constructor
 
 ```typescript
-new OptionsSchemaInvalidError(message: string, path?: string)
+new OptionsInvalidError(message: string, path?: string)
 ```
 
 #### Example
 
 ```typescript
-import { trace, OptionsSchemaInvalidError } from '@study-lenses/embody';
+import { trace, OptionsInvalidError } from '@study-lenses/embody';
 
 try {
   await trace('chars', 'ab', { options: { direction: 'invalid' } });
 } catch (error) {
-  if (error instanceof OptionsSchemaInvalidError) {
+  if (error instanceof OptionsInvalidError) {
     console.log(error.path); // 'options.direction'
     console.log(error.message); // "direction must be one of: lr, rl"
   }
@@ -261,7 +261,7 @@ Thrown when options pass schema validation but violate cross-field constraints.
 
 #### Thrown By
 
-Lang's `verifyOptions()` function (semantic validation)
+Tracer's `verifyOptions()` function (semantic validation)
 
 #### Interface
 
@@ -301,7 +301,7 @@ Thrown when the code cannot be parsed.
 
 #### Thrown By
 
-Lang's `record()` function
+Tracer's `record()` function
 
 #### Interface
 
@@ -312,10 +312,12 @@ class ParseError extends EmbodyError {
 }
 
 type SourceLoc = {
-  readonly line: number; // 1-indexed line number
-  readonly column: number; // 1-indexed column number
+  readonly line: number; // 1-indexed line number (ESTree standard)
+  readonly column: number; // 0-indexed column number (ESTree standard)
 };
 ```
+
+**ESTree compliance**: Follows the [ESTree specification](https://github.com/estree/estree/blob/master/es5.md#node-objects). Line numbers are 1-indexed, column numbers are 0-indexed.
 
 #### Constructor
 
@@ -333,7 +335,7 @@ try {
 } catch (error) {
   if (error instanceof ParseError) {
     console.log(error.loc.line); // 1
-    console.log(error.loc.column); // 11
+    console.log(error.loc.column); // 10 (0-indexed column)
     console.log(error.message); // "Unexpected character: ‽"
   }
 }
@@ -347,7 +349,7 @@ Thrown when code execution fails during tracing.
 
 #### Thrown By
 
-Lang's `record()` function
+Tracer's `record()` function
 
 #### Interface
 
@@ -387,7 +389,7 @@ Thrown when execution exceeds configured limits.
 
 #### Thrown By
 
-Lang's `record()` function
+Tracer's `record()` function
 
 #### Interface
 

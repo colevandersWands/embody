@@ -51,62 +51,62 @@ function errorWith(properties: Record<string, unknown>): Error {
 describe('record (async)', () => {
   describe('basic traversal', () => {
     it('produces complete trace with all step properties', async () => {
-      const { steps } = await record('ab', defaultConfig);
+      const steps = await record('ab', defaultConfig);
       expect(steps).toEqual([
-        { step: 1, loc: { line: 1, column: 1 }, char: 'a' },
-        { step: 2, loc: { line: 1, column: 2 }, char: 'b' },
+        { step: 1, loc: { start: { line: 1, column: 0 }, end: { line: 1, column: 0 } }, char: 'a' },
+        { step: 2, loc: { start: { line: 1, column: 1 }, end: { line: 1, column: 1 } }, char: 'b' },
       ]);
     });
 
     it('produces one step per character', async () => {
-      const { steps } = await record('abc', defaultConfig);
+      const steps = await record('abc', defaultConfig);
       expect(steps).toHaveLength(3);
     });
 
     it('returns empty array for empty string', async () => {
-      const { steps } = await record('', defaultConfig);
+      const steps = await record('', defaultConfig);
       expect(steps).toHaveLength(0);
     });
 
     it('assigns sequential step numbers starting at 1', async () => {
-      const { steps } = await record('abc', defaultConfig);
+      const steps = await record('abc', defaultConfig);
       expect(steps.map((s) => s.step)).toEqual([1, 2, 3]);
     });
 
-    it('assigns 1-indexed column positions', async () => {
-      const { steps } = await record('abc', defaultConfig);
-      expect(steps.map((s) => s.loc.column)).toEqual([1, 2, 3]);
+    it('assigns 0-indexed column positions (ESTree)', async () => {
+      const steps = await record('abc', defaultConfig);
+      expect(steps.map((s) => s.loc.start.column)).toEqual([0, 1, 2]);
     });
 
     it('sets line to 1 for all characters', async () => {
-      const { steps } = await record('abc', defaultConfig);
-      expect(steps.every((s) => s.loc.line === 1)).toBe(true);
+      const steps = await record('abc', defaultConfig);
+      expect(steps.every((s) => s.loc.start.line === 1)).toBe(true);
     });
 
     it('captures the character at each position', async () => {
-      const { steps } = await record('abc', defaultConfig);
+      const steps = await record('abc', defaultConfig);
       expect(steps.map((s) => s.char)).toEqual(['a', 'b', 'c']);
     });
   });
 
   describe('direction', () => {
     it('traverses left-to-right with lr direction', async () => {
-      const { steps } = await record('abc', config({ direction: 'lr' }));
+      const steps = await record('abc', config({ direction: 'lr' }));
       expect(steps.map((s) => s.char)).toEqual(['a', 'b', 'c']);
     });
 
     it('traverses right-to-left with rl direction', async () => {
-      const { steps } = await record('abc', config({ direction: 'rl' }));
+      const steps = await record('abc', config({ direction: 'rl' }));
       expect(steps.map((s) => s.char)).toEqual(['c', 'b', 'a']);
     });
 
     it('assigns sequential column positions with rl direction', async () => {
-      const { steps } = await record('abc', config({ direction: 'rl' }));
-      expect(steps.map((s) => s.loc.column)).toEqual([1, 2, 3]);
+      const steps = await record('abc', config({ direction: 'rl' }));
+      expect(steps.map((s) => s.loc.start.column)).toEqual([0, 1, 2]);
     });
 
     it('assigns step numbers in traversal order with rl', async () => {
-      const { steps } = await record('abc', config({ direction: 'rl' }));
+      const steps = await record('abc', config({ direction: 'rl' }));
       expect(steps[0].step).toBe(1);
       expect(steps[0].char).toBe('c');
     });
@@ -114,63 +114,63 @@ describe('record (async)', () => {
 
   describe('remove filter', () => {
     it('excludes characters in remove array', async () => {
-      const { steps } = await record('abc', config({ remove: ['b'] }));
+      const steps = await record('abc', config({ remove: ['b'] }));
       expect(steps.map((s) => s.char)).toEqual(['a', 'c']);
     });
 
     it('excludes multiple characters', async () => {
-      const { steps } = await record('abcd', config({ remove: ['a', 'c'] }));
+      const steps = await record('abcd', config({ remove: ['a', 'c'] }));
       expect(steps.map((s) => s.char)).toEqual(['b', 'd']);
     });
 
     it('renumbers steps after removal', async () => {
-      const { steps } = await record('abc', config({ remove: ['b'] }));
+      const steps = await record('abc', config({ remove: ['b'] }));
       expect(steps.map((s) => s.step)).toEqual([1, 2]);
     });
 
     it('preserves original column positions after removal', async () => {
-      const { steps } = await record('abc', config({ remove: ['b'] }));
-      expect(steps.map((s) => s.loc.column)).toEqual([1, 3]);
+      const steps = await record('abc', config({ remove: ['b'] }));
+      expect(steps.map((s) => s.loc.start.column)).toEqual([0, 2]);
     });
   });
 
   describe('replace filter', () => {
     it('substitutes characters according to replace map', async () => {
-      const { steps } = await record('abc', config({ replace: { a: 'x' } }));
+      const steps = await record('abc', config({ replace: { a: 'x' } }));
       expect(steps.map((s) => s.char)).toEqual(['x', 'b', 'c']);
     });
 
     it('applies multiple replacements', async () => {
-      const { steps } = await record('abc', config({ replace: { a: 'x', c: 'z' } }));
+      const steps = await record('abc', config({ replace: { a: 'x', c: 'z' } }));
       expect(steps.map((s) => s.char)).toEqual(['x', 'b', 'z']);
     });
 
     it('preserves column positions after replacement', async () => {
-      const { steps } = await record('abc', config({ replace: { a: 'x' } }));
-      expect(steps.map((s) => s.loc.column)).toEqual([1, 2, 3]);
+      const steps = await record('abc', config({ replace: { a: 'x' } }));
+      expect(steps.map((s) => s.loc.start.column)).toEqual([0, 1, 2]);
     });
   });
 
   describe('combined filters', () => {
     it('applies remove before replace (removes original char)', async () => {
-      const { steps } = await record('abc', config({ remove: ['a'], replace: { a: 'x' } }));
+      const steps = await record('abc', config({ remove: ['a'], replace: { a: 'x' } }));
       expect(steps.map((s) => s.char)).toEqual(['b', 'c']);
     });
 
     it('combines direction with remove', async () => {
-      const { steps } = await record('abc', config({ direction: 'rl', remove: ['b'] }));
+      const steps = await record('abc', config({ direction: 'rl', remove: ['b'] }));
       expect(steps.map((s) => s.char)).toEqual(['c', 'a']);
     });
 
     it('combines direction with replace', async () => {
-      const { steps } = await record('abc', config({ direction: 'rl', replace: { a: 'x' } }));
+      const steps = await record('abc', config({ direction: 'rl', replace: { a: 'x' } }));
       expect(steps.map((s) => s.char)).toEqual(['c', 'b', 'x']);
     });
   });
 
   describe('character class filter', () => {
     it('excludes lowercase when lowercase is false', async () => {
-      const { steps } = await record(
+      const steps = await record(
         'aBc',
         config({
           allowedCharClasses: { ...DEFAULT_OPTIONS.allowedCharClasses, lowercase: false },
@@ -180,7 +180,7 @@ describe('record (async)', () => {
     });
 
     it('excludes uppercase when uppercase is false', async () => {
-      const { steps } = await record(
+      const steps = await record(
         'aBc',
         config({
           allowedCharClasses: { ...DEFAULT_OPTIONS.allowedCharClasses, uppercase: false },
@@ -192,7 +192,7 @@ describe('record (async)', () => {
     it('excludes numbers when number is false', async () => {
       // Note: Can't test digits directly - emoji regex matches them
       // This test verifies the mechanism works via uppercase/lowercase
-      const { steps } = await record(
+      const steps = await record(
         'aAbB',
         config({
           allowedCharClasses: { ...DEFAULT_OPTIONS.allowedCharClasses, lowercase: false },
@@ -202,7 +202,7 @@ describe('record (async)', () => {
     });
 
     it('excludes punctuation when punctuation is false', async () => {
-      const { steps } = await record(
+      const steps = await record(
         'a!b@c',
         config({
           allowedCharClasses: { ...DEFAULT_OPTIONS.allowedCharClasses, punctuation: false },
@@ -212,7 +212,7 @@ describe('record (async)', () => {
     });
 
     it('excludes other (spaces, newlines) when other is false', async () => {
-      const { steps } = await record(
+      const steps = await record(
         'a b\nc',
         config({
           allowedCharClasses: { ...DEFAULT_OPTIONS.allowedCharClasses, other: false },
@@ -222,7 +222,7 @@ describe('record (async)', () => {
     });
 
     it('excludes multiple classes', async () => {
-      const { steps } = await record(
+      const steps = await record(
         'aBc!',
         config({
           allowedCharClasses: {
@@ -238,17 +238,17 @@ describe('record (async)', () => {
     });
 
     it('preserves column positions after filtering', async () => {
-      const { steps } = await record(
+      const steps = await record(
         'aBCd',
         config({
           allowedCharClasses: { ...DEFAULT_OPTIONS.allowedCharClasses, uppercase: false },
         }),
       );
-      expect(steps.map((s) => s.loc.column)).toEqual([1, 4]);
+      expect(steps.map((s) => s.loc.start.column)).toEqual([0, 3]);
     });
 
     it('combines with remove filter', async () => {
-      const { steps } = await record(
+      const steps = await record(
         'aAbB',
         config({
           remove: ['a'],
@@ -261,18 +261,18 @@ describe('record (async)', () => {
 
   describe('special characters', () => {
     it('handles newlines as characters', async () => {
-      const { steps } = await record('a\nb', defaultConfig);
+      const steps = await record('a\nb', defaultConfig);
       expect(steps).toHaveLength(3);
       expect(steps[1].char).toBe('\n');
     });
 
     it('handles spaces', async () => {
-      const { steps } = await record('a b', defaultConfig);
+      const steps = await record('a b', defaultConfig);
       expect(steps[1].char).toBe(' ');
     });
 
     it('handles unicode characters', async () => {
-      const { steps } = await record('añb', defaultConfig);
+      const steps = await record('añb', defaultConfig);
       expect(steps).toHaveLength(3);
       expect(steps[1].char).toBe('ñ');
     });
@@ -288,15 +288,15 @@ describe('record (async)', () => {
         await expect(record('ab‽cd', defaultConfig)).rejects.toBeInstanceOf(ParseError);
       });
 
-      it('includes location at column 3 for ab‽cd', async () => {
+      it('includes location at column 2 for ab‽cd (0-indexed)', async () => {
         await expect(record('ab‽cd', defaultConfig)).rejects.toThrow(
-          errorWith({ loc: { line: 1, column: 3 } }),
+          errorWith({ loc: { line: 1, column: 2 } }),
         );
       });
 
-      it('includes location at column 1 when interrobang is first', async () => {
+      it('includes location at column 0 when interrobang is first', async () => {
         await expect(record('‽abc', defaultConfig)).rejects.toThrow(
-          errorWith({ loc: { line: 1, column: 1 } }),
+          errorWith({ loc: { line: 1, column: 0 } }),
         );
       });
     });
@@ -310,9 +310,9 @@ describe('record (async)', () => {
         await expect(record('ab🎉cd', defaultConfig)).rejects.toBeInstanceOf(RuntimeError);
       });
 
-      it('includes location at column 3 for ab🎉cd', async () => {
+      it('includes location at column 2 for ab🎉cd (0-indexed)', async () => {
         await expect(record('ab🎉cd', defaultConfig)).rejects.toThrow(
-          errorWith({ loc: { line: 1, column: 3 } }),
+          errorWith({ loc: { line: 1, column: 2 } }),
         );
       });
 
@@ -335,7 +335,7 @@ describe('record (async)', () => {
       });
 
       it('allows code at exactly maxLength', async () => {
-        const { steps } = await record('abc', config({ maxLength: 3 }));
+        const steps = await record('abc', config({ maxLength: 3 }));
         expect(steps).toHaveLength(3);
       });
 
@@ -354,7 +354,7 @@ describe('record (async)', () => {
       });
 
       it('does not check maxLength when undefined', async () => {
-        const { steps } = await record('a'.repeat(1000), defaultConfig);
+        const steps = await record('a'.repeat(1000), defaultConfig);
         expect(steps).toHaveLength(1000);
       });
     });
@@ -369,27 +369,14 @@ describe('record (async)', () => {
 
       it('allows code at exactly meta.max.steps', async () => {
         const metaWithLimit = { ...DEFAULT_META, max: { ...DEFAULT_META.max, steps: 3 } };
-        const { steps } = await record('abc', { meta: metaWithLimit, options: DEFAULT_OPTIONS });
+        const steps = await record('abc', { meta: metaWithLimit, options: DEFAULT_OPTIONS });
         expect(steps).toHaveLength(3);
       });
 
       it('does not check meta.max.steps when null', async () => {
-        const { steps } = await record('a'.repeat(1000), defaultConfig);
+        const steps = await record('a'.repeat(1000), defaultConfig);
         expect(steps).toHaveLength(1000);
       });
-    });
-  });
-
-  describe('resolved config', () => {
-    it('returns the options used in config.options', async () => {
-      const customOptions = { ...DEFAULT_OPTIONS, direction: 'rl' as const };
-      const result = await record('abc', { meta: DEFAULT_META, options: customOptions });
-      expect(result.config.options).toEqual(customOptions);
-    });
-
-    it('returns the meta used in config.meta', async () => {
-      const result = await record('abc', defaultConfig);
-      expect(result.config.meta).toEqual(DEFAULT_META);
     });
   });
 });

@@ -2,7 +2,7 @@
  * @file Tests for validateConfig function.
  */
 
-import OptionsSchemaInvalidError from '../../errors/options-schema-invalid-error.js';
+import OptionsInvalidError from '../../errors/options-invalid-error.js';
 import type { JSONSchema } from '../types.js';
 import validateConfig from '../validate-config.js';
 
@@ -45,10 +45,10 @@ describe('validateConfig', () => {
   });
 
   describe('invalid type', () => {
-    it('throws OptionsSchemaInvalidError for wrong type', () => {
+    it('throws OptionsInvalidError for wrong type', () => {
       const input = { direction: 123 };
 
-      expect(() => validateConfig(input, testSchema)).toThrow(OptionsSchemaInvalidError);
+      expect(() => validateConfig(input, testSchema)).toThrow(OptionsInvalidError);
     });
 
     it('error message includes field path', () => {
@@ -62,7 +62,7 @@ describe('validateConfig', () => {
     it('throws for invalid enum value', () => {
       const input = { direction: 'invalid' };
 
-      expect(() => validateConfig(input, testSchema)).toThrow(OptionsSchemaInvalidError);
+      expect(() => validateConfig(input, testSchema)).toThrow(OptionsInvalidError);
     });
 
     it('error message lists allowed values', () => {
@@ -76,7 +76,7 @@ describe('validateConfig', () => {
     it('throws when required field is missing', () => {
       const input = { remove: [] };
 
-      expect(() => validateConfig(input, testSchema)).toThrow(OptionsSchemaInvalidError);
+      expect(() => validateConfig(input, testSchema)).toThrow(OptionsInvalidError);
     });
 
     it('error message mentions the missing field', () => {
@@ -94,7 +94,7 @@ describe('validateConfig', () => {
         validateConfig(input, testSchema);
         fail('Expected error to be thrown');
       } catch (error) {
-        expect(error).toBeInstanceOf(OptionsSchemaInvalidError);
+        expect(error).toBeInstanceOf(OptionsInvalidError);
         const { message } = error as Error;
         expect(message).toMatch(/direction/);
         expect(message).toMatch(/count/);

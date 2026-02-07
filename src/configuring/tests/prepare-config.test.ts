@@ -2,7 +2,7 @@
  * @file Tests for prepareConfig wrapper function.
  */
 
-import OptionsSchemaInvalidError from '../../errors/options-schema-invalid-error.js';
+import OptionsInvalidError from '../../errors/options-invalid-error.js';
 import prepareConfig from '../prepare-config.js';
 import type { JSONSchema } from '../types.js';
 
@@ -78,17 +78,17 @@ describe('prepareConfig', () => {
   });
 
   describe('validation errors', () => {
-    it('throws OptionsSchemaInvalidError for invalid input', () => {
+    it('throws OptionsInvalidError for invalid input', () => {
       const input = { direction: 'invalid' };
 
-      expect(() => prepareConfig(input, testSchema)).toThrow(OptionsSchemaInvalidError);
+      expect(() => prepareConfig(input, testSchema)).toThrow(OptionsInvalidError);
     });
 
     it('throws after attempting to fill defaults', () => {
       // Invalid type that can't be coerced
       const input = { direction: { nested: 'object' } };
 
-      expect(() => prepareConfig(input, testSchema)).toThrow(OptionsSchemaInvalidError);
+      expect(() => prepareConfig(input, testSchema)).toThrow(OptionsInvalidError);
     });
   });
 

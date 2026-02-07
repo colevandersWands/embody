@@ -174,5 +174,5 @@ record('aB1c', {
 
 ## Links
 
-- [Parent README](../README.md) — lang module architecture
+- [Parent README](../README.md) — tracer module architecture
 - [/configuring](../../configuring/README.md) — how options are validated

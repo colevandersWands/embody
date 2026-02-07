@@ -15,7 +15,7 @@ import validateConfig from './validate-config.js';
  * @param data - User-provided data (may be partial, may use shorthand)
  * @param schema - JSON Schema defining expected structure with defaults
  * @returns Fully-filled, validated data object
- * @throws OptionsSchemaInvalidError when validation fails
+ * @throws OptionsInvalidError when validation fails
  */
 function prepareConfig(data: unknown, schema: JSONSchema): unknown {
   const expanded = expandShorthand(data, schema);

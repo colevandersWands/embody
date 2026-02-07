@@ -6,27 +6,27 @@
  * and the hybrid typing approach for object-threading patterns.
  */
 
-import type { StepCore } from '../langs/types.js';
+import type { StepCore } from '../tracers/types.js';
 
 // ============================================================================
-// Stub Types (placeholder until proper implementation in langs/js/)
+// Stub Types (placeholder until proper implementation in tracers/js/)
 // ============================================================================
 
 /**
  * User-provided configuration options.
- * Stub type - will be replaced when langs/js/ is implemented.
+ * Stub type - will be replaced when tracers/js/ is implemented.
  */
 type UserConfig = Readonly<Record<string, unknown>>;
 
 /**
  * Expanded configuration with all defaults filled.
- * Stub type - will be replaced when langs/js/ is implemented.
+ * Stub type - will be replaced when tracers/js/ is implemented.
  */
 type ExpandedConfig = Readonly<Record<string, unknown>>;
 
 /**
  * Specific trace event with all details.
- * Stub type - will be replaced when langs/js/ is implemented.
+ * Stub type - will be replaced when tracers/js/ is implemented.
  */
 type SpecificTraceEvent = StepCore & Readonly<Record<string, unknown>>;
 

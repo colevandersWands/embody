@@ -1,5 +1,5 @@
 /**
- * Integration tests for the lang module infrastructure.
+ * Integration tests for the tracer module infrastructure.
  * Tests dispatch + chars together without touching /api.
  */
 
@@ -28,35 +28,35 @@ const DEFAULT_OPTIONS = {
   },
 };
 
-describe('lang module integration', () => {
+describe('tracer module integration', () => {
   describe('dispatch routing', () => {
     it('dispatches to chars and records', async () => {
-      const record = dispatch.chars;
-      const { steps } = await record('ab', {
+      const { record } = dispatch.chars;
+      const steps = await record('ab', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
       expect(steps).toHaveLength(2);
     });
 
-    it('returns undefined for unknown lang', () => {
+    it('returns undefined for unknown tracer', () => {
       expect((dispatch as Record<string, unknown>).unknown).toBeUndefined();
     });
 
-    it('can iterate over available languages', () => {
-      const langIds = Object.keys(dispatch);
-      expect(langIds).toContain('chars');
+    it('can iterate over available tracers', () => {
+      const tracerIds = Object.keys(dispatch);
+      expect(tracerIds).toContain('chars');
     });
   });
 
   describe('record function signature', () => {
-    it('chars record is a function', () => {
-      expect(typeof dispatch.chars).toBe('function');
+    it('chars.record is a function', () => {
+      expect(typeof dispatch.chars.record).toBe('function');
     });
 
     it('accepts code and config object', async () => {
-      const record = dispatch.chars;
-      const { steps } = await record('test', {
+      const { record } = dispatch.chars;
+      const steps = await record('test', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
@@ -64,45 +64,47 @@ describe('lang module integration', () => {
     });
   });
 
-  describe('StepCore contract', () => {
+  describe('StepCore contract (ESTree format)', () => {
     it('all steps have required StepCore fields', async () => {
-      const { steps } = await dispatch.chars('abc', {
+      const steps = await dispatch.chars.record('abc', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
       for (const step of steps) {
         expect(typeof step.step).toBe('number');
-        expect(typeof step.loc.line).toBe('number');
-        expect(typeof step.loc.column).toBe('number');
+        expect(typeof step.loc.start.line).toBe('number');
+        expect(typeof step.loc.start.column).toBe('number');
+        expect(typeof step.loc.end.line).toBe('number');
+        expect(typeof step.loc.end.column).toBe('number');
       }
     });
 
     it('step numbers are 1-indexed', async () => {
-      const { steps } = await dispatch.chars('abc', {
+      const steps = await dispatch.chars.record('abc', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
       expect(steps[0].step).toBe(1);
     });
 
-    it('line numbers are 1-indexed', async () => {
-      const { steps } = await dispatch.chars('abc', {
+    it('line numbers are 1-indexed (ESTree standard)', async () => {
+      const steps = await dispatch.chars.record('abc', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
-      expect(steps[0].loc.line).toBe(1);
+      expect(steps[0].loc.start.line).toBe(1);
     });
 
-    it('column numbers are 1-indexed', async () => {
-      const { steps } = await dispatch.chars('abc', {
+    it('column numbers are 0-indexed (ESTree standard)', async () => {
+      const steps = await dispatch.chars.record('abc', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
-      expect(steps[0].loc.column).toBe(1);
+      expect(steps[0].loc.start.column).toBe(0);
     });
 
     it('steps are in execution order', async () => {
-      const { steps } = await dispatch.chars('abc', {
+      const steps = await dispatch.chars.record('abc', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
@@ -114,7 +116,7 @@ describe('lang module integration', () => {
   describe('immutability guarantees', () => {
     it('returned steps are readonly', async () => {
       // Note: dispatch tests call record() directly with FULLY-FILLED config
-      const { steps } = await dispatch.chars('ab', {
+      const steps = await dispatch.chars.record('ab', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
@@ -123,12 +125,12 @@ describe('lang module integration', () => {
   });
 
   describe('type narrowing helper', () => {
-    it('can type-check lang existence before use', async () => {
-      const langId = 'chars';
-      if (langId in dispatch) {
-        const record = dispatch[langId as keyof typeof dispatch];
+    it('can type-check tracer existence before use', async () => {
+      const tracerId = 'chars';
+      if (tracerId in dispatch) {
+        const { record } = dispatch[tracerId as keyof typeof dispatch];
         // Note: dispatch tests call record() directly with FULLY-FILLED config
-        const { steps } = await record('test', {
+        const steps = await record('test', {
           meta: DEFAULT_META,
           options: DEFAULT_OPTIONS,
         });

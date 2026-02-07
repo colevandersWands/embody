@@ -1,78 +1,79 @@
-import ConfigInvalidError from '../errors/config-invalid-error.js';
-import LangUnknownError from '../errors/lang-unknown-error.js';
-import dispatch from '../langs/dispatch.js';
-import type { StepCore } from '../langs/types.js';
-
-import prepareOptions from './prepare-options.js';
-
 /**
- * Executes the trace after type validation.
- * Handles lang lookup, config preparation, and record call.
+ * @file Simple tracing function.
+ *
+ * All validation and config prep is SYNCHRONOUS — errors throw immediately.
+ * Only the final record() call is async.
  */
-async function executeTrace(
-  lang: string,
-  code: string,
-  config: unknown,
-): Promise<readonly StepCore[]> {
-  const langRecord = dispatch[lang];
-  if (typeof langRecord !== 'function') {
-    throw new LangUnknownError(lang, {
-      cause: { available: Object.keys(dispatch) },
-    });
-  }
 
-  // Prepare both meta and options (fill defaults + verify)
-  const userConfig = (config ?? {}) as {
-    readonly meta?: Readonly<Record<string, unknown>>;
-    readonly options?: Readonly<Record<string, unknown>>;
-  };
-  const { meta, options } = prepareOptions(lang, userConfig);
-
-  // Pass fully-filled config to lang record function
-  const result = await langRecord(code, { meta, options });
-  return result.steps;
-}
+import prepareConfig from '../configuring/prepare-config.js';
+import type { JSONSchema } from '../configuring/types.js';
+import ArgumentInvalidError from '../errors/argument-invalid-error.js';
+import TracerUnknownError from '../errors/tracer-unknown-error.js';
+import dispatch from '../tracers/dispatch.js';
+import metaSchema from '../tracers/meta.schema.json';
+import type { MetaConfig, StepCore } from '../tracers/types.js';
+import deepClone from '../utils/deep-clone.js';
 
 /**
- * Simple tracing function for quick usage. Async — returns Promise.
+ * Traces code execution for a given tracer.
  *
- * Returns just the trace steps array without metadata. Useful for simple
- * scripts or when you don't need the full trace metadata.
+ * All validation and config prep is SYNCHRONOUS — errors throw immediately.
+ * Only the final record() call is async.
  *
- * Type validation happens eagerly (throws sync). Semantic errors reject the Promise.
- *
- * @example
- * ```typescript
- * import { trace } from '@study-lenses/embody';
- *
- * // Trace with default options for the language
- * const steps = await trace('chars', 'hello');
- *
- * // Trace with custom options
- * const steps = await trace('chars', 'hello', { options: { direction: 'rl' } });
- * ```
- *
- * @param lang - Language identifier (e.g., 'chars', 'js', 'python')
+ * @param tracer - Tracer identifier (e.g., 'chars', 'js:klve')
  * @param code - Code/input to trace
  * @param config - Optional config with { meta?, options? } structure
  * @returns Promise resolving to array of trace steps
- * @throws {ConfigInvalidError} (sync) if lang/code is not a string
- * @throws {LangUnknownError} (async) if language is not supported
- * @throws {OptionsSemanticInvalidError} (async) if verifyOptions fails
- * @throws {ParseError|RuntimeError|LimitExceededError} (async) from the record function
+ * @throws {ArgumentInvalidError} (sync) if tracer/code/config has wrong type
+ * @throws {TracerUnknownError} (sync) if tracer not supported
+ * @throws {OptionsInvalidError} (sync) if schema validation fails
+ * @throws {OptionsSemanticInvalidError} (sync) if verifyOptions fails
  */
-function trace(lang: string, code: string, config?: unknown): Promise<readonly StepCore[]> {
-  // Type validation throws synchronously (before Promise creation)
-  if (typeof lang !== 'string' || lang.trim() === '') {
-    throw new ConfigInvalidError('lang', 'trace: lang must be a non-empty string');
+function trace(tracer: string, code: string, config?: unknown): Promise<readonly StepCore[]> {
+  // 1. Validate tracer type (sync)
+  if (typeof tracer !== 'string' || tracer.trim() === '') {
+    throw new ArgumentInvalidError('tracer', 'trace: tracer must be a non-empty string');
   }
 
+  // 2. Check tracer exists (sync)
+  const tracerModule = dispatch[tracer];
+  if (!tracerModule) {
+    throw new TracerUnknownError(tracer, { cause: { available: Object.keys(dispatch) } });
+  }
+
+  // 3. Validate code type (sync)
   if (typeof code !== 'string') {
-    throw new ConfigInvalidError('code', `trace: expected code to be a string, got ${typeof code}`);
+    throw new ArgumentInvalidError(
+      'code',
+      `trace: expected code to be a string, got ${typeof code}`,
+    );
   }
 
-  // Semantic validation and execution return Promise (rejects on error)
-  return Promise.resolve().then(() => executeTrace(lang, code, config));
+  // 4. Validate config type (sync)
+  if (config !== undefined && config !== null && typeof config !== 'object') {
+    throw new ArgumentInvalidError(
+      'config',
+      `trace: expected config to be an object, got ${typeof config}`,
+    );
+  }
+
+  // 5. Prepare meta config (sync)
+  const userConfig = (deepClone(config) ?? {}) as {
+    readonly meta?: unknown;
+    readonly options?: unknown;
+  };
+  const meta = prepareConfig(userConfig.meta ?? {}, metaSchema as JSONSchema) as MetaConfig;
+
+  // 6. Prepare tracer options (sync) — skip if tracer has no schema
+  const options = tracerModule.schema
+    ? prepareConfig(userConfig.options ?? {}, tracerModule.schema as JSONSchema)
+    : {};
+
+  // 7. Semantic validation (sync) — only if tracer exports verifyOptions
+  tracerModule?.verifyOptions?.(options);
+
+  // 8. Record (async) — returns steps directly
+  return tracerModule.record(code, { meta, options });
 }
 
 export default trace;

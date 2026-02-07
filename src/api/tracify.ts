@@ -1,168 +1,205 @@
 /**
- * @file Minimal chainable tracing API that throws on errors.
+ * @file Chainable tracing API that throws on errors.
  *
  * Provides fluent interface for building trace configuration.
- * Type errors throw synchronously; semantic errors reject the Promise.
+ * Type errors throw synchronously; record errors reject the Promise.
  *
  * @example
  * ```js
- * const steps = await tracify.lang('chars').code('hello').steps;
+ * const steps = await tracify.tracer('chars').code('hello').steps;
+ * const config = tracify.tracer('chars').resolvedConfig; // sync
  * ```
  */
 
-import ConfigInvalidError from '../errors/config-invalid-error.js';
-import LangUnknownError from '../errors/lang-unknown-error.js';
-import dispatch from '../langs/dispatch.js';
-import type { ResolvedConfig, StepCore } from '../langs/types.js';
+import prepareConfig from '../configuring/prepare-config.js';
+import type { JSONSchema } from '../configuring/types.js';
+import ArgumentInvalidError from '../errors/argument-invalid-error.js';
+import TracerUnknownError from '../errors/tracer-unknown-error.js';
+import dispatch from '../tracers/dispatch.js';
+import metaSchema from '../tracers/meta.schema.json';
+import type { MetaConfig, ResolvedConfig, StepCore } from '../tracers/types.js';
 import deepClone from '../utils/deep-clone.js';
-
-import prepareOptions from './prepare-options.js';
 
 /**
  * Internal chain state for tracify.
+ * Input fields (tracer, code, config) are readonly.
+ * Cache fields (steps, resolvedConfig) are mutable for lazy computation.
+ * Uses `| undefined` to satisfy exactOptionalPropertyTypes.
  */
 type TracifyState = {
-  readonly lang: string | undefined;
-  readonly code: string | undefined;
-  readonly config: unknown;
-};
-
-/**
- * Cached trace result for memoization.
- */
-type CachedResult = {
-  readonly steps: readonly StepCore[];
-  readonly resolvedConfig: ResolvedConfig;
+  readonly tracer?: string | undefined;
+  readonly code?: string | undefined;
+  readonly config?: unknown;
+  readonly steps?: Promise<readonly StepCore[]> | undefined;
+  readonly resolvedConfig?: ResolvedConfig | undefined;
 };
 
 /**
  * The chain object returned by tracify methods.
- * Uses .lang(), .code(), .config() methods for chaining.
+ * Uses .tracer(), .code(), .config() methods for chaining.
  * Steps are memoized - traced once on first access, cached thereafter.
- * KISS: No .set() method - use .lang().code().config() instead.
  */
 type TracifyChain = {
-  // Chaining methods (return new chain)
-  lang(langId: string): TracifyChain;
+  tracer(tracerId: string): TracifyChain;
   code(source: string): TracifyChain;
   config(cfg: unknown): TracifyChain;
-  // Result getters (async, deep cloned on access)
   readonly steps: Promise<readonly StepCore[]>;
-  readonly resolvedConfig: Promise<ResolvedConfig>;
-  readonly ok: true; // Always true (throws on error)
+  readonly resolvedConfig: ResolvedConfig;
 };
 
 /**
- * Creates a new chain with the given state.
- * Deep clones config on entry to prevent caller mutations.
- * Memoizes trace result - computed once on first access.
+ * Creates a chain with the given state.
+ * Each chain method returns a new chain, invalidating caches as needed.
  */
-function tracifyChain(state: TracifyState): TracifyChain {
-  // Deep clone config to prevent caller mutations
-  const clonedConfig = state.config === undefined ? undefined : deepClone(state.config);
-  const internalState = { ...state, config: clonedConfig };
-
-  // Memoization: cache the trace result Promise
-  let cachedPromise: Promise<CachedResult> | null = null;
-
-  /**
-   * Performs the actual trace operation (async).
-   * Validates state, dispatches to lang module, returns result.
-   */
-  async function performTrace(): Promise<CachedResult> {
-    const { lang, code, config } = internalState;
-
-    if (typeof lang !== 'string') {
-      throw new ConfigInvalidError('lang', 'tracify: lang is required');
-    }
-
-    if (typeof code !== 'string') {
-      throw new ConfigInvalidError('code', 'tracify: code is required');
-    }
-
-    // Find language module
-    const langRecord = dispatch[lang];
-    if (typeof langRecord !== 'function') {
-      throw new LangUnknownError(lang, {
-        cause: { available: Object.keys(dispatch) },
-      });
-    }
-
-    // Prepare both meta and options (fill defaults + verify)
-    const userConfig = (config ?? {}) as {
-      readonly meta?: Readonly<Record<string, unknown>>;
-      readonly options?: Readonly<Record<string, unknown>>;
-    };
-    const { meta, options } = prepareOptions(lang, userConfig);
-
-    // Call the language's record function with fully-filled config
-    const result = await langRecord(code, { meta, options });
-
-    return {
-      steps: result.steps,
-      resolvedConfig: result.config,
-    };
-  }
-
-  /**
-   * Executes the trace and caches the result Promise.
-   * Returns Promise that rejects with EmbodyError subclass on failure.
-   */
-  function executeTrace(): Promise<CachedResult> {
-    if (cachedPromise !== null) {
-      return cachedPromise;
-    }
-
-    // Wrap in Promise to convert sync throws to rejections
-    cachedPromise = Promise.resolve().then(performTrace);
-
-    return cachedPromise;
-  }
-
+function tracifyChain(state: TracifyState = {}): TracifyChain {
   return {
-    lang(langId: string): TracifyChain {
-      if (typeof langId !== 'string') {
-        throw new ConfigInvalidError(
-          'lang',
-          `tracify.lang(): expected string, got ${typeof langId}`,
+    tracer(_tracer: string): TracifyChain {
+      if (typeof _tracer !== 'string') {
+        throw new ArgumentInvalidError(
+          'tracer',
+          `tracify.tracer(): expected a string, got ${typeof _tracer}`,
         );
       }
-      return tracifyChain({ ...internalState, lang: langId });
+      if (_tracer === '') {
+        throw new ArgumentInvalidError('tracer', 'tracify.tracer(): expected a non-empty string');
+      }
+
+      const tracerModule = dispatch[_tracer];
+      if (!tracerModule) {
+        throw new TracerUnknownError(_tracer, { cause: { available: Object.keys(dispatch) } });
+      }
+
+      // Invalidate cache when tracer changes (drops steps and resolvedConfig)
+      return tracifyChain({
+        ...state,
+        tracer: _tracer,
+        steps: undefined,
+        resolvedConfig: undefined,
+      });
     },
-    code(source: string): TracifyChain {
-      if (typeof source !== 'string') {
-        throw new ConfigInvalidError(
+
+    code(_code: string): TracifyChain {
+      if (typeof _code !== 'string') {
+        throw new ArgumentInvalidError(
           'code',
-          `tracify.code(): expected string, got ${typeof source}`,
+          `tracify.code(): expected a string, got ${typeof _code}`,
         );
       }
-      return tracifyChain({ ...internalState, code: source });
+      if (_code === '') {
+        throw new ArgumentInvalidError('code', 'tracify.code(): expected a non-empty string');
+      }
+
+      // Invalidate steps cache when code changes (keep resolvedConfig)
+      return tracifyChain({ ...state, code: _code, steps: undefined });
     },
-    config(cfg: unknown): TracifyChain {
-      return tracifyChain({ ...internalState, config: cfg });
+
+    config(_config: unknown): TracifyChain {
+      if (_config !== null && typeof _config !== 'object') {
+        throw new ArgumentInvalidError(
+          'config',
+          `tracify.config(): expected an object, got ${typeof _config}`,
+        );
+      }
+
+      // Invalidate cache when config changes
+      return tracifyChain({
+        ...state,
+        config: deepClone(_config ?? {}),
+        steps: undefined,
+        resolvedConfig: undefined,
+      });
     },
+
     get steps(): Promise<readonly StepCore[]> {
-      // Execute trace (memoized) and return deep clone
-      return executeTrace().then((result) => deepClone(result.steps));
+      if (state.steps) return state.steps.then(deepClone);
+
+      // 1. Validate tracer
+      if (state.tracer === undefined) {
+        throw new ArgumentInvalidError(
+          'tracer',
+          'tracify: a tracer is required to generate trace steps',
+        );
+      }
+
+      // 2. Validate code
+      if (state.code === undefined) {
+        throw new ArgumentInvalidError('code', 'tracify: code is required to generate trace steps');
+      }
+
+      // 3. Check tracer exists
+      const tracerModule = dispatch[state.tracer];
+      if (!tracerModule) {
+        throw new TracerUnknownError(state.tracer, { cause: { available: Object.keys(dispatch) } });
+      }
+
+      // 4-6. Reuse cached config if available, otherwise prepare
+      if (!state.resolvedConfig) {
+        const userConfig = (state.config ?? {}) as {
+          readonly meta?: unknown;
+          readonly options?: unknown;
+        };
+        const meta = prepareConfig(userConfig.meta ?? {}, metaSchema as JSONSchema) as MetaConfig;
+        // Skip options prep if tracer has no schema
+        const options = tracerModule.schema
+          ? (prepareConfig(userConfig.options ?? {}, tracerModule.schema as JSONSchema) as Record<
+              string,
+              unknown
+            >)
+          : {};
+        tracerModule?.verifyOptions?.(options);
+        // eslint-ignore
+        state.resolvedConfig = { meta, options };
+      }
+
+      // 7. Record (resolvedConfig is now guaranteed to exist)
+      // eslint-ignore
+      state.steps = tracerModule.record(state.code, state.resolvedConfig);
+
+      return state.steps.then(deepClone);
     },
-    get resolvedConfig(): Promise<ResolvedConfig> {
-      // Execute trace (memoized) and return deep clone
-      return executeTrace().then((result) => deepClone(result.resolvedConfig));
-    },
-    get ok(): true {
-      // Always true for tracify (it throws/rejects instead of returning ok: false)
-      return true;
+
+    get resolvedConfig(): ResolvedConfig {
+      if (state.resolvedConfig) return deepClone(state.resolvedConfig);
+
+      // 1. Validate tracer
+      if (state.tracer === undefined) {
+        throw new ArgumentInvalidError(
+          'tracer',
+          'tracify: tracer is required to access the resolved config',
+        );
+      }
+
+      // 2. Check tracer exists
+      const tracerModule = dispatch[state.tracer];
+      if (!tracerModule) {
+        throw new TracerUnknownError(state.tracer, { cause: { available: Object.keys(dispatch) } });
+      }
+
+      // 3. Prepare config (no code validation needed for config-only access)
+      const userConfig = (state.config ?? {}) as {
+        readonly meta?: unknown;
+        readonly options?: unknown;
+      };
+      const meta = prepareConfig(userConfig.meta ?? {}, metaSchema as JSONSchema) as MetaConfig;
+      // Skip options prep if tracer has no schema
+      const options = tracerModule.schema
+        ? (prepareConfig(userConfig.options ?? {}, tracerModule.schema as JSONSchema) as Record<
+            string,
+            unknown
+          >)
+        : {};
+
+      // 4. Semantic validation
+      tracerModule?.verifyOptions?.(options);
+
+      // 5. Cache and return
+      const resolvedConfig: ResolvedConfig = { meta, options };
+      // eslint-ignore
+      state.resolvedConfig = resolvedConfig;
+
+      return deepClone(resolvedConfig);
     },
   };
 }
 
-/**
- * Entry point for tracify - an object with chainable methods.
- */
-const tracify: TracifyChain = tracifyChain({
-  lang: undefined,
-  code: undefined,
-  config: undefined,
-});
-
-export default tracify;
+export default tracifyChain({});

@@ -35,7 +35,7 @@ Structured errors that enable both catch-all handling (any embody error) and spe
 ## Quick Start
 
 ```typescript
-import { trace, EmbodyError, ParseError, LangUnknownError } from '@study-lenses/embody';
+import { trace, EmbodyError, ParseError, TracerUnknownError } from '@study-lenses/embody';
 
 try {
   const steps = await trace('chars', 'hello');
@@ -47,8 +47,8 @@ try {
     // Specific handling
     if (error instanceof ParseError) {
       console.error(`Parse failed at line ${error.loc.line}`);
-    } else if (error instanceof LangUnknownError) {
-      console.error(`Unknown language: ${error.lang}`);
+    } else if (error instanceof TracerUnknownError) {
+      console.error(`Unknown tracer: ${error.tracer}`);
     }
   } else {
     throw error; // Re-throw non-embody errors
@@ -61,48 +61,48 @@ try {
 ```text
 Error (built-in)
   └── EmbodyError (marker class — never thrown directly)
-        ├── LangUnknownError        (API layer)
-        ├── ConfigInvalidError      (API layer)
-        ├── OptionsSchemaInvalidError   (/configuring)
-        ├── OptionsSemanticInvalidError (lang's verifyOptions)
-        ├── ParseError              (lang's record)
-        ├── RuntimeError            (lang's record)
-        ├── LimitExceededError      (lang's record)
-        └── InternalError           (any layer)
+        ├── TracerUnknownError            (API layer)
+        ├── ArgumentInvalidError        (API layer)
+        ├── OptionsInvalidError         (/configuring)
+        ├── OptionsSemanticInvalidError (tracer's verifyOptions)
+        ├── ParseError                  (tracer's record)
+        ├── RuntimeError                (tracer's record)
+        ├── LimitExceededError          (tracer's record)
+        └── InternalError               (any layer)
 ```
 
 ### Error Ownership
 
-| Error Class                   | Thrown By              | When                                         |
-| ----------------------------- | ---------------------- | -------------------------------------------- |
-| `LangUnknownError`            | API layer              | Language not in dispatch registry            |
-| `ConfigInvalidError`          | API layer              | Type validation fails (lang/code not string) |
-| `OptionsSchemaInvalidError`   | `/configuring`         | Options don't match JSON Schema              |
-| `OptionsSemanticInvalidError` | Lang's `verifyOptions` | Cross-field constraints violated             |
-| `ParseError`                  | Lang's `record`        | Code cannot be parsed                        |
-| `RuntimeError`                | Lang's `record`        | Execution fails during tracing               |
-| `LimitExceededError`          | Lang's `record`        | Execution limit exceeded                     |
-| `InternalError`               | Any layer              | Unexpected internal error                    |
+| Error Class                   | Thrown By                | When                                     |
+| ----------------------------- | ------------------------ | ---------------------------------------- |
+| `TracerUnknownError`          | API layer                | Tracer not in dispatch registry          |
+| `ArgumentInvalidError`        | API layer                | Required arguments have wrong type/value |
+| `OptionsInvalidError`         | `/configuring`           | meta/options don't match JSON Schema     |
+| `OptionsSemanticInvalidError` | Tracer's `verifyOptions` | Cross-field constraints violated         |
+| `ParseError`                  | Tracer's `record`        | Code cannot be parsed                    |
+| `RuntimeError`                | Tracer's `record`        | Execution fails during tracing           |
+| `LimitExceededError`          | Tracer's `record`        | Execution limit exceeded                 |
+| `InternalError`               | Any layer                | Unexpected internal error                |
 
 ## File Structure
 
 ```text
 src/errors/
-  README.md                       # This file
-  DOCS.md                         # Full API reference
-  types.ts                        # Shared types (SourceLoc)
-  embody-error.ts                 # Base class (marker only)
-  lang-unknown-error.ts           # API: unknown language
-  config-invalid-error.ts         # API: type validation failed
-  options-schema-invalid-error.ts # /configuring: schema mismatch
-  options-semantic-invalid-error.ts # lang: semantic constraint violated
-  parse-error.ts                  # lang: parse failed
-  runtime-error.ts                # lang: execution failed
-  limit-exceeded-error.ts         # lang: limit exceeded
-  internal-error.ts               # any: unexpected error
+  README.md                         # This file
+  DOCS.md                           # Full API reference
+  types.ts                          # Shared types (SourceLoc)
+  embody-error.ts                   # Base class (marker only)
+  tracer-unknown-error.ts             # API: unknown tracer
+  argument-invalid-error.ts         # API: argument type/value invalid
+  options-invalid-error.ts          # /configuring: schema mismatch
+  options-semantic-invalid-error.ts # tracer: semantic constraint violated
+  parse-error.ts                    # tracer: parse failed
+  runtime-error.ts                  # tracer: execution failed
+  limit-exceeded-error.ts           # tracer: limit exceeded
+  internal-error.ts                 # any: unexpected error
   tests/
     embody-error.test.ts
-    parse-error.test.ts
+    argument-invalid-error.test.ts
     ...
 ```
 

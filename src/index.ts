@@ -10,18 +10,18 @@
 // Type Exports
 // ============================================================================
 
-export type { StepCore } from './langs/types.js';
+export type { StepCore } from './tracers/types.js';
 
 // ============================================================================
 // Error Classes (for instanceof checks)
 // ============================================================================
 
 export { default as EmbodyError } from './errors/embody-error.js';
-export { default as ConfigInvalidError } from './errors/config-invalid-error.js';
+export { default as ArgumentInvalidError } from './errors/argument-invalid-error.js';
 export { default as InternalError } from './errors/internal-error.js';
-export { default as LangUnknownError } from './errors/lang-unknown-error.js';
+export { default as TracerUnknownError } from './errors/tracer-unknown-error.js';
 export { default as LimitExceededError } from './errors/limit-exceeded-error.js';
-export { default as OptionsSchemaInvalidError } from './errors/options-schema-invalid-error.js';
+export { default as OptionsInvalidError } from './errors/options-invalid-error.js';
 export { default as OptionsSemanticInvalidError } from './errors/options-semantic-invalid-error.js';
 export { default as ParseError } from './errors/parse-error.js';
 export { default as RuntimeError } from './errors/runtime-error.js';

@@ -1,7 +1,7 @@
 /**
  * @file Parse error class.
  *
- * Thrown when code cannot be parsed by a lang's record() function.
+ * Thrown when code cannot be parsed by a tracer's record() function.
  * Includes source location (line and column) where parsing failed.
  */
 

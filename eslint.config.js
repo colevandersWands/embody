@@ -10,7 +10,14 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 export default tseslint.config(
   // --- Global ignores ---
   {
-    ignores: ['dist/', 'node_modules/', '**/*.d.ts'],
+    ignores: [
+      'dist/',
+      'node_modules/',
+      '**/*.d.ts',
+      // Tracer sub-projects that manage their own linting.
+      // See src/tracers/DEV.md § Linting for how to opt out.
+      'src/tracers/js-klve/**',
+    ],
   },
 
   // --- Base TypeScript configs ---
@@ -49,7 +56,7 @@ export default tseslint.config(
         { type: 'entry', pattern: 'src/index.ts', mode: 'file' },
         { type: 'api', pattern: 'src/api/*', mode: 'file' },
         { type: 'configuring', pattern: 'src/configuring/*', mode: 'file' },
-        { type: 'langs', pattern: 'src/langs/**/*', mode: 'file' },
+        { type: 'tracers', pattern: 'src/tracers/**/*', mode: 'file' },
         { type: 'error', pattern: 'src/errors/*', mode: 'file', capture: ['errorFile'] },
         { type: 'utils', pattern: 'src/utils/*', mode: 'file' },
         { type: 'types', pattern: 'src/types.ts', mode: 'file' },
@@ -70,10 +77,13 @@ export default tseslint.config(
               allow: [
                 'api',
                 'configuring',
-                'langs',
+                'tracers',
                 'utils',
                 'types',
-                ['error', { errorFile: '{embody,internal,lang-unknown,config-invalid}-error.ts' }],
+                [
+                  'error',
+                  { errorFile: '{embody,internal,tracer-unknown,argument-invalid}-error.ts' },
+                ],
                 ['error', { errorFile: 'types.ts' }],
               ],
             },
@@ -84,15 +94,15 @@ export default tseslint.config(
                 'configuring',
                 'utils',
                 'types',
-                ['error', { errorFile: '{internal,options-schema-invalid}-error.ts' }],
+                ['error', { errorFile: '{internal,options-invalid}-error.ts' }],
                 ['error', { errorFile: 'types.ts' }],
               ],
             },
-            // Langs: utils + specific errors (no api imports - would be circular)
+            // tracers: utils + specific errors (no api imports - would be circular)
             {
-              from: 'langs',
+              from: 'tracers',
               allow: [
-                'langs',
+                'tracers',
                 'utils',
                 'types',
                 [

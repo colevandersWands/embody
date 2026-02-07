@@ -5,9 +5,9 @@ API overview for the `@study-lenses/embody` execution tracer. For complete detai
 ## Table of Contents
 
 - [Main API Functions](#main-api-functions)
-  - [`trace`](#tracelang-code-config)
+  - [`trace`](#tracetracer-code-config)
   - [`tracify`](#tracify)
-  - [`embody`](#embody-lang-code-config-)
+  - [`embody`](#embody-tracer-code-config-)
   - [`embodify`](#embodify)
 - [Error Handling](#error-handling)
 - [Configuration](#configuration)
@@ -19,7 +19,7 @@ Four APIs in two families: **trace family** (throws on error) and **embody famil
 
 All APIs are **async** — trace execution returns a Promise.
 
-### `trace(lang, code, config?)`
+### `trace(tracer, code, config?)`
 
 Simplest API — positional arguments, returns steps array. Throws on error. Also available as default export.
 
@@ -43,15 +43,15 @@ Chainable builder API. Throws on error. Results are memoized.
 ```typescript
 import { tracify } from '@study-lenses/embody';
 
-const steps = await tracify.lang('chars').code('hello').steps;
+const steps = await tracify.tracer('chars').code('hello').steps;
 
 // Order doesn't matter
-const steps = await tracify.code('hello').lang('chars').steps;
+const steps = await tracify.code('hello').tracer('chars').steps;
 ```
 
 For full interface and examples, see [API Reference](./src/api/DOCS.md#tracify).
 
-### `embody({ lang, code, config })`
+### `embody({ tracer, code, config })`
 
 Object-threading API with smart partial application. Returns `{ ok, error, steps }`.
 
@@ -59,15 +59,15 @@ Object-threading API with smart partial application. Returns `{ ok, error, steps
 import { embody } from '@study-lenses/embody';
 
 // Full call — await the Promise, then access .steps sync
-const result = await embody({ lang: 'chars', code: 'hello', config: null });
+const result = await embody({ tracer: 'chars', code: 'hello', config: null });
 if (result.ok) console.log(result.steps);
 
 // Partial application (closure is sync, completing call is async)
-const withLang = embody({ lang: 'chars' });
-const result = await withLang({ code: 'hello', config: null });
+const withTracer = embody({ tracer: 'chars' });
+const result = await withTracer({ code: 'hello', config: null });
 ```
 
-For full overloads, closure behavior, and config semantics, see [API Reference](./src/api/DOCS.md#embody-lang-code-config-).
+For full overloads, closure behavior, and config semantics, see [API Reference](./src/api/DOCS.md#embody-tracer-code-config-).
 
 ### `embodify()`
 
@@ -76,13 +76,13 @@ Chainable API with recoverable errors. `.set()` is sync, `.trace()` is async.
 ```typescript
 import { embodify } from '@study-lenses/embody';
 
-const chain = await embodify({ lang: 'chars', code: 'hello' }).trace();
+const chain = await embodify({ tracer: 'chars', code: 'hello' }).trace();
 if (chain.ok) console.log(chain.steps);
 
 // Recoverable errors — fix with .set()
-const bad = embodify({ lang: 123 });
+const bad = embodify({ tracer: 123 });
 bad.ok; // false
-const fixed = bad.set({ lang: 'chars' });
+const fixed = bad.set({ tracer: 'chars' });
 fixed.ok; // true
 ```
 
@@ -111,7 +111,7 @@ try {
 }
 ```
 
-**Error classes**: `LangUnknownError`, `ConfigInvalidError`, `OptionsSchemaInvalidError`, `OptionsSemanticInvalidError`, `ParseError`, `RuntimeError`, `LimitExceededError`, `InternalError`.
+**Error classes**: `TracerUnknownError`, `ArgumentInvalidError`, `OptionsInvalidError`, `OptionsSemanticInvalidError`, `ParseError`, `RuntimeError`, `LimitExceededError`, `InternalError`.
 
 For complete error hierarchy and ownership, see [Errors Reference](./src/errors/README.md).
 
@@ -119,7 +119,7 @@ For complete error hierarchy and ownership, see [Errors Reference](./src/errors/
 
 ### Config Structure
 
-User config has two parts: `meta` (execution limits) and `options` (lang-specific):
+User config has two parts: `meta` (execution limits) and `options` (tracer-specific):
 
 ```typescript
 // With meta limits
@@ -127,7 +127,7 @@ await trace('chars', 'hello', {
   meta: { max: { steps: 100 } },
 });
 
-// With lang-specific options
+// With tracer-specific options
 await trace('chars', 'hello', {
   options: { direction: 'rl' },
 });
@@ -152,7 +152,7 @@ import type { StepCore } from '@study-lenses/embody';
 type StepCore = {
   step: number; // 1-indexed execution order
   loc: { line: number; column: number }; // 1-indexed source location
-  // ...lang-specific fields
+  // ...tracer-specific fields
 };
 ```
 
@@ -161,7 +161,7 @@ For complete type definitions, see [src/api/types.ts](./src/api/types.ts).
 ## Notes
 
 - All APIs are **async** — await the result before accessing `.steps`
-- The `lang` parameter is **required** for all APIs
+- The `tracer` parameter is **required** for all APIs
 - Config uses `null` for defaults, `undefined` means "waiting" (partial application)
 
 ## Links
@@ -170,5 +170,5 @@ For complete type definitions, see [src/api/types.ts](./src/api/types.ts).
 - [API Decision Matrix](./src/api/README.md) — which API to use when
 - [Error Handling](./src/errors/README.md) — error hierarchy and ownership
 - [Configuration](./src/configuring/README.md) — options validation and defaults
-- [Language Modules](./src/langs/README.md) — how languages are implemented
+- [Tracer Modules](./src/tracers/README.md) — how tracers are implemented
 - [Developer Guide](./DEV.md) — architecture and conventions

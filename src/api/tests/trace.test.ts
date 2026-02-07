@@ -1,5 +1,5 @@
-import LangUnknownError from '../../errors/lang-unknown-error.js';
 import OptionsSemanticInvalidError from '../../errors/options-semantic-invalid-error.js';
+import TracerUnknownError from '../../errors/tracer-unknown-error.js';
 import trace from '../trace.js';
 
 describe('trace', () => {
@@ -19,7 +19,7 @@ describe('trace', () => {
   });
 
   describe('type validation (eager, sync)', () => {
-    it('throws immediately for non-string lang', () => {
+    it('throws immediately for non-string tracer', () => {
       expect(() => trace(123 as unknown as string, 'ab')).toThrow(/string/);
     });
 
@@ -28,14 +28,14 @@ describe('trace', () => {
     });
   });
 
-  describe('semantic validation (lazy, async)', () => {
-    it('rejects for unknown language with LangUnknownError', async () => {
-      await expect(trace('unknown', 'ab')).rejects.toBeInstanceOf(LangUnknownError);
+  describe('tracer validation (eager, sync)', () => {
+    it('throws sync for unknown tracer with TracerUnknownError', () => {
+      expect(() => trace('unknown', 'ab')).toThrow(TracerUnknownError);
     });
   });
 
   describe('config handling', () => {
-    it('passes config to lang module', async () => {
+    it('passes config to tracer module', async () => {
       const steps = await trace('chars', 'ab', {
         options: { remove: ['a'], replace: {}, direction: 'lr' },
       });
@@ -43,7 +43,7 @@ describe('trace', () => {
       expect(steps).toHaveLength(1);
     });
 
-    it('uses lang defaults when no config', async () => {
+    it('uses tracer defaults when no config', async () => {
       const steps = await trace('chars', 'ab');
 
       expect(steps).toHaveLength(2);
@@ -60,22 +60,22 @@ describe('trace', () => {
     });
   });
 
-  describe('semantic validation (verifyOptions)', () => {
-    it('calls verifyOptions and throws OptionsSemanticInvalidError', async () => {
+  describe('semantic validation (verifyOptions, sync)', () => {
+    it('throws sync OptionsSemanticInvalidError for constraint violation', () => {
       // chars verifyOptions: maxLength must be >= remove.length
-      await expect(
+      expect(() =>
         trace('chars', 'abc', {
           options: { maxLength: 1, remove: ['a', 'b'] },
         }),
-      ).rejects.toBeInstanceOf(OptionsSemanticInvalidError);
+      ).toThrow(OptionsSemanticInvalidError);
     });
 
-    it('includes descriptive message about the constraint violation', async () => {
-      await expect(
+    it('includes descriptive message about the constraint violation', () => {
+      expect(() =>
         trace('chars', 'abc', {
           options: { maxLength: 1, remove: ['a', 'b', 'c'] },
         }),
-      ).rejects.toThrow(/maxLength/);
+      ).toThrow(/maxLength/);
     });
   });
 });

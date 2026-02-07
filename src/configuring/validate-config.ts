@@ -7,7 +7,7 @@
 
 import Ajv from 'ajv';
 
-import OptionsSchemaInvalidError from '../errors/options-schema-invalid-error.js';
+import OptionsInvalidError from '../errors/options-invalid-error.js';
 
 import type { JSONSchema } from './types.js';
 
@@ -23,7 +23,7 @@ const ajv = new Ajv({
  * @param data - Data to validate
  * @param schema - JSON Schema to validate against
  * @returns Same data reference on success (enables piping)
- * @throws OptionsSchemaInvalidError when validation fails
+ * @throws OptionsInvalidError when validation fails
  */
 function validateConfig(data: unknown, schema: JSONSchema): unknown {
   // Handle null/undefined as empty object
@@ -38,7 +38,7 @@ function validateConfig(data: unknown, schema: JSONSchema): unknown {
     const combined = messages.join('; ');
     const firstError = errors[0];
     const firstPath = getErrorPath(firstError);
-    throw new OptionsSchemaInvalidError(combined, firstPath);
+    throw new OptionsInvalidError(combined, firstPath);
   }
 
   return input;

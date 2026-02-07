@@ -3,51 +3,55 @@ import embodify from '../embodify.js';
 
 describe('embodify', () => {
   describe('state management', () => {
-    it('creates chain with lang set', () => {
-      const chain = embodify({ lang: 'chars' });
+    it('creates chain with tracer set', () => {
+      const chain = embodify({ tracer: 'chars' });
 
-      expect(chain.lang).toBe('chars');
+      expect(chain.tracer).toBe('chars');
     });
 
     it('.set() returns NEW chain with state added', () => {
-      const chain1 = embodify({ lang: 'chars' });
+      const chain1 = embodify({ tracer: 'chars' });
       const chain2 = chain1.set({ code: 'ab' });
 
       expect(chain2.code).toBe('ab');
-      expect(chain2.lang).toBe('chars');
+      expect(chain2.tracer).toBe('chars');
     });
 
     it('original chain unchanged after .set() (immutability)', () => {
-      const chain1 = embodify({ lang: 'chars' });
+      const chain1 = embodify({ tracer: 'chars' });
       chain1.set({ code: 'ab' });
 
       expect(chain1.code).toBeUndefined();
     });
 
     it('getters return current state values', () => {
-      const chain = embodify({ lang: 'chars', code: 'ab', config: { options: { remove: ['a'] } } });
+      const chain = embodify({
+        tracer: 'chars',
+        code: 'ab',
+        config: { options: { remove: ['a'] } },
+      });
 
-      expect(chain.lang).toBe('chars');
+      expect(chain.tracer).toBe('chars');
       expect(chain.code).toBe('ab');
       expect(chain.config).toEqual({ options: { remove: ['a'] } });
     });
   });
 
   describe('before trace', () => {
-    it('.steps is null before .trace() called', () => {
-      const chain = embodify({ lang: 'chars', code: 'ab' });
+    it('.steps is undefined before .trace() called', () => {
+      const chain = embodify({ tracer: 'chars', code: 'ab' });
 
-      expect(chain.steps).toBeNull();
+      expect(chain.steps).toBeUndefined();
     });
 
-    it('.ok is true before trace if no type errors', () => {
-      const chain = embodify({ lang: 'chars', code: 'ab' });
+    it('.ok is true before trace', () => {
+      const chain = embodify({ tracer: 'chars', code: 'ab' });
 
       expect(chain.ok).toBe(true);
     });
 
-    it('.error is undefined before trace if no type errors', () => {
-      const chain = embodify({ lang: 'chars', code: 'ab' });
+    it('.error is undefined before trace', () => {
+      const chain = embodify({ tracer: 'chars', code: 'ab' });
 
       expect(chain.error).toBeUndefined();
     });
@@ -55,20 +59,20 @@ describe('embodify', () => {
 
   describe('tracing (async)', () => {
     it('.trace() returns a Promise', () => {
-      const result = embodify({ lang: 'chars', code: 'ab' }).trace();
+      const result = embodify({ tracer: 'chars', code: 'ab' }).trace();
 
       expect(result).toBeInstanceOf(Promise);
     });
 
     it('.trace() uses default config if none set', async () => {
-      const traced = await embodify({ lang: 'chars', code: 'ab' }).trace();
+      const traced = await embodify({ tracer: 'chars', code: 'ab' }).trace();
 
       expect(traced.ok).toBe(true);
       expect(traced.steps).toHaveLength(2);
     });
 
     it('.trace({ config }) uses provided config', async () => {
-      const traced = await embodify({ lang: 'chars', code: 'ab' }).trace({
+      const traced = await embodify({ tracer: 'chars', code: 'ab' }).trace({
         config: { options: { remove: ['a'], replace: {}, direction: 'lr' } },
       });
 
@@ -77,45 +81,91 @@ describe('embodify', () => {
     });
 
     it('.trace() returns NEW chain with result', async () => {
-      const chain = embodify({ lang: 'chars', code: 'ab' });
+      const chain = embodify({ tracer: 'chars', code: 'ab' });
       const traced = await chain.trace();
 
       expect(traced.ok).toBe(true);
-      expect(traced.steps).not.toBeNull();
-      expect(chain.steps).toBeNull(); // Original unchanged
+      expect(traced.steps).toBeDefined();
+      expect(chain.steps).toBeUndefined(); // Original unchanged
     });
 
     it('after successful trace .ok is true', async () => {
-      const traced = await embodify({ lang: 'chars', code: 'ab' }).trace();
+      const traced = await embodify({ tracer: 'chars', code: 'ab' }).trace();
 
       expect(traced.ok).toBe(true);
     });
 
     it('after successful trace .steps contains step array', async () => {
-      const traced = await embodify({ lang: 'chars', code: 'ab' }).trace();
+      const traced = await embodify({ tracer: 'chars', code: 'ab' }).trace();
 
       expect(Array.isArray(traced.steps)).toBe(true);
       expect(traced.steps).toHaveLength(2);
     });
 
     it('after failed trace .error contains EmbodyError', async () => {
-      const traced = await embodify({ lang: 'unknown', code: 'ab' }).trace();
+      const traced = await embodify({ tracer: 'unknown', code: 'ab' }).trace();
 
       expect(traced.ok).toBe(false);
       expect(traced.error).toBeInstanceOf(EmbodyError);
     });
   });
 
-  describe('result invalidation', () => {
-    it('after .set() on traced chain, .steps becomes null', async () => {
-      const traced = await embodify({ lang: 'chars', code: 'ab' }).trace();
-      const modified = traced.set({ code: 'xyz' });
+  describe('cache invalidation', () => {
+    it('.set({}) preserves all cached state', async () => {
+      const traced = await embodify({ tracer: 'chars', code: 'ab' }).trace();
+      const newChain = traced.set({});
 
-      expect(modified.steps).toBeNull();
+      expect(newChain.tracer).toBe(traced.tracer);
+      expect(newChain.code).toBe(traced.code);
+      expect(newChain.resolvedConfig).toEqual(traced.resolvedConfig);
+      expect(newChain.steps).toEqual(traced.steps);
+    });
+
+    it('.set({ code }) preserves resolvedConfig, invalidates steps', async () => {
+      const traced = await embodify({ tracer: 'chars', code: 'ab' }).trace();
+      const newChain = traced.set({ code: 'xyz' });
+
+      expect(newChain.resolvedConfig).toEqual(traced.resolvedConfig);
+      expect(newChain.steps).toBeUndefined();
+    });
+
+    it('.set({ tracer }) with same value preserves cache', async () => {
+      const traced = await embodify({ tracer: 'chars', code: 'ab' }).trace();
+      const newChain = traced.set({ tracer: 'chars' }); // Same value = no change
+
+      // No actual change = no invalidation
+      expect(newChain.resolvedConfig).toEqual(traced.resolvedConfig);
+      expect(newChain.steps).toEqual(traced.steps);
+    });
+
+    it('.set({ tracer }) with different value invalidates', async () => {
+      const traced = await embodify({ tracer: 'chars', code: 'ab' }).trace();
+      const newChain = traced.set({ tracer: 'js' }); // Different tracer
+
+      // resolvedConfig is lazy-recomputed with new tracer
+      // steps is invalidated
+      expect(newChain.steps).toBeUndefined();
+    });
+
+    it('.set({ config }) with same value preserves cache', async () => {
+      const config = { options: { direction: 'lr' } };
+      const traced = await embodify({ tracer: 'chars', code: 'ab', config }).trace();
+      const newChain = traced.set({ config }); // Same config object
+
+      // No actual change = no invalidation
+      expect(newChain.steps).toEqual(traced.steps);
+    });
+
+    it('.set({ config }) with different value invalidates', async () => {
+      const traced = await embodify({ tracer: 'chars', code: 'ab' }).trace();
+      const newChain = traced.set({ config: { options: { direction: 'rl' } } });
+
+      // Different config = invalidate
+      expect(newChain.steps).toBeUndefined();
     });
 
     it('can re-trace after modifying state', async () => {
-      const traced = await embodify({ lang: 'chars', code: 'ab' }).trace();
+      const traced = await embodify({ tracer: 'chars', code: 'ab' }).trace();
       const modified = traced.set({ code: 'xyz' });
       const retraced = await modified.trace();
 
@@ -124,61 +174,65 @@ describe('embodify', () => {
     });
   });
 
-  describe('eager type validation (recoverable)', () => {
-    it('type error on lang sets ok=false', () => {
-      const chain = embodify({ lang: 123 as unknown as string });
+  describe('lazy resolvedConfig', () => {
+    it('computes on access if tracer is present', () => {
+      const chain = embodify({ tracer: 'chars' });
 
-      expect(chain.ok).toBe(false);
+      expect(chain.resolvedConfig).toBeDefined();
+      expect(chain.resolvedConfig?.options).toHaveProperty('direction', 'lr');
     });
 
-    it('type error sets .error with combined message', () => {
-      const chain = embodify({ lang: 123 as unknown as string, code: 456 as unknown as string });
+    it('returns undefined if tracer is missing', () => {
+      const chain = embodify({});
 
-      expect(chain.error).toBeInstanceOf(EmbodyError);
-      expect(chain.error?.message).toMatch(/lang must be string/);
-      expect(chain.error?.message).toMatch(/code must be string/);
+      expect(chain.resolvedConfig).toBeUndefined();
     });
 
-    it('fixing error with .set() clears error', () => {
-      const bad = embodify({ lang: 123 as unknown as string });
-      const fixed = bad.set({ lang: 'chars' });
+    it('returns undefined if tracer is unknown', () => {
+      const chain = embodify({ tracer: 'nonexistent' });
 
-      expect(fixed.ok).toBe(true);
-      expect(fixed.error).toBeUndefined();
+      expect(chain.resolvedConfig).toBeUndefined();
     });
 
-    it('partial fix updates error message', () => {
-      const bad = embodify({ lang: 123 as unknown as string, code: 456 as unknown as string });
-      const partial = bad.set({ lang: 'chars' });
+    it('caches computed value', () => {
+      const chain = embodify({ tracer: 'chars' });
 
-      expect(partial.ok).toBe(false);
-      expect(partial.error?.message).not.toMatch(/lang/);
-      expect(partial.error?.message).toMatch(/code must be string/);
+      const resolved1 = chain.resolvedConfig;
+      const resolved2 = chain.resolvedConfig;
+
+      expect(resolved1).toEqual(resolved2);
+    });
+
+    it('returns deep cloned copy', () => {
+      const chain = embodify({ tracer: 'chars' });
+
+      const resolved1 = chain.resolvedConfig;
+      const resolved2 = chain.resolvedConfig;
+
+      expect(resolved1).not.toBe(resolved2);
+    });
+
+    it('after trace returns resolved config with tracer defaults', async () => {
+      const traced = await embodify({ tracer: 'chars', code: 'ab' }).trace();
+
+      expect(traced.resolvedConfig).toHaveProperty('options');
+      expect(traced.resolvedConfig?.options).toHaveProperty('direction', 'lr');
     });
   });
 
   describe('necessity validation (lazy, async)', () => {
-    it('.trace() on chain missing lang returns error', async () => {
+    it('.trace() on chain missing tracer returns error', async () => {
       const traced = await embodify({ code: 'ab' }).trace();
 
       expect(traced.ok).toBe(false);
-      expect(traced.error?.message).toMatch(/lang is required/);
+      expect(traced.error?.message).toMatch(/tracer is required/);
     });
 
     it('.trace() on chain missing code returns error', async () => {
-      const traced = await embodify({ lang: 'chars' }).trace();
+      const traced = await embodify({ tracer: 'chars' }).trace();
 
       expect(traced.ok).toBe(false);
       expect(traced.error?.message).toMatch(/code is required/);
-    });
-
-    it('.trace() with type error does not execute trace', async () => {
-      const bad = embodify({ lang: 123 as unknown as string, code: 'ab' });
-      const traced = await bad.trace();
-
-      // Should still have the type error, not attempt trace
-      expect(traced.ok).toBe(false);
-      expect(traced.error?.message).toMatch(/lang must be string/);
     });
   });
 
@@ -194,7 +248,7 @@ describe('embodify', () => {
     });
 
     it('.steps getter returns deep cloned copy', async () => {
-      const traced = await embodify({ lang: 'chars', code: 'ab' }).trace();
+      const traced = await embodify({ tracer: 'chars', code: 'ab' }).trace();
 
       const steps1 = traced.steps as unknown as { char: string }[];
       const steps2 = traced.steps as unknown as { char: string }[];
@@ -203,31 +257,6 @@ describe('embodify', () => {
         steps1[0].char = 'mutated';
       }
       expect(steps2?.[0]?.char).toBe('a');
-    });
-  });
-
-  describe('resolvedConfig', () => {
-    it('.resolvedConfig returns resolved options with lang defaults', async () => {
-      const traced = await embodify({ lang: 'chars', code: 'ab' }).trace();
-
-      expect(traced.resolvedConfig).toHaveProperty('options');
-      expect(traced.resolvedConfig?.options).toHaveProperty('direction', 'lr');
-    });
-
-    it('.resolvedConfig is undefined before trace', () => {
-      const chain = embodify({ lang: 'chars', code: 'ab' });
-
-      expect(chain.resolvedConfig).toBeUndefined();
-    });
-
-    it('.resolvedConfig returns deep cloned copy', async () => {
-      const traced = await embodify({ lang: 'chars', code: 'ab' }).trace();
-
-      const resolved1 = traced.resolvedConfig;
-      const resolved2 = traced.resolvedConfig;
-
-      expect(resolved1).toEqual(resolved2);
-      expect(resolved1).not.toBe(resolved2);
     });
   });
 });
