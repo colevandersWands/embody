@@ -64,10 +64,10 @@ async function record(
   // RUNTIME_ERROR: triple consecutive chars (ESTree: 0-indexed column)
   const tripleMatch = TRIPLE_CHAR_REGEX.exec(code);
   if (tripleMatch) {
-    throw new RuntimeError(
-      `Triple character not allowed: "${tripleMatch[1]}" repeated 3 times`,
-      { line: 1, column: tripleMatch.index },
-    );
+    throw new RuntimeError(`Triple character not allowed: "${tripleMatch[1]}" repeated 3 times`, {
+      line: 1,
+      column: tripleMatch.index,
+    });
   }
 
   // LIMIT_EXCEEDED: maxLength (tracer-specific limit)

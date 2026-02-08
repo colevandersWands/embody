@@ -427,31 +427,36 @@ describe('record (async)', () => {
       it('includes operator on BinaryExpression steps', async () => {
         const steps = await record('1 + 2;', defaultConfig);
         const binary = steps.find((s) => s.type === 'BinaryExpression' && s.time === 'after');
-        expect(binary?.detail).toEqual({ operator: '+' });
+        expect(binary?.detail).toEqual({ action: 'compute', operator: '+' });
       });
 
       it('includes operator on AssignmentExpression steps', async () => {
         const steps = await record('let x; x = 1;', defaultConfig);
         const assign = steps.find((s) => s.type === 'AssignmentExpression' && s.time === 'after');
-        expect(assign?.detail).toEqual({ operator: '=', target: 'x' });
+        expect(assign?.detail).toEqual({ action: 'assign', operator: '=', target: 'x' });
       });
 
       it('includes operator and prefix on UpdateExpression steps', async () => {
         const steps = await record('let x = 0; x++;', defaultConfig);
         const update = steps.find((s) => s.type === 'UpdateExpression' && s.time === 'after');
-        expect(update?.detail).toEqual({ operator: '++', prefix: false, target: 'x' });
+        expect(update?.detail).toEqual({
+          action: 'update',
+          operator: '++',
+          prefix: false,
+          target: 'x',
+        });
       });
 
       it('includes operator on LogicalExpression steps', async () => {
         const steps = await record('true && false;', defaultConfig);
         const logical = steps.find((s) => s.type === 'LogicalExpression' && s.time === 'after');
-        expect(logical?.detail).toEqual({ operator: '&&' });
+        expect(logical?.detail).toEqual({ action: 'compute', operator: '&&' });
       });
 
       it('includes operator and prefix on UnaryExpression steps', async () => {
         const steps = await record('!true;', defaultConfig);
         const unary = steps.find((s) => s.type === 'UnaryExpression' && s.time === 'after');
-        expect(unary?.detail).toEqual({ operator: '!', prefix: true });
+        expect(unary?.detail).toEqual({ action: 'compute', operator: '!', prefix: true });
       });
     });
 
@@ -459,13 +464,13 @@ describe('record (async)', () => {
       it('includes kind on VariableDeclaration steps', async () => {
         const steps = await record('let x = 1;', defaultConfig);
         const decl = steps.find((s) => s.type === 'VariableDeclaration');
-        expect(decl?.detail).toEqual({ kind: 'let', target: 'x' });
+        expect(decl?.detail).toEqual({ action: 'declare', kind: 'let', target: 'x' });
       });
 
       it('distinguishes const from let', async () => {
         const steps = await record('const y = 2;', defaultConfig);
         const decl = steps.find((s) => s.type === 'VariableDeclaration');
-        expect(decl?.detail).toEqual({ kind: 'const', target: 'y' });
+        expect(decl?.detail).toEqual({ action: 'declare', kind: 'const', target: 'y' });
       });
     });
 
@@ -473,7 +478,7 @@ describe('record (async)', () => {
       it('includes computed on MemberExpression steps', async () => {
         const steps = await record('console.log;', defaultConfig);
         const member = steps.find((s) => s.type === 'MemberExpression' && s.time === 'after');
-        expect(member?.detail).toEqual({ computed: false, property: 'log' });
+        expect(member?.detail).toEqual({ action: 'access', computed: false, property: 'log' });
       });
 
       it('includes name on Identifier steps', async () => {
@@ -487,7 +492,7 @@ describe('record (async)', () => {
       it('includes arity on CallExpression steps', async () => {
         const steps = await record('console.log("a", "b");', defaultConfig);
         const call = steps.find((s) => s.type === 'CallExpression' && s.time === 'after');
-        expect(call?.detail).toEqual({ arity: 2, callee: 'log', method: true });
+        expect(call?.detail).toEqual({ action: 'call', arity: 2, callee: 'log', method: true });
       });
     });
 
@@ -495,19 +500,19 @@ describe('record (async)', () => {
       it('includes arity on ArrowFunctionExpression steps', async () => {
         const steps = await record('const f = (a, b) => a + b;', defaultConfig);
         const arrow = steps.find((s) => s.type === 'ArrowFunctionExpression');
-        expect(arrow?.detail).toEqual({ arity: 2 });
+        expect(arrow?.detail).toEqual({ action: 'define', arity: 2, expressionBody: true });
       });
 
       it('includes name and arity on FunctionExpression steps', async () => {
         const steps = await record('const f = function foo(x) { return x; };', defaultConfig);
         const func = steps.find((s) => s.type === 'FunctionExpression');
-        expect(func?.detail).toEqual({ name: 'foo', arity: 1 });
+        expect(func?.detail).toEqual({ action: 'define', name: 'foo', arity: 1 });
       });
 
       it('includes null name for anonymous FunctionExpression', async () => {
         const steps = await record('const f = function(x) { return x; };', defaultConfig);
         const func = steps.find((s) => s.type === 'FunctionExpression');
-        expect(func?.detail).toEqual({ name: null, arity: 1 });
+        expect(func?.detail).toEqual({ action: 'define', name: null, arity: 1 });
       });
     });
 
@@ -594,10 +599,100 @@ describe('record (async)', () => {
       });
     });
 
-    it('does not include detail on types without metadata', async () => {
-      const steps = await record('for (let i = 0; i < 1; i++) {}', defaultConfig);
-      const forStep = steps.find((s) => s.type === 'ForStatement');
-      expect(forStep?.detail).toBeUndefined();
+    describe('action field', () => {
+      it('includes action on all non-init steps', async () => {
+        const steps = await record('let x = 1;', defaultConfig);
+        const nonInit = steps.filter((s) => s.category !== 'init');
+        expect(nonInit.every((s) => s.detail?.action !== undefined)).toBe(true);
+      });
+
+      it('does not include detail on init step', async () => {
+        const steps = await record('let x = 1;', defaultConfig);
+        expect(steps[0].detail).toBeUndefined();
+      });
+
+      it('maps ForStatement to loop', async () => {
+        const steps = await record('for (let i = 0; i < 1; i++) {}', defaultConfig);
+        const forStep = steps.find((s) => s.type === 'ForStatement');
+        expect(forStep?.detail?.action).toBe('loop');
+      });
+
+      it('maps IfStatement to branch', async () => {
+        const steps = await record('if (true) {}', defaultConfig);
+        const ifStep = steps.find((s) => s.type === 'IfStatement');
+        expect(ifStep?.detail?.action).toBe('branch');
+      });
+
+      it('maps NumericLiteral to literal', async () => {
+        const steps = await record('42;', defaultConfig);
+        const lit = steps.find((s) => s.type === 'NumericLiteral' && s.time === 'after');
+        expect(lit?.detail?.action).toBe('literal');
+      });
+
+      it('groups BinaryExpression and UnaryExpression as compute', async () => {
+        const steps = await record('-(1 + 2);', defaultConfig);
+        const computes = steps.filter((s) => s.detail?.action === 'compute' && s.time === 'after');
+        expect(computes.length).toBeGreaterThanOrEqual(2);
+      });
+    });
+
+    describe('structural metadata', () => {
+      it('includes hasAlternate on IfStatement with else', async () => {
+        const steps = await record('if (true) {} else {}', defaultConfig);
+        const ifStep = steps.find((s) => s.type === 'IfStatement');
+        expect(ifStep?.detail?.hasAlternate).toBe(true);
+      });
+
+      it('includes hasAlternate false on IfStatement without else', async () => {
+        const steps = await record('if (true) {}', defaultConfig);
+        const ifStep = steps.find((s) => s.type === 'IfStatement');
+        expect(ifStep?.detail?.hasAlternate).toBe(false);
+      });
+
+      it('includes hasCatch and hasFinally on TryStatement', async () => {
+        const steps = await record('try {} catch(e) {} finally {}', defaultConfig);
+        const tryStep = steps.find((s) => s.type === 'TryStatement');
+        expect(tryStep?.detail?.hasCatch).toBe(true);
+        expect(tryStep?.detail?.hasFinally).toBe(true);
+      });
+
+      it('includes hasInit/hasTest/hasUpdate on ForStatement', async () => {
+        const steps = await record('for (let i = 0; i < 1; i++) {}', defaultConfig);
+        const forStep = steps.find((s) => s.type === 'ForStatement');
+        expect(forStep?.detail?.hasInit).toBe(true);
+        expect(forStep?.detail?.hasTest).toBe(true);
+        expect(forStep?.detail?.hasUpdate).toBe(true);
+      });
+
+      it('maps WhileStatement to loop action', async () => {
+        const steps = await record('let i = 0; while (i < 1) { i++; }', defaultConfig);
+        const whileStep = steps.find((s) => s.type === 'WhileStatement');
+        expect(whileStep?.detail?.action).toBe('loop');
+      });
+
+      it('includes expressionBody on expression-bodied arrow', async () => {
+        const steps = await record('const f = (x) => x;', defaultConfig);
+        const arrow = steps.find((s) => s.type === 'ArrowFunctionExpression');
+        expect(arrow?.detail?.expressionBody).toBe(true);
+      });
+
+      it('includes expressionBody false on block-bodied arrow', async () => {
+        const steps = await record('const f = (x) => { return x; };', defaultConfig);
+        const arrow = steps.find((s) => s.type === 'ArrowFunctionExpression');
+        expect(arrow?.detail?.expressionBody).toBe(false);
+      });
+
+      it('includes elementCount on ArrayExpression', async () => {
+        const steps = await record('[1, 2, 3];', defaultConfig);
+        const arr = steps.find((s) => s.type === 'ArrayExpression' && s.time === 'after');
+        expect(arr?.detail?.elementCount).toBe(3);
+      });
+
+      it('includes propertyCount on ObjectExpression', async () => {
+        const steps = await record('({a: 1, b: 2});', defaultConfig);
+        const obj = steps.find((s) => s.type === 'ObjectExpression' && s.time === 'after');
+        expect(obj?.detail?.propertyCount).toBe(2);
+      });
     });
   });
 

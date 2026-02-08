@@ -13,12 +13,12 @@ Chars exists to validate the multi-language tracer architecture without the comp
 
 ## Exports
 
-| Export              | Type        | Required | Description                     |
-| ------------------- | ----------- | -------- | ------------------------------- |
-| `tracerId`          | string      | Yes      | `'chars'`                       |
-| `record`            | Function    | Yes      | Character traversal tracer      |
-| `optionsSchema`     | JSON Schema | Yes      | Options validation and defaults |
-| `verifyOptions`     | Function    | Yes      | Semantic validation             |
+| Export          | Type        | Required | Description                     |
+| --------------- | ----------- | -------- | ------------------------------- |
+| `tracerId`      | string      | Yes      | `'chars'`                       |
+| `record`        | Function    | Yes      | Character traversal tracer      |
+| `optionsSchema` | JSON Schema | Yes      | Options validation and defaults |
+| `verifyOptions` | Function    | Yes      | Semantic validation             |
 
 ## Configuration
 
@@ -100,7 +100,7 @@ type CharsStep = {
   readonly step: number; // 1-indexed execution order
   readonly loc: {
     readonly start: { readonly line: 1; readonly column: number }; // 0-indexed column (ESTree)
-    readonly end: { readonly line: 1; readonly column: number };   // 0-indexed column (ESTree)
+    readonly end: { readonly line: 1; readonly column: number }; // 0-indexed column (ESTree)
   };
   readonly char: string; // Character at this position (after replacement)
 };
@@ -181,15 +181,15 @@ record('aB1c', {
 
 ## Files
 
-| File                  | Purpose                           |
-| --------------------- | --------------------------------- |
-| `index.ts`            | Barrel: re-exports as named       |
-| `tracer-id.ts`        | Tracer ID constant (`'chars'`)    |
-| `record.ts`           | Core traversal logic              |
-| `options.schema.json` | JSON Schema for options           |
-| `verify-options.ts`   | Semantic validation               |
-| `types.ts`            | CharsOptions, CharsStep types     |
-| `README.md`           | This file                         |
+| File                  | Purpose                        |
+| --------------------- | ------------------------------ |
+| `index.ts`            | Barrel: re-exports as named    |
+| `tracer-id.ts`        | Tracer ID constant (`'chars'`) |
+| `record.ts`           | Core traversal logic           |
+| `options.schema.json` | JSON Schema for options        |
+| `verify-options.ts`   | Semantic validation            |
+| `types.ts`            | CharsOptions, CharsStep types  |
+| `README.md`           | This file                      |
 
 ## Links
 

@@ -12,11 +12,11 @@ Adapted from:
 
 ## Exports
 
-| Export              | Type        | Required | Description                     |
-| ------------------- | ----------- | -------- | ------------------------------- |
-| `tracerId`          | string      | Yes      | `'js:klve'`                     |
-| `record`            | Function    | Yes      | JavaScript execution tracer     |
-| `optionsSchema`     | JSON Schema | Yes      | Options validation and defaults |
+| Export          | Type        | Required | Description                     |
+| --------------- | ----------- | -------- | ------------------------------- |
+| `tracerId`      | string      | Yes      | `'js:klve'`                     |
+| `record`        | Function    | Yes      | JavaScript execution tracer     |
+| `optionsSchema` | JSON Schema | Yes      | Options validation and defaults |
 
 js-klve does NOT export `verifyOptions` — the hierarchical filter config has no cross-field constraints.
 
@@ -64,7 +64,33 @@ type JsKlveStep = {
   readonly value?: unknown; // Expression value (after evaluation)
   readonly logs?: readonly unknown[][]; // console.log captures
   readonly dt?: number; // Milliseconds since trace start
-  readonly detail?: JsKlveDetail; // Node-type-specific AST metadata
+  readonly detail?: JsKlveDetail; // Node-type-specific AST metadata (always on non-init)
+};
+
+type JsKlveDetail = {
+  readonly action?: string; // Semantic classification: 'read', 'assign', 'call', etc.
+  readonly operator?: string; // '+', '=', '&&', '!', '++', etc.
+  readonly prefix?: boolean; // Prefix vs postfix (unary/update)
+  readonly kind?: string; // 'let', 'const', 'var'
+  readonly computed?: boolean; // obj[x] vs obj.x
+  readonly name?: string | null; // Identifier name, function name
+  readonly arity?: number; // Parameter count (functions) or argument count (calls)
+  readonly target?: string | null; // Variable being written to
+  readonly property?: string | null; // Property being accessed (dot access only)
+  readonly callee?: string | null; // Function being called
+  readonly method?: boolean; // f() vs obj.f()
+  readonly optional?: boolean; // Optional chaining (obj?.x)
+  readonly async?: boolean; // Async function
+  readonly generator?: boolean; // Generator function
+  readonly hasAlternate?: boolean; // If/ternary has else branch
+  readonly hasCatch?: boolean; // Try has catch clause
+  readonly hasFinally?: boolean; // Try has finally clause
+  readonly hasInit?: boolean; // For-loop has init clause
+  readonly hasTest?: boolean; // For-loop has test clause
+  readonly hasUpdate?: boolean; // For-loop has update clause
+  readonly expressionBody?: boolean; // Arrow: => expr vs => { ... }
+  readonly elementCount?: number; // Array literal element count
+  readonly propertyCount?: number; // Object literal property count
 };
 ```
 
@@ -93,12 +119,12 @@ Uses `@babel/standalone` for browser-compatible code transformation. Bundle size
 
 ## Execution Limits
 
-| Limit                  | Supported | Enforcement    | Notes                                      |
-| ---------------------- | --------- | -------------- | ------------------------------------------ |
-| `meta.max.steps`       | Yes       | During tracing | Throws when step count exceeds limit       |
-| `meta.max.time`        | Yes       | During tracing | Throws when elapsed ms exceeds limit       |
-| `meta.max.iterations`  | No        | —              | Not implemented (requires instrumentation) |
-| `meta.max.callstack`   | No        | —              | Not implemented (requires instrumentation) |
+| Limit                 | Supported | Enforcement    | Notes                                      |
+| --------------------- | --------- | -------------- | ------------------------------------------ |
+| `meta.max.steps`      | Yes       | During tracing | Throws when step count exceeds limit       |
+| `meta.max.time`       | Yes       | During tracing | Throws when elapsed ms exceeds limit       |
+| `meta.max.iterations` | No        | —              | Not implemented (requires instrumentation) |
+| `meta.max.callstack`  | No        | —              | Not implemented (requires instrumentation) |
 
 ## Limitations
 

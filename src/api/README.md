@@ -121,10 +121,10 @@ User: trace('chars', 'ab', { meta: { max: { steps: 100 } }, options: { direction
 
 User config has two independent parts:
 
-| Part      | Schema Location                          | Purpose                             |
-| --------- | ---------------------------------------- | ----------------------------------- |
-| `meta`    | `/tracers/meta.schema.json`              | Execution limits, timestamps, debug |
-| `options` | `/tracers/<tracer>/options.schema.json`  | Tracer-specific tracing options     |
+| Part      | Schema Location                         | Purpose                             |
+| --------- | --------------------------------------- | ----------------------------------- |
+| `meta`    | `/tracers/meta.schema.json`             | Execution limits, timestamps, debug |
+| `options` | `/tracers/<tracer>/options.schema.json` | Tracer-specific tracing options     |
 
 Each part is validated independently — meta errors don't affect options validation and vice versa.
 

@@ -46,10 +46,10 @@ type MetaConfig = {
 
 ### Meta vs Options
 
-| Schema                | Location                                  | Scope       | Purpose                        |
-| --------------------- | ----------------------------------------- | ----------- | ------------------------------ |
-| `meta.schema.json`    | `/tracers/meta.schema.json`               | All tracers | Execution limits, debugging    |
-| `options.schema.json` | `/tracers/<tracer>/options.schema.json`   | Per-tracer  | Tracer-specific tracing config |
+| Schema                | Location                                | Scope       | Purpose                        |
+| --------------------- | --------------------------------------- | ----------- | ------------------------------ |
+| `meta.schema.json`    | `/tracers/meta.schema.json`             | All tracers | Execution limits, debugging    |
+| `options.schema.json` | `/tracers/<tracer>/options.schema.json` | Per-tracer  | Tracer-specific tracing config |
 
 The API layer validates both schemas independently before calling `record()`.
 
@@ -57,17 +57,17 @@ The API layer validates both schemas independently before calling `record()`.
 
 Each tracer module MUST export (via its `index.ts` barrel):
 
-| Export              | Type     | Description                               |
-| ------------------- | -------- | ----------------------------------------- |
-| `tracerId`          | string   | Unique tracer identifier (e.g. `'chars'`) |
-| `record`            | Function | Async tracing function (see TracerModule) |
+| Export     | Type     | Description                               |
+| ---------- | -------- | ----------------------------------------- |
+| `tracerId` | string   | Unique tracer identifier (e.g. `'chars'`) |
+| `record`   | Function | Async tracing function (see TracerModule) |
 
 Each tracer module MAY export:
 
-| Export              | Type        | Description                             |
-| ------------------- | ----------- | --------------------------------------- |
-| `optionsSchema`     | JSON Schema | Options validation and defaults         |
-| `verifyOptions`     | Function    | Semantic validation (cross-field rules) |
+| Export          | Type        | Description                             |
+| --------------- | ----------- | --------------------------------------- |
+| `optionsSchema` | JSON Schema | Options validation and defaults         |
+| `verifyOptions` | Function    | Semantic validation (cross-field rules) |
 
 ### Schema Export (Optional)
 

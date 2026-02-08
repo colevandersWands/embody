@@ -328,31 +328,61 @@ function transpilerPlugin(
     }
   }
 
+  // Semantic action classification for each AST node type.
+  const ACTION_MAP: Record<string, string> = {
+    Identifier: 'read',
+    MemberExpression: 'access',
+    AssignmentExpression: 'assign',
+    UpdateExpression: 'update',
+    VariableDeclaration: 'declare',
+    CallExpression: 'call',
+    NewExpression: 'construct',
+    BinaryExpression: 'compute',
+    UnaryExpression: 'compute',
+    LogicalExpression: 'compute',
+    SequenceExpression: 'compute',
+    ConditionalExpression: 'branch',
+    IfStatement: 'branch',
+    ForStatement: 'loop',
+    WhileStatement: 'loop',
+    TryStatement: 'protect',
+    ExpressionStatement: 'evaluate',
+    ArrowFunctionExpression: 'define',
+    FunctionExpression: 'define',
+    NumericLiteral: 'literal',
+    StringLiteral: 'literal',
+    BooleanLiteral: 'literal',
+    ArrayExpression: 'literal',
+    ObjectExpression: 'literal',
+  };
+
   // Extract node-type-specific AST metadata for trace steps.
   // Uses node.type string comparison instead of t.is*() type guards
   // because @babel/standalone type defs are incomplete.
-  function extractDetail(
-    node: BabelNode & { readonly type: string },
-  ): Record<string, unknown> | undefined {
+  // Always returns a detail object (never undefined).
+  function extractDetail(node: BabelNode & { readonly type: string }): Record<string, unknown> {
     const n = node as unknown as Record<string, unknown>;
     const { type } = node;
+    const action = ACTION_MAP[type] ?? 'unknown';
 
     if (type === 'BinaryExpression' || type === 'LogicalExpression') {
-      return { operator: n['operator'] as string };
+      return { action, operator: n['operator'] as string };
     }
     if (type === 'AssignmentExpression') {
       const left = n['left'] as Record<string, unknown>;
       return {
+        action,
         operator: n['operator'] as string,
         target: left['type'] === 'Identifier' ? (left['name'] as string) : null,
       };
     }
     if (type === 'UnaryExpression') {
-      return { operator: n['operator'] as string, prefix: n['prefix'] as boolean };
+      return { action, operator: n['operator'] as string, prefix: n['prefix'] as boolean };
     }
     if (type === 'UpdateExpression') {
       const arg = n['argument'] as Record<string, unknown>;
       return {
+        action,
         operator: n['operator'] as string,
         prefix: n['prefix'] as boolean,
         target: arg['type'] === 'Identifier' ? (arg['name'] as string) : null,
@@ -362,6 +392,7 @@ function transpilerPlugin(
       const decls = n['declarations'] as readonly Record<string, unknown>[];
       const firstId = decls[0]?.['id'] as Record<string, unknown> | undefined;
       return {
+        action,
         kind: n['kind'] as string,
         target: firstId?.['type'] === 'Identifier' ? (firstId['name'] as string) : null,
       };
@@ -370,6 +401,7 @@ function transpilerPlugin(
       const computed = n['computed'] as boolean;
       const prop = n['property'] as Record<string, unknown>;
       const result: Record<string, unknown> = {
+        action,
         computed,
         property: !computed && prop['type'] === 'Identifier' ? (prop['name'] as string) : null,
       };
@@ -379,7 +411,7 @@ function transpilerPlugin(
       return result;
     }
     if (type === 'Identifier') {
-      return { name: n['name'] as string };
+      return { action, name: n['name'] as string };
     }
     if (type === 'CallExpression' || type === 'NewExpression') {
       const callee = n['callee'] as Record<string, unknown>;
@@ -397,6 +429,7 @@ function transpilerPlugin(
       }
 
       return {
+        action,
         arity: (n['arguments'] as readonly unknown[]).length,
         callee: calleeName,
         method: isMethod,
@@ -404,7 +437,9 @@ function transpilerPlugin(
     }
     if (type === 'ArrowFunctionExpression') {
       const result: Record<string, unknown> = {
+        action,
         arity: (n['params'] as readonly unknown[]).length,
+        expressionBody: (n['body'] as Record<string, unknown>)['type'] !== 'BlockStatement',
       };
       if (n['async'] === true) {
         result['async'] = true;
@@ -414,6 +449,7 @@ function transpilerPlugin(
     if (type === 'FunctionExpression') {
       const id = n['id'] as { readonly name?: string } | null;
       const result: Record<string, unknown> = {
+        action,
         name: id?.name ?? null,
         arity: (n['params'] as readonly unknown[]).length,
       };
@@ -425,7 +461,32 @@ function transpilerPlugin(
       }
       return result;
     }
-    return undefined;
+    if (type === 'IfStatement' || type === 'ConditionalExpression') {
+      return { action, hasAlternate: n['alternate'] != null };
+    }
+    if (type === 'ForStatement') {
+      return {
+        action,
+        hasInit: n['init'] != null,
+        hasTest: n['test'] != null,
+        hasUpdate: n['update'] != null,
+      };
+    }
+    if (type === 'TryStatement') {
+      return {
+        action,
+        hasCatch: n['handler'] != null,
+        hasFinally: n['finalizer'] != null,
+      };
+    }
+    if (type === 'ArrayExpression') {
+      return { action, elementCount: (n['elements'] as readonly unknown[]).length };
+    }
+    if (type === 'ObjectExpression') {
+      return { action, propertyCount: (n['properties'] as readonly unknown[]).length };
+    }
+    // WhileStatement, ExpressionStatement, SequenceExpression, literals without extra fields
+    return { action };
   }
 
   // Build metadata object for a step
@@ -483,7 +544,7 @@ function transpilerPlugin(
       loc: node.loc,
       type: node.type,
       scopes,
-      ...(detail !== undefined ? { detail } : {}),
+      detail,
     };
 
     return json(metadata);

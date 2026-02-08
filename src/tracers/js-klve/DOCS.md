@@ -145,12 +145,12 @@ type JsKlveNameConfig = {
 
 ### Semantics
 
-| Config | Mode | Behavior |
-| --- | --- | --- |
-| `{ include: ['x'] }` | Whitelist | Only keep steps mentioning `'x'` + nameless structural steps |
-| `{ exclude: ['console'] }` | Blacklist | Remove steps mentioning `'console'`, keep everything else |
-| `{ include: ['x'], exclude: ['y'] }` | Whitelist wins | `include` takes precedence, `exclude` is ignored |
-| `{}` or absent | No filtering | All steps pass through |
+| Config                               | Mode           | Behavior                                                     |
+| ------------------------------------ | -------------- | ------------------------------------------------------------ |
+| `{ include: ['x'] }`                 | Whitelist      | Only keep steps mentioning `'x'` + nameless structural steps |
+| `{ exclude: ['console'] }`           | Blacklist      | Remove steps mentioning `'console'`, keep everything else    |
+| `{ include: ['x'], exclude: ['y'] }` | Whitelist wins | `include` takes precedence, `exclude` is ignored             |
+| `{}` or absent                       | No filtering   | All steps pass through                                       |
 
 ### Key Behaviors
 
@@ -225,10 +225,11 @@ type JsKlveStep = {
 
 ## JsKlveDetail
 
-Node-type-specific AST metadata included in trace steps. Contains static properties from the AST node (known at compile time, not runtime). Only present on step types that have relevant metadata.
+Node-type-specific AST metadata included in trace steps. Contains static properties from the AST node (known at compile time, not runtime). Present on all non-init steps.
 
 ```typescript
 type JsKlveDetail = {
+  readonly action?: string;
   readonly operator?: string;
   readonly prefix?: boolean;
   readonly kind?: string;
@@ -242,47 +243,97 @@ type JsKlveDetail = {
   readonly optional?: boolean;
   readonly async?: boolean;
   readonly generator?: boolean;
+  readonly hasAlternate?: boolean;
+  readonly hasCatch?: boolean;
+  readonly hasFinally?: boolean;
+  readonly hasInit?: boolean;
+  readonly hasTest?: boolean;
+  readonly hasUpdate?: boolean;
+  readonly expressionBody?: boolean;
+  readonly elementCount?: number;
+  readonly propertyCount?: number;
 };
 ```
 
 ### Fields
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `operator` | `string?` | Operator characters (e.g. `+`, `===`, `&&`) |
-| `prefix` | `boolean?` | Prefix vs postfix for unary/update |
-| `kind` | `string?` | Declaration kind: let, const, var |
-| `computed` | `boolean?` | Computed vs dot member access |
-| `name` | `string \| null?` | Identifier or function name |
-| `arity` | `number?` | Param count (functions) or arg count (calls) |
-| `target` | `string \| null?` | Variable being written to (null for complex targets) |
-| `property` | `string \| null?` | Property name for dot access (null when computed) |
-| `callee` | `string \| null?` | Function/method being called (null for anonymous) |
-| `method` | `boolean?` | Whether call is a method invocation (`obj.f()` vs `f()`) |
-| `optional` | `boolean?` | Optional chaining (`?.`); only present when true |
-| `async` | `boolean?` | Async function; only present when true |
-| `generator` | `boolean?` | Generator function; only present when true |
+| Field            | Type              | Description                                                      |
+| ---------------- | ----------------- | ---------------------------------------------------------------- |
+| `action`         | `string?`         | Semantic classification (e.g. `'compute'`, `'assign'`, `'loop'`) |
+| `operator`       | `string?`         | Operator characters (e.g. `+`, `===`, `&&`)                      |
+| `prefix`         | `boolean?`        | Prefix vs postfix for unary/update                               |
+| `kind`           | `string?`         | Declaration kind: let, const, var                                |
+| `computed`       | `boolean?`        | Computed vs dot member access                                    |
+| `name`           | `string \| null?` | Identifier or function name                                      |
+| `arity`          | `number?`         | Param count (functions) or arg count (calls)                     |
+| `target`         | `string \| null?` | Variable being written to (null for complex targets)             |
+| `property`       | `string \| null?` | Property name for dot access (null when computed)                |
+| `callee`         | `string \| null?` | Function/method being called (null for anonymous)                |
+| `method`         | `boolean?`        | Whether call is a method invocation (`obj.f()` vs `f()`)         |
+| `optional`       | `boolean?`        | Optional chaining (`?.`); only present when true                 |
+| `async`          | `boolean?`        | Async function; only present when true                           |
+| `generator`      | `boolean?`        | Generator function; only present when true                       |
+| `hasAlternate`   | `boolean?`        | IfStatement/ConditionalExpression has else/alternate branch      |
+| `hasCatch`       | `boolean?`        | TryStatement has a catch handler                                 |
+| `hasFinally`     | `boolean?`        | TryStatement has a finally block                                 |
+| `hasInit`        | `boolean?`        | ForStatement has an init clause                                  |
+| `hasTest`        | `boolean?`        | ForStatement has a test clause                                   |
+| `hasUpdate`      | `boolean?`        | ForStatement has an update clause                                |
+| `expressionBody` | `boolean?`        | ArrowFunctionExpression uses expression body (not block)         |
+| `elementCount`   | `number?`         | Number of elements in ArrayExpression                            |
+| `propertyCount`  | `number?`         | Number of properties in ObjectExpression                         |
+
+### Action Values
+
+The `action` field groups 24 AST node types into 14 semantic categories:
+
+| Action      | AST Types                                                                        |
+| ----------- | -------------------------------------------------------------------------------- |
+| `read`      | Identifier                                                                       |
+| `access`    | MemberExpression                                                                 |
+| `assign`    | AssignmentExpression                                                             |
+| `update`    | UpdateExpression                                                                 |
+| `declare`   | VariableDeclaration                                                              |
+| `call`      | CallExpression                                                                   |
+| `construct` | NewExpression                                                                    |
+| `compute`   | BinaryExpression, UnaryExpression, LogicalExpression, SequenceExpression         |
+| `branch`    | IfStatement, ConditionalExpression                                               |
+| `loop`      | ForStatement, WhileStatement                                                     |
+| `protect`   | TryStatement                                                                     |
+| `evaluate`  | ExpressionStatement                                                              |
+| `define`    | ArrowFunctionExpression, FunctionExpression                                      |
+| `literal`   | NumericLiteral, StringLiteral, BooleanLiteral, ArrayExpression, ObjectExpression |
 
 ### Which Types Get Which Fields
 
-| AST Type | `operator` | `prefix` | `kind` | `computed` | `name` | `arity` | `target` | `property` | `callee` | `method` | `optional` | `async` | `generator` |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `BinaryExpression` | yes | — | — | — | — | — | — | — | — | — | — | — | — |
-| `LogicalExpression` | yes | — | — | — | — | — | — | — | — | — | — | — | — |
-| `AssignmentExpression` | yes | — | — | — | — | — | yes | — | — | — | — | — | — |
-| `UnaryExpression` | yes | yes | — | — | — | — | — | — | — | — | — | — | — |
-| `UpdateExpression` | yes | yes | — | — | — | — | yes | — | — | — | — | — | — |
-| `VariableDeclaration` | — | — | yes | — | — | — | yes | — | — | — | — | — | — |
-| `MemberExpression` | — | — | — | yes | — | — | — | yes | — | — | if true | — | — |
-| `Identifier` | — | — | — | — | yes | — | — | — | — | — | — | — | — |
-| `CallExpression` | — | — | — | — | — | yes | — | — | yes | yes | — | — | — |
-| `NewExpression` | — | — | — | — | — | yes | — | — | yes | yes | — | — | — |
-| `ArrowFunctionExpression` | — | — | — | — | — | yes | — | — | — | — | — | if true | — |
-| `FunctionExpression` | — | — | — | — | yes | yes | — | — | — | — | — | if true | if true |
+| AST Type                  | `action`  | `operator` | `prefix` | `kind` | `computed` | `name` | `arity` | `target` | `property` | `callee` | `method` | `optional` | `async` | `generator` | structural                  |
+| ------------------------- | --------- | ---------- | -------- | ------ | ---------- | ------ | ------- | -------- | ---------- | -------- | -------- | ---------- | ------- | ----------- | --------------------------- |
+| `BinaryExpression`        | compute   | yes        | —        | —      | —          | —      | —       | —        | —          | —        | —        | —          | —       | —           | —                           |
+| `LogicalExpression`       | compute   | yes        | —        | —      | —          | —      | —       | —        | —          | —        | —        | —          | —       | —           | —                           |
+| `AssignmentExpression`    | assign    | yes        | —        | —      | —          | —      | —       | yes      | —          | —        | —        | —          | —       | —           | —                           |
+| `UnaryExpression`         | compute   | yes        | yes      | —      | —          | —      | —       | —        | —          | —        | —        | —          | —       | —           | —                           |
+| `UpdateExpression`        | update    | yes        | yes      | —      | —          | —      | —       | yes      | —          | —        | —        | —          | —       | —           | —                           |
+| `VariableDeclaration`     | declare   | —          | —        | yes    | —          | —      | —       | yes      | —          | —        | —        | —          | —       | —           | —                           |
+| `MemberExpression`        | access    | —          | —        | —      | yes        | —      | —       | —        | yes        | —        | —        | if true    | —       | —           | —                           |
+| `Identifier`              | read      | —          | —        | —      | —          | yes    | —       | —        | —          | —        | —        | —          | —       | —           | —                           |
+| `CallExpression`          | call      | —          | —        | —      | —          | —      | yes     | —        | —          | yes      | yes      | —          | —       | —           | —                           |
+| `NewExpression`           | construct | —          | —        | —      | —          | —      | yes     | —        | —          | yes      | yes      | —          | —       | —           | —                           |
+| `ArrowFunctionExpression` | define    | —          | —        | —      | —          | —      | yes     | —        | —          | —        | —        | —          | if true | —           | expressionBody              |
+| `FunctionExpression`      | define    | —          | —        | —      | —          | yes    | yes     | —        | —          | —        | —        | —          | if true | if true     | —                           |
+| `IfStatement`             | branch    | —          | —        | —      | —          | —      | —       | —        | —          | —        | —        | —          | —       | —           | hasAlternate                |
+| `ConditionalExpression`   | branch    | —          | —        | —      | —          | —      | —       | —        | —          | —        | —        | —          | —       | —           | hasAlternate                |
+| `ForStatement`            | loop      | —          | —        | —      | —          | —      | —       | —        | —          | —        | —        | —          | —       | —           | hasInit, hasTest, hasUpdate |
+| `WhileStatement`          | loop      | —          | —        | —      | —          | —      | —       | —        | —          | —        | —        | —          | —       | —           | —                           |
+| `TryStatement`            | protect   | —          | —        | —      | —          | —      | —       | —        | —          | —        | —        | —          | —       | —           | hasCatch, hasFinally        |
+| `ExpressionStatement`     | evaluate  | —          | —        | —      | —          | —      | —       | —        | —          | —        | —        | —          | —       | —           | —                           |
+| `SequenceExpression`      | compute   | —          | —        | —      | —          | —      | —       | —        | —          | —        | —        | —          | —       | —           | —                           |
+| `NumericLiteral`          | literal   | —          | —        | —      | —          | —      | —       | —        | —          | —        | —        | —          | —       | —           | —                           |
+| `StringLiteral`           | literal   | —          | —        | —      | —          | —      | —       | —        | —          | —        | —        | —          | —       | —           | —                           |
+| `BooleanLiteral`          | literal   | —          | —        | —      | —          | —      | —       | —        | —          | —        | —        | —          | —       | —           | —                           |
+| `ArrayExpression`         | literal   | —          | —        | —      | —          | —      | —       | —        | —          | —        | —        | —          | —       | —           | elementCount                |
+| `ObjectExpression`        | literal   | —          | —        | —      | —          | —      | —       | —        | —          | —        | —        | —          | —       | —           | propertyCount               |
 
 "if true" means the field is only present when the value is `true` (omitted when `false`).
-
-All other types (`ForStatement`, `WhileStatement`, `IfStatement`, literals, etc.) have no `detail` — their `type` field already communicates everything useful.
 
 ## Examples
 
@@ -405,11 +456,11 @@ The init step has no `type`, `time`, `loc`, `value`, or `detail`. It exists so c
 
 ### Step Categories
 
-| Category | Meaning | `type` present? | `time` present? | `value` present? |
-| --- | --- | --- | --- | --- |
-| `init` | Program start (step 0 only) | No | No | No |
-| `statement` | A statement node executing | Yes | Yes | No (statements don't produce values) |
-| `expression` | An expression node executing | Yes | Yes | Yes (on `after` steps) |
+| Category     | Meaning                      | `type` present? | `time` present? | `value` present?                     |
+| ------------ | ---------------------------- | --------------- | --------------- | ------------------------------------ |
+| `init`       | Program start (step 0 only)  | No              | No              | No                                   |
+| `statement`  | A statement node executing   | Yes             | Yes             | No (statements don't produce values) |
+| `expression` | An expression node executing | Yes             | Yes             | Yes (on `after` steps)               |
 
 ### Timing: Before and After
 
@@ -422,25 +473,25 @@ Statements only have meaningful `before`/`after` for statements with side effect
 
 ### Core Fields (Always Present)
 
-| Field | On every step? | Description |
-| --- | --- | --- |
-| `step` | Yes | 1-indexed execution order (init is step 0) |
-| `category` | Yes | `'init'`, `'statement'`, or `'expression'` |
+| Field      | On every step? | Description                                |
+| ---------- | -------------- | ------------------------------------------ |
+| `step`     | Yes            | 1-indexed execution order (init is step 0) |
+| `category` | Yes            | `'init'`, `'statement'`, or `'expression'` |
 
 ### Conditional Fields
 
 These fields are present on non-init steps but can be stripped by the `data` filter config:
 
-| Field | Default | What it contains | When absent |
-| --- | --- | --- | --- |
-| `type` | Always on non-init | AST node type string (e.g., `'ForStatement'`, `'BinaryExpression'`) | Never absent on non-init steps |
-| `time` | Always on non-init | `'before'` or `'after'` | Never absent on non-init steps |
-| `loc` | Included | Source position: `{ start: { line, column }, end: { line, column } }`. Line is 1-indexed, column is 0-indexed. | Stripped when `data.loc: false` |
-| `scopes` | Included | Array of scope objects, innermost first. Each scope is `Record<string, unknown>` mapping variable names to their current values. | Stripped when `data.scopes: false` |
-| `value` | Included | The expression's result value (only on `after` expression steps). For statements, always absent. | Stripped when `data.value: false` |
-| `logs` | Included | Array of `console.log()` argument arrays captured at this step. Each call is one inner array. | Stripped when `data.logs: false` |
-| `dt` | Included | Milliseconds elapsed since trace start (`Date.now() - t0`). | Stripped when `data.dt: false` |
-| `detail` | Included | Node-type-specific AST metadata object. See [JsKlveDetail](#jsklvedetail) section. | Absent on types without metadata (ForStatement, literals, etc.) |
+| Field    | Default            | What it contains                                                                                                                 | When absent                        |
+| -------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `type`   | Always on non-init | AST node type string (e.g., `'ForStatement'`, `'BinaryExpression'`)                                                              | Never absent on non-init steps     |
+| `time`   | Always on non-init | `'before'` or `'after'`                                                                                                          | Never absent on non-init steps     |
+| `loc`    | Included           | Source position: `{ start: { line, column }, end: { line, column } }`. Line is 1-indexed, column is 0-indexed.                   | Stripped when `data.loc: false`    |
+| `scopes` | Included           | Array of scope objects, innermost first. Each scope is `Record<string, unknown>` mapping variable names to their current values. | Stripped when `data.scopes: false` |
+| `value`  | Included           | The expression's result value (only on `after` expression steps). For statements, always absent.                                 | Stripped when `data.value: false`  |
+| `logs`   | Included           | Array of `console.log()` argument arrays captured at this step. Each call is one inner array.                                    | Stripped when `data.logs: false`   |
+| `dt`     | Included           | Milliseconds elapsed since trace start (`Date.now() - t0`).                                                                      | Stripped when `data.dt: false`     |
+| `detail` | Always on non-init | Node-type-specific AST metadata object. See [JsKlveDetail](#jsklvedetail) section.                                               | Only absent on init step           |
 
 ### What Each Node Type Tells You
 
@@ -454,10 +505,10 @@ Below is every traced node type, what information it provides, and an example of
 // before
 { step: 1, category: 'statement', type: 'VariableDeclaration', time: 'before',
   loc: { start: { line: 1, column: 0 }, end: { line: 1, column: 10 } },
-  scopes: [{ x: undefined }], detail: { kind: 'let', target: 'x' } }
+  scopes: [{ x: undefined }], detail: { action: 'declare', kind: 'let', target: 'x' } }
 // after
 { step: N, category: 'statement', type: 'VariableDeclaration', time: 'after',
-  scopes: [{ x: 1 }], detail: { kind: 'let', target: 'x' } }
+  scopes: [{ x: 1 }], detail: { action: 'declare', kind: 'let', target: 'x' } }
 ```
 
 Key info: `detail.kind` tells you `let`/`const`/`var`. `detail.target` is the declared variable name (null for destructuring patterns).
@@ -466,11 +517,43 @@ Key info: `detail.kind` tells you `let`/`const`/`var`. `detail.target` is the de
 
 ```typescript
 { step: N, category: 'statement', type: 'ForStatement', time: 'before',
-  scopes: [{ i: 0 }] }
-// No detail — the type name says it all
+  scopes: [{ i: 0 }],
+  detail: { action: 'loop', hasInit: true, hasTest: true, hasUpdate: true } }
 ```
 
-**WhileStatement**, **IfStatement**, **TryStatement**, **ExpressionStatement** — same pattern: `before`/`after` with scopes, no detail.
+Key info: `detail.hasInit`/`hasTest`/`hasUpdate` reflect which for-loop clauses are present. All `false` for `for (;;)`.
+
+**WhileStatement** (`while (x > 0) { ... }`)
+
+```typescript
+{ step: N, category: 'statement', type: 'WhileStatement', time: 'before',
+  scopes: [{ x: 3 }], detail: { action: 'loop' } }
+```
+
+**IfStatement** (`if (x > 0) { ... } else { ... }`)
+
+```typescript
+{ step: N, category: 'statement', type: 'IfStatement', time: 'before',
+  scopes: [{ x: 1 }], detail: { action: 'branch', hasAlternate: true } }
+```
+
+Key info: `detail.hasAlternate` is `true` when an `else` clause exists, `false` without one.
+
+**TryStatement** (`try { ... } catch (e) { ... } finally { ... }`)
+
+```typescript
+{ step: N, category: 'statement', type: 'TryStatement', time: 'before',
+  detail: { action: 'protect', hasCatch: true, hasFinally: true } }
+```
+
+Key info: `detail.hasCatch`/`hasFinally` reflect which clauses are present.
+
+**ExpressionStatement** (`x + 1;`)
+
+```typescript
+{ step: N, category: 'statement', type: 'ExpressionStatement', time: 'before',
+  detail: { action: 'evaluate' } }
+```
 
 #### Expressions — Operators
 
@@ -479,12 +562,12 @@ Key info: `detail.kind` tells you `let`/`const`/`var`. `detail.target` is the de
 ```typescript
 // after
 { step: N, category: 'expression', type: 'BinaryExpression', time: 'after',
-  value: 3, detail: { operator: '+' } }
+  value: 3, detail: { action: 'compute', operator: '+' } }
 ```
 
-**LogicalExpression** (`true && false`) — `detail: { operator: '&&' }`
+**LogicalExpression** (`true && false`) — `detail: { action: 'compute', operator: '&&' }`
 
-**UnaryExpression** (`!true`) — `detail: { operator: '!', prefix: true }`
+**UnaryExpression** (`!true`) — `detail: { action: 'compute', operator: '!', prefix: true }`
 
 **AssignmentExpression** (`x = 1`)
 
@@ -492,7 +575,7 @@ Key info: `detail.kind` tells you `let`/`const`/`var`. `detail.target` is the de
 // after
 { step: N, category: 'expression', type: 'AssignmentExpression', time: 'after',
   value: 1, scopes: [{ x: 1 }],
-  detail: { operator: '=', target: 'x' } }
+  detail: { action: 'assign', operator: '=', target: 'x' } }
 ```
 
 `detail.target` is `null` when the assignment target is complex (e.g., `obj.x = 1`).
@@ -503,7 +586,7 @@ Key info: `detail.kind` tells you `let`/`const`/`var`. `detail.target` is the de
 // after
 { step: N, category: 'expression', type: 'UpdateExpression', time: 'after',
   value: 0, // postfix returns old value
-  detail: { operator: '++', prefix: false, target: 'x' } }
+  detail: { action: 'update', operator: '++', prefix: false, target: 'x' } }
 ```
 
 #### Expressions — Access
@@ -514,13 +597,13 @@ Key info: `detail.kind` tells you `let`/`const`/`var`. `detail.target` is the de
 // dot access
 { step: N, category: 'expression', type: 'MemberExpression', time: 'after',
   value: /* resolved value */,
-  detail: { computed: false, property: 'x' } }
+  detail: { action: 'access', computed: false, property: 'x' } }
 
 // computed access
-{ step: N, ..., detail: { computed: true, property: null } }
+{ step: N, ..., detail: { action: 'access', computed: true, property: null } }
 
 // optional chaining (obj?.x)
-{ step: N, ..., detail: { computed: false, property: 'x', optional: true } }
+{ step: N, ..., detail: { action: 'access', computed: false, property: 'x', optional: true } }
 ```
 
 **Identifier** (`x`)
@@ -528,7 +611,7 @@ Key info: `detail.kind` tells you `let`/`const`/`var`. `detail.target` is the de
 ```typescript
 { step: N, category: 'expression', type: 'Identifier', time: 'after',
   value: /* current value of x */,
-  detail: { name: 'x' } }
+  detail: { action: 'read', name: 'x' } }
 ```
 
 #### Expressions — Calls
@@ -539,59 +622,92 @@ Key info: `detail.kind` tells you `let`/`const`/`var`. `detail.target` is the de
 // simple call
 { step: N, category: 'expression', type: 'CallExpression', time: 'after',
   value: /* return value */,
-  detail: { arity: 2, callee: 'f', method: false } }
+  detail: { action: 'call', arity: 2, callee: 'f', method: false } }
 
 // method call
 { step: N, ...,
-  detail: { arity: 1, callee: 'method', method: true } }
+  detail: { action: 'call', arity: 1, callee: 'method', method: true } }
 
 // anonymous callee: (x => x)(1)
 { step: N, ...,
-  detail: { arity: 1, callee: null, method: false } }
+  detail: { action: 'call', arity: 1, callee: null, method: false } }
 ```
 
-**NewExpression** (`new Foo(1)`) — same detail shape as CallExpression.
+**NewExpression** (`new Foo(1)`) — same detail shape as CallExpression, but `action: 'construct'`.
 
 #### Expressions — Functions
 
 **ArrowFunctionExpression** (`(a, b) => a + b`)
 
 ```typescript
+// expression body: (a, b) => a + b
 { step: N, category: 'expression', type: 'ArrowFunctionExpression', time: 'after',
   value: /* the function object */,
-  detail: { arity: 2 } }
+  detail: { action: 'define', arity: 2, expressionBody: true } }
+
+// block body: (a, b) => { return a + b; }
+{ step: N, ..., detail: { action: 'define', arity: 2, expressionBody: false } }
 
 // async arrow
-{ step: N, ..., detail: { arity: 2, async: true } }
+{ step: N, ..., detail: { action: 'define', arity: 2, expressionBody: true, async: true } }
 ```
+
+Key info: `detail.expressionBody` distinguishes `=> expr` from `=> { ... }`.
 
 **FunctionExpression** (`function foo(x) { return x; }`)
 
 ```typescript
 { step: N, category: 'expression', type: 'FunctionExpression', time: 'after',
   value: /* the function object */,
-  detail: { name: 'foo', arity: 1 } }
+  detail: { action: 'define', name: 'foo', arity: 1 } }
 
 // anonymous: function(x) { ... }
-{ step: N, ..., detail: { name: null, arity: 1 } }
+{ step: N, ..., detail: { action: 'define', name: null, arity: 1 } }
 
 // async generator: async function* gen() { ... }
-{ step: N, ..., detail: { name: 'gen', arity: 0, async: true, generator: true } }
+{ step: N, ..., detail: { action: 'define', name: 'gen', arity: 0, async: true, generator: true } }
 ```
 
 #### Expressions — Literals
 
-**NumericLiteral** (`42`), **StringLiteral** (`"hello"`), **BooleanLiteral** (`true`), **ArrayExpression** (`[1, 2]`), **ObjectExpression** (`{ a: 1 }`)
+**NumericLiteral** (`42`), **StringLiteral** (`"hello"`), **BooleanLiteral** (`true`)
 
 ```typescript
-// All literals have value but no detail
 { step: N, category: 'expression', type: 'NumericLiteral', time: 'after',
-  value: 42 }
+  value: 42, detail: { action: 'literal' } }
+```
+
+**ArrayExpression** (`[1, 2]`)
+
+```typescript
+{ step: N, category: 'expression', type: 'ArrayExpression', time: 'after',
+  value: [1, 2], detail: { action: 'literal', elementCount: 2 } }
+```
+
+**ObjectExpression** (`{ a: 1, b: 2 }`)
+
+```typescript
+{ step: N, category: 'expression', type: 'ObjectExpression', time: 'after',
+  value: { a: 1, b: 2 }, detail: { action: 'literal', propertyCount: 2 } }
 ```
 
 #### Expressions — Other
 
-**ConditionalExpression** (`a ? b : c`), **SequenceExpression** (`(a, b)`) — no detail.
+**ConditionalExpression** (`a ? b : c`)
+
+```typescript
+{ step: N, category: 'expression', type: 'ConditionalExpression', time: 'after',
+  value: /* result */, detail: { action: 'branch', hasAlternate: true } }
+```
+
+Ternaries always have `hasAlternate: true` (both branches are syntactically required).
+
+**SequenceExpression** (`(a, b)`)
+
+```typescript
+{ step: N, category: 'expression', type: 'SequenceExpression', time: 'after',
+  value: /* last value */, detail: { action: 'compute' } }
+```
 
 ### Scope Chain
 
@@ -599,10 +715,12 @@ The `scopes` array represents the scope chain at each step, innermost scope firs
 
 ```typescript
 scopes: [
-  { x: 1, y: 2 },          // innermost (current block)
-  { outerVar: 'hello' },    // enclosing scope
-  { /* global scope */ },    // outermost
-]
+  { x: 1, y: 2 }, // innermost (current block)
+  { outerVar: 'hello' }, // enclosing scope
+  {
+    /* global scope */
+  }, // outermost
+];
 ```
 
 Scope entries use the pattern `varName (!)` when a scope was created by the tracer's internal transformations (e.g., for-loop desugaring) rather than existing in the original code. These "synthetic" scopes are flagged so consumers can hide them if desired.
@@ -614,7 +732,7 @@ The `logs` field captures `console.log()` calls made during execution. Each elem
 ```typescript
 // Code: console.log("a", 1); console.log("b");
 // On a step after both calls:
-logs: [["a", 1], ["b"]]
+logs: [['a', 1], ['b']];
 ```
 
 Logs accumulate — each step's `logs` includes all captures up to that point.
@@ -623,17 +741,17 @@ Logs accumulate — each step's `logs` includes all captures up to that point.
 
 The following information is **not** available in js-klve trace steps:
 
-| Missing Information | Why |
-| --- | --- |
-| Branch taken (if/else) | Runtime decision, requires instrumentation changes |
-| Loop iteration count | Requires per-loop counter instrumentation |
-| Which catch/finally executed | Runtime control flow, not static AST metadata |
-| Call stack depth | Requires stack tracking instrumentation |
-| Destructuring target names | `const { a, b } = obj` — `target` is null; decomposition is consumer-level |
-| Computed property values | `obj[expr]` — `property` is null; the value is runtime-only |
-| Closure relationships | Which function closes over which variables |
-| Prototype chain | Object inheritance structure |
-| `this` binding | Runtime context, not extractable at compile time |
+| Missing Information          | Why                                                                        |
+| ---------------------------- | -------------------------------------------------------------------------- |
+| Branch taken (if/else)       | Runtime decision, requires instrumentation changes                         |
+| Loop iteration count         | Requires per-loop counter instrumentation                                  |
+| Which catch/finally executed | Runtime control flow, not static AST metadata                              |
+| Call stack depth             | Requires stack tracking instrumentation                                    |
+| Destructuring target names   | `const { a, b } = obj` — `target` is null; decomposition is consumer-level |
+| Computed property values     | `obj[expr]` — `property` is null; the value is runtime-only                |
+| Closure relationships        | Which function closes over which variables                                 |
+| Prototype chain              | Object inheritance structure                                               |
+| `this` binding               | Runtime context, not extractable at compile time                           |
 
 ## Error Handling
 

@@ -114,10 +114,10 @@ async function executeTrace(
     const meta = prepareConfig(userConfig.meta ?? {}, metaSchema as JSONSchema) as MetaConfig;
     // Skip options prep if tracer has no schema
     const options = tracerModule.optionsSchema
-      ? (prepareConfig(userConfig.options ?? {}, tracerModule.optionsSchema as JSONSchema) as Record<
-          string,
-          unknown
-        >)
+      ? (prepareConfig(
+          userConfig.options ?? {},
+          tracerModule.optionsSchema as JSONSchema,
+        ) as Record<string, unknown>)
       : {};
 
     // 3. Semantic validation

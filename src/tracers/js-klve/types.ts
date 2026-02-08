@@ -59,10 +59,10 @@ export type DescribedValue = readonly [ValueDescriptor, readonly HeapObject[]];
 /**
  * Node-type-specific AST metadata included in trace steps.
  * Contains static properties from the AST node (known at compile time).
- * Present on all non-init steps. `action` is always set.
+ * Present on all non-init steps.
  */
 export type JsKlveDetail = {
-  readonly action: string;
+  readonly action?: string;
   readonly operator?: string;
   readonly prefix?: boolean;
   readonly kind?: string;
