@@ -308,6 +308,14 @@ export default tseslint.config(
     },
   },
 
+  // --- Tracer barrels (scoped exception — plugin-like modules with fixed contract) ---
+  {
+    files: ['src/tracers/index.ts', 'src/tracers/*/index.ts'],
+    rules: {
+      'import/no-named-export': 'off',
+    },
+  },
+
   // --- Type definition files (named exports allowed) ---
   {
     files: ['**/types.ts', '**/*.types.ts', '**/types/*.ts'],

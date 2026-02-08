@@ -1,9 +1,9 @@
 /**
  * Integration tests for the tracer module infrastructure.
- * Tests dispatch + chars together without touching /api.
+ * Tests tracer registry + chars together without touching /api.
  */
 
-import dispatch from '../dispatch.js';
+import tracers from '../index.js';
 import type { MetaConfig, StepCore } from '../types.js';
 
 /** Default meta config for tests (all limits disabled) */
@@ -29,9 +29,9 @@ const DEFAULT_OPTIONS = {
 };
 
 describe('tracer module integration', () => {
-  describe('dispatch routing', () => {
-    it('dispatches to chars and records', async () => {
-      const { record } = dispatch.chars;
+  describe('registry routing', () => {
+    it('routes to chars and records', async () => {
+      const { record } = tracers.chars;
       const steps = await record('ab', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
@@ -40,22 +40,22 @@ describe('tracer module integration', () => {
     });
 
     it('returns undefined for unknown tracer', () => {
-      expect((dispatch as Record<string, unknown>).unknown).toBeUndefined();
+      expect((tracers as Record<string, unknown>).unknown).toBeUndefined();
     });
 
     it('can iterate over available tracers', () => {
-      const tracerIds = Object.keys(dispatch);
+      const tracerIds = Object.keys(tracers);
       expect(tracerIds).toContain('chars');
     });
   });
 
   describe('record function signature', () => {
     it('chars.record is a function', () => {
-      expect(typeof dispatch.chars.record).toBe('function');
+      expect(typeof tracers.chars.record).toBe('function');
     });
 
     it('accepts code and config object', async () => {
-      const { record } = dispatch.chars;
+      const { record } = tracers.chars;
       const steps = await record('test', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
@@ -66,7 +66,7 @@ describe('tracer module integration', () => {
 
   describe('StepCore contract (ESTree format)', () => {
     it('all steps have required StepCore fields', async () => {
-      const steps = await dispatch.chars.record('abc', {
+      const steps = await tracers.chars.record('abc', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
@@ -80,7 +80,7 @@ describe('tracer module integration', () => {
     });
 
     it('step numbers are 1-indexed', async () => {
-      const steps = await dispatch.chars.record('abc', {
+      const steps = await tracers.chars.record('abc', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
@@ -88,7 +88,7 @@ describe('tracer module integration', () => {
     });
 
     it('line numbers are 1-indexed (ESTree standard)', async () => {
-      const steps = await dispatch.chars.record('abc', {
+      const steps = await tracers.chars.record('abc', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
@@ -96,7 +96,7 @@ describe('tracer module integration', () => {
     });
 
     it('column numbers are 0-indexed (ESTree standard)', async () => {
-      const steps = await dispatch.chars.record('abc', {
+      const steps = await tracers.chars.record('abc', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
@@ -104,7 +104,7 @@ describe('tracer module integration', () => {
     });
 
     it('steps are in execution order', async () => {
-      const steps = await dispatch.chars.record('abc', {
+      const steps = await tracers.chars.record('abc', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
@@ -115,8 +115,8 @@ describe('tracer module integration', () => {
 
   describe('immutability guarantees', () => {
     it('returned steps are readonly', async () => {
-      // Note: dispatch tests call record() directly with FULLY-FILLED config
-      const steps = await dispatch.chars.record('ab', {
+      // Note: registry tests call record() directly with FULLY-FILLED config
+      const steps = await tracers.chars.record('ab', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
@@ -127,9 +127,9 @@ describe('tracer module integration', () => {
   describe('type narrowing helper', () => {
     it('can type-check tracer existence before use', async () => {
       const tracerId = 'chars';
-      if (tracerId in dispatch) {
-        const { record } = dispatch[tracerId as keyof typeof dispatch];
-        // Note: dispatch tests call record() directly with FULLY-FILLED config
+      if (tracerId in tracers) {
+        const { record } = tracers[tracerId as keyof typeof tracers];
+        // Note: registry tests call record() directly with FULLY-FILLED config
         const steps = await record('test', {
           meta: DEFAULT_META,
           options: DEFAULT_OPTIONS,

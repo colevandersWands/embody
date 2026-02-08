@@ -29,11 +29,12 @@ function record(
 
 ### Throws
 
-| Error                | Condition                       |
-| -------------------- | ------------------------------- |
-| `ParseError`         | Syntax errors in the code       |
-| `RuntimeError`       | Runtime errors during execution |
-| `LimitExceededError` | Trace exceeds `meta.max.steps`  |
+| Error                | Condition                                   |
+| -------------------- | ------------------------------------------- |
+| `ParseError`         | Syntax errors in the code                   |
+| `RuntimeError`       | Runtime errors during execution             |
+| `LimitExceededError` | Trace exceeds `meta.max.steps` (step count) |
+| `LimitExceededError` | Trace exceeds `meta.max.time` (elapsed ms)  |
 
 ## JsKlveOptions
 
@@ -52,6 +53,7 @@ Hierarchical configuration for filtering trace steps.
 ```typescript
 type JsKlveFilterConfig = {
   readonly nodes?: JsKlveNodeConfig;
+  readonly names?: JsKlveNameConfig;
   readonly timing?: {
     readonly before?: boolean; // Include pre-execution steps
     readonly after?: boolean; // Include post-execution steps
@@ -68,7 +70,7 @@ type JsKlveFilterConfig = {
 
 ### Defaults
 
-All options default to `true` (include everything).
+All boolean options default to `true` (include everything). `names` defaults to no filtering (all names pass through).
 
 ## JsKlveNodeConfig
 
@@ -130,6 +132,60 @@ type JsKlveNodeConfig = {
 | `functions.arrow`            | `ArrowFunctionExpression` |
 | `functions.expression`       | `FunctionExpression`      |
 
+## JsKlveNameConfig
+
+Name-based step filtering. Operates on the name-like fields in each step's `detail`: `name`, `target`, `callee`, `property`.
+
+```typescript
+type JsKlveNameConfig = {
+  readonly include?: readonly string[]; // whitelist
+  readonly exclude?: readonly string[]; // blacklist
+};
+```
+
+### Semantics
+
+| Config | Mode | Behavior |
+| --- | --- | --- |
+| `{ include: ['x'] }` | Whitelist | Only keep steps mentioning `'x'` + nameless structural steps |
+| `{ exclude: ['console'] }` | Blacklist | Remove steps mentioning `'console'`, keep everything else |
+| `{ include: ['x'], exclude: ['y'] }` | Whitelist wins | `include` takes precedence, `exclude` is ignored |
+| `{}` or absent | No filtering | All steps pass through |
+
+### Key Behaviors
+
+- **Nameless steps always survive**: Steps without name-like `detail` fields (ForStatement, literals, BinaryExpression without target) pass through in both modes. Structural context is always preserved.
+- **Init step always survives**: The step 0 init step is never filtered.
+- **Step-level only**: Entire steps are removed/kept. Scope objects are NOT modified by name filtering.
+- **Name fields checked**: `detail.name`, `detail.target`, `detail.callee`, `detail.property`. Only non-null string values count.
+- **Exact match**: Names are matched exactly (no wildcards or regex).
+
+### Pipeline Position
+
+```text
+raw steps → filter(node type + timing) → filter(names) → map(stripData) → output
+```
+
+Name filtering runs after node/timing filters and before data stripping.
+
+### Name Filter Examples
+
+```typescript
+// Only trace what happens to variable 'x'
+const options: JsKlveOptions = {
+  filter: {
+    names: { include: ['x'] },
+  },
+};
+
+// Hide all console-related steps
+const options: JsKlveOptions = {
+  filter: {
+    names: { exclude: ['log', 'console'] },
+  },
+};
+```
+
 ## JsKlveStep
 
 Output step structure.
@@ -148,6 +204,7 @@ type JsKlveStep = {
   readonly value?: unknown;
   readonly logs?: readonly unknown[][];
   readonly dt?: number;
+  readonly detail?: JsKlveDetail;
 };
 ```
 
@@ -164,6 +221,68 @@ type JsKlveStep = {
 | `value`    | `unknown?`        | Expression result (after-steps only)       |
 | `logs`     | `unknown[][]?`    | console.log captures at this step          |
 | `dt`       | `number?`         | Milliseconds since trace start             |
+| `detail`   | `JsKlveDetail?`   | Node-type-specific AST metadata            |
+
+## JsKlveDetail
+
+Node-type-specific AST metadata included in trace steps. Contains static properties from the AST node (known at compile time, not runtime). Only present on step types that have relevant metadata.
+
+```typescript
+type JsKlveDetail = {
+  readonly operator?: string;
+  readonly prefix?: boolean;
+  readonly kind?: string;
+  readonly computed?: boolean;
+  readonly name?: string | null;
+  readonly arity?: number;
+  readonly target?: string | null;
+  readonly property?: string | null;
+  readonly callee?: string | null;
+  readonly method?: boolean;
+  readonly optional?: boolean;
+  readonly async?: boolean;
+  readonly generator?: boolean;
+};
+```
+
+### Fields
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `operator` | `string?` | Operator characters (e.g. `+`, `===`, `&&`) |
+| `prefix` | `boolean?` | Prefix vs postfix for unary/update |
+| `kind` | `string?` | Declaration kind: let, const, var |
+| `computed` | `boolean?` | Computed vs dot member access |
+| `name` | `string \| null?` | Identifier or function name |
+| `arity` | `number?` | Param count (functions) or arg count (calls) |
+| `target` | `string \| null?` | Variable being written to (null for complex targets) |
+| `property` | `string \| null?` | Property name for dot access (null when computed) |
+| `callee` | `string \| null?` | Function/method being called (null for anonymous) |
+| `method` | `boolean?` | Whether call is a method invocation (`obj.f()` vs `f()`) |
+| `optional` | `boolean?` | Optional chaining (`?.`); only present when true |
+| `async` | `boolean?` | Async function; only present when true |
+| `generator` | `boolean?` | Generator function; only present when true |
+
+### Which Types Get Which Fields
+
+| AST Type | `operator` | `prefix` | `kind` | `computed` | `name` | `arity` | `target` | `property` | `callee` | `method` | `optional` | `async` | `generator` |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `BinaryExpression` | yes | — | — | — | — | — | — | — | — | — | — | — | — |
+| `LogicalExpression` | yes | — | — | — | — | — | — | — | — | — | — | — | — |
+| `AssignmentExpression` | yes | — | — | — | — | — | yes | — | — | — | — | — | — |
+| `UnaryExpression` | yes | yes | — | — | — | — | — | — | — | — | — | — | — |
+| `UpdateExpression` | yes | yes | — | — | — | — | yes | — | — | — | — | — | — |
+| `VariableDeclaration` | — | — | yes | — | — | — | yes | — | — | — | — | — | — |
+| `MemberExpression` | — | — | — | yes | — | — | — | yes | — | — | if true | — | — |
+| `Identifier` | — | — | — | — | yes | — | — | — | — | — | — | — | — |
+| `CallExpression` | — | — | — | — | — | yes | — | — | yes | yes | — | — | — |
+| `NewExpression` | — | — | — | — | — | yes | — | — | yes | yes | — | — | — |
+| `ArrowFunctionExpression` | — | — | — | — | — | yes | — | — | — | — | — | if true | — |
+| `FunctionExpression` | — | — | — | — | yes | yes | — | — | — | — | — | if true | if true |
+
+"if true" means the field is only present when the value is `true` (omitted when `false`).
+
+All other types (`ForStatement`, `WhileStatement`, `IfStatement`, literals, etc.) have no `detail` — their `type` field already communicates everything useful.
 
 ## Examples
 
@@ -249,6 +368,273 @@ assignments.forEach((s) => {
 });
 ```
 
+### Focus on Specific Variables
+
+```typescript
+// Only see steps involving variable 'x' (declarations, assignments, reads)
+const steps = await record('let x = 0; let y = 1; x = x + y;', {
+  meta: defaultMeta,
+  options: {
+    filter: {
+      names: { include: ['x'] },
+    },
+  },
+});
+// Steps mentioning 'y' are removed; structural steps (loops, etc.) kept
+```
+
+## Trace Anatomy
+
+A complete reference for everything a js-klve trace contains. Given input code, the tracer produces an array of steps representing the program's execution. This section documents every field, every step category, and what information is available at each point.
+
+### The Init Step
+
+Every trace begins with exactly one `init` step (step 0). It captures the program's initial state before any code executes:
+
+```typescript
+{
+  step: 0,
+  category: 'init',
+  scopes: [{ /* global-scope variables */ }],
+  logs: [],
+  dt: 0,
+}
+```
+
+The init step has no `type`, `time`, `loc`, `value`, or `detail`. It exists so consumers can see the starting scope (e.g., variables hoisted by the runtime).
+
+### Step Categories
+
+| Category | Meaning | `type` present? | `time` present? | `value` present? |
+| --- | --- | --- | --- | --- |
+| `init` | Program start (step 0 only) | No | No | No |
+| `statement` | A statement node executing | Yes | Yes | No (statements don't produce values) |
+| `expression` | An expression node executing | Yes | Yes | Yes (on `after` steps) |
+
+### Timing: Before and After
+
+Most steps come in pairs — a `before` step (about to execute) and an `after` step (just executed):
+
+- **`before`**: The node is about to execute. `scopes` show the current variable values. No `value` yet.
+- **`after`**: The node just finished. For expressions, `value` contains the result. `scopes` may have changed (e.g., after an assignment).
+
+Statements only have meaningful `before`/`after` for statements with side effects. Block statements (`{ }`) are skipped.
+
+### Core Fields (Always Present)
+
+| Field | On every step? | Description |
+| --- | --- | --- |
+| `step` | Yes | 1-indexed execution order (init is step 0) |
+| `category` | Yes | `'init'`, `'statement'`, or `'expression'` |
+
+### Conditional Fields
+
+These fields are present on non-init steps but can be stripped by the `data` filter config:
+
+| Field | Default | What it contains | When absent |
+| --- | --- | --- | --- |
+| `type` | Always on non-init | AST node type string (e.g., `'ForStatement'`, `'BinaryExpression'`) | Never absent on non-init steps |
+| `time` | Always on non-init | `'before'` or `'after'` | Never absent on non-init steps |
+| `loc` | Included | Source position: `{ start: { line, column }, end: { line, column } }`. Line is 1-indexed, column is 0-indexed. | Stripped when `data.loc: false` |
+| `scopes` | Included | Array of scope objects, innermost first. Each scope is `Record<string, unknown>` mapping variable names to their current values. | Stripped when `data.scopes: false` |
+| `value` | Included | The expression's result value (only on `after` expression steps). For statements, always absent. | Stripped when `data.value: false` |
+| `logs` | Included | Array of `console.log()` argument arrays captured at this step. Each call is one inner array. | Stripped when `data.logs: false` |
+| `dt` | Included | Milliseconds elapsed since trace start (`Date.now() - t0`). | Stripped when `data.dt: false` |
+| `detail` | Included | Node-type-specific AST metadata object. See [JsKlveDetail](#jsklvedetail) section. | Absent on types without metadata (ForStatement, literals, etc.) |
+
+### What Each Node Type Tells You
+
+Below is every traced node type, what information it provides, and an example of the step content.
+
+#### Statements
+
+**VariableDeclaration** (`let x = 1;`)
+
+```typescript
+// before
+{ step: 1, category: 'statement', type: 'VariableDeclaration', time: 'before',
+  loc: { start: { line: 1, column: 0 }, end: { line: 1, column: 10 } },
+  scopes: [{ x: undefined }], detail: { kind: 'let', target: 'x' } }
+// after
+{ step: N, category: 'statement', type: 'VariableDeclaration', time: 'after',
+  scopes: [{ x: 1 }], detail: { kind: 'let', target: 'x' } }
+```
+
+Key info: `detail.kind` tells you `let`/`const`/`var`. `detail.target` is the declared variable name (null for destructuring patterns).
+
+**ForStatement** (`for (let i = 0; i < 3; i++) { ... }`)
+
+```typescript
+{ step: N, category: 'statement', type: 'ForStatement', time: 'before',
+  scopes: [{ i: 0 }] }
+// No detail — the type name says it all
+```
+
+**WhileStatement**, **IfStatement**, **TryStatement**, **ExpressionStatement** — same pattern: `before`/`after` with scopes, no detail.
+
+#### Expressions — Operators
+
+**BinaryExpression** (`1 + 2`)
+
+```typescript
+// after
+{ step: N, category: 'expression', type: 'BinaryExpression', time: 'after',
+  value: 3, detail: { operator: '+' } }
+```
+
+**LogicalExpression** (`true && false`) — `detail: { operator: '&&' }`
+
+**UnaryExpression** (`!true`) — `detail: { operator: '!', prefix: true }`
+
+**AssignmentExpression** (`x = 1`)
+
+```typescript
+// after
+{ step: N, category: 'expression', type: 'AssignmentExpression', time: 'after',
+  value: 1, scopes: [{ x: 1 }],
+  detail: { operator: '=', target: 'x' } }
+```
+
+`detail.target` is `null` when the assignment target is complex (e.g., `obj.x = 1`).
+
+**UpdateExpression** (`x++`)
+
+```typescript
+// after
+{ step: N, category: 'expression', type: 'UpdateExpression', time: 'after',
+  value: 0, // postfix returns old value
+  detail: { operator: '++', prefix: false, target: 'x' } }
+```
+
+#### Expressions — Access
+
+**MemberExpression** (`obj.x` or `obj[expr]`)
+
+```typescript
+// dot access
+{ step: N, category: 'expression', type: 'MemberExpression', time: 'after',
+  value: /* resolved value */,
+  detail: { computed: false, property: 'x' } }
+
+// computed access
+{ step: N, ..., detail: { computed: true, property: null } }
+
+// optional chaining (obj?.x)
+{ step: N, ..., detail: { computed: false, property: 'x', optional: true } }
+```
+
+**Identifier** (`x`)
+
+```typescript
+{ step: N, category: 'expression', type: 'Identifier', time: 'after',
+  value: /* current value of x */,
+  detail: { name: 'x' } }
+```
+
+#### Expressions — Calls
+
+**CallExpression** (`f(1, 2)` or `obj.method(1)`)
+
+```typescript
+// simple call
+{ step: N, category: 'expression', type: 'CallExpression', time: 'after',
+  value: /* return value */,
+  detail: { arity: 2, callee: 'f', method: false } }
+
+// method call
+{ step: N, ...,
+  detail: { arity: 1, callee: 'method', method: true } }
+
+// anonymous callee: (x => x)(1)
+{ step: N, ...,
+  detail: { arity: 1, callee: null, method: false } }
+```
+
+**NewExpression** (`new Foo(1)`) — same detail shape as CallExpression.
+
+#### Expressions — Functions
+
+**ArrowFunctionExpression** (`(a, b) => a + b`)
+
+```typescript
+{ step: N, category: 'expression', type: 'ArrowFunctionExpression', time: 'after',
+  value: /* the function object */,
+  detail: { arity: 2 } }
+
+// async arrow
+{ step: N, ..., detail: { arity: 2, async: true } }
+```
+
+**FunctionExpression** (`function foo(x) { return x; }`)
+
+```typescript
+{ step: N, category: 'expression', type: 'FunctionExpression', time: 'after',
+  value: /* the function object */,
+  detail: { name: 'foo', arity: 1 } }
+
+// anonymous: function(x) { ... }
+{ step: N, ..., detail: { name: null, arity: 1 } }
+
+// async generator: async function* gen() { ... }
+{ step: N, ..., detail: { name: 'gen', arity: 0, async: true, generator: true } }
+```
+
+#### Expressions — Literals
+
+**NumericLiteral** (`42`), **StringLiteral** (`"hello"`), **BooleanLiteral** (`true`), **ArrayExpression** (`[1, 2]`), **ObjectExpression** (`{ a: 1 }`)
+
+```typescript
+// All literals have value but no detail
+{ step: N, category: 'expression', type: 'NumericLiteral', time: 'after',
+  value: 42 }
+```
+
+#### Expressions — Other
+
+**ConditionalExpression** (`a ? b : c`), **SequenceExpression** (`(a, b)`) — no detail.
+
+### Scope Chain
+
+The `scopes` array represents the scope chain at each step, innermost scope first:
+
+```typescript
+scopes: [
+  { x: 1, y: 2 },          // innermost (current block)
+  { outerVar: 'hello' },    // enclosing scope
+  { /* global scope */ },    // outermost
+]
+```
+
+Scope entries use the pattern `varName (!)` when a scope was created by the tracer's internal transformations (e.g., for-loop desugaring) rather than existing in the original code. These "synthetic" scopes are flagged so consumers can hide them if desired.
+
+### Console Log Captures
+
+The `logs` field captures `console.log()` calls made during execution. Each element is an array of the arguments passed to a single `console.log()` call:
+
+```typescript
+// Code: console.log("a", 1); console.log("b");
+// On a step after both calls:
+logs: [["a", 1], ["b"]]
+```
+
+Logs accumulate — each step's `logs` includes all captures up to that point.
+
+### What Is NOT in the Trace
+
+The following information is **not** available in js-klve trace steps:
+
+| Missing Information | Why |
+| --- | --- |
+| Branch taken (if/else) | Runtime decision, requires instrumentation changes |
+| Loop iteration count | Requires per-loop counter instrumentation |
+| Which catch/finally executed | Runtime control flow, not static AST metadata |
+| Call stack depth | Requires stack tracking instrumentation |
+| Destructuring target names | `const { a, b } = obj` — `target` is null; decomposition is consumer-level |
+| Computed property values | `obj[expr]` — `property` is null; the value is runtime-only |
+| Closure relationships | Which function closes over which variables |
+| Prototype chain | Object inheritance structure |
+| `this` binding | Runtime context, not extractable at compile time |
+
 ## Error Handling
 
 ```typescript
@@ -264,7 +650,8 @@ try {
   } else if (error instanceof RuntimeError) {
     console.log(`Runtime error: ${error.message}`);
   } else if (error instanceof LimitExceededError) {
-    console.log(`Too many steps: ${error.actual} > ${config.meta.max.steps}`);
+    console.log(`Limit exceeded (${error.limit}): ${error.actual}`);
+    // error.limit is 'steps' or 'time'
   }
 }
 ```

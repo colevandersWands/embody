@@ -25,7 +25,7 @@ Internal architecture, conventions, and implementation details for `@study-lense
 The tracer follows a strict linear pipeline architecture:
 
 ```
-Input → prepareConfig (meta + options) → dispatch → record → Output
+Input → prepareConfig (meta + options) → registry lookup → record → Output
 ```
 
 The API layer coordinates:
@@ -115,6 +115,8 @@ import { createConfig, applyPreset } from './configuring/index.js';
 // ✅ EXCEPTION - Public API only
 import { embody, pipeline } from '@study-lenses/embody';
 ```
+
+**Scoped exception — tracer barrels**: Each tracer directory (`src/tracers/<name>/`) has an `index.ts` that re-exports its default exports as named exports. Tracers are plugin-like modules with a fixed contract (`tracerId`, `record`, `optionsSchema`, `verifyOptions?`), so barrels enforce that contract and keep the registry clean. The top-level `src/tracers/index.ts` also serves as a barrel (named namespace re-exports) plus registry (default export). See [src/tracers/DEV.md](src/tracers/DEV.md) for details.
 
 **Rationale**:
 
@@ -368,7 +370,7 @@ try {
 | `OptionsSemanticInvalidError` | Tracer `verifyOptions` | Cross-field constraint violated      |
 | `OptionsInvalidError`         | `/configuring`         | meta/options don't match JSON Schema |
 | `ArgumentInvalidError`        | API layer              | `tracer`/`code`/`config` wrong type  |
-| `TracerUnknownError`          | API layer              | Tracer not in dispatch               |
+| `TracerUnknownError`          | API layer              | Tracer not in registry               |
 | `InternalError`               | Any layer              | Unexpected error wrapper             |
 
 **Naming Convention**:
@@ -942,7 +944,7 @@ Config validation and default-filling use pure functions from `/configuring`. Th
 User config: { meta?: {...}, options?: {...} }
     ↓
 API Layer (coordination)
-    ├── 1. Check tracer exists (dispatch lookup)
+    ├── 1. Check tracer exists (registry lookup)
     ├── 2. Validate meta config
     │       └── prepareConfig(userMeta, metaSchema) from /configuring
     ├── 3. Validate options config
@@ -956,10 +958,10 @@ Tracer record(code, { meta, options }) — enforces limits, pure tracing
 
 **User config structure**:
 
-| Part      | Schema                          | Purpose                      |
-| --------- | ------------------------------- | ---------------------------- |
-| `meta`    | `/tracers/meta.schema.json`     | Execution limits, timestamps |
-| `options` | `/tracers/<tracer>/schema.json` | Tracer-specific options      |
+| Part      | Schema                                  | Purpose                      |
+| --------- | --------------------------------------- | ---------------------------- |
+| `meta`    | `/tracers/meta.schema.json`             | Execution limits, timestamps |
+| `options` | `/tracers/<tracer>/options.schema.json` | Tracer-specific options      |
 
 **Recommended**: Use `prepareConfig(data, schema)` — wraps expand → fill → validate.
 
@@ -1462,7 +1464,7 @@ Tracer subdirectories (`src/tracers/<name>/`) are **repo-linted by default** —
 
 **Always repo-linted** (top-level tracers files, not inside any subdirectory):
 
-- `src/tracers/dispatch.ts` — the tracer registry
+- `src/tracers/index.ts` — the tracer registry (barrel + default export)
 - `src/tracers/types.ts` — shared types
 - `src/tracers/tests/` — registry and integration tests
 

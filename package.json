@@ -36,14 +36,19 @@
     "./utils/serializer": {
       "import": "./dist/utils/serializer.js",
       "types": "./dist/utils/serializer.d.ts"
+    },
+    "./browser": {
+      "import": "./dist/embody.browser.js"
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run build:copy-json",
     "build:watch": "tsc --watch",
-    "build:bundle": "esbuild src/index.ts --bundle --platform=browser --outfile=dist/index.js",
+    "build:bundle": "esbuild src/index.ts --bundle --format=esm --outfile=dist/embody.browser.js",
+    "build:copy-json": "mkdir -p dist/tracers/chars dist/tracers/js-klve && cp src/tracers/meta.schema.json dist/tracers/ && cp src/tracers/chars/options.schema.json dist/tracers/chars/ && cp src/tracers/js-klve/options.schema.json dist/tracers/js-klve/",
     "clean": "rm -rf dist",
     "dev": "tsc --watch",
+    "dev:sandbox": "esbuild src/index.ts --bundle --format=esm --outfile=dist/embody.browser.js --servedir=. --serve=8080",
     "test": "jest",
     "test:types": "tsc --noEmit",
     "lint": "eslint src/",
@@ -51,7 +56,7 @@
     "format": "prettier --write \"**/*.{ts,js,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,js,json,md}\"",
     "type-check": "tsc --noEmit",
-    "prepublishOnly": "npm run clean && npm run build",
+    "prepublishOnly": "npm run clean && npm run build && npm run build:bundle",
     "prepare": "husky",
     "validate": "npm run lint && npm run type-check && npm test -- --watchAll=false"
   },

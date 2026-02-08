@@ -9,7 +9,7 @@ import prepareConfig from '../configuring/prepare-config.js';
 import type { JSONSchema } from '../configuring/types.js';
 import ArgumentInvalidError from '../errors/argument-invalid-error.js';
 import TracerUnknownError from '../errors/tracer-unknown-error.js';
-import dispatch from '../tracers/dispatch.js';
+import tracers from '../tracers/index.js';
 import metaSchema from '../tracers/meta.schema.json';
 import type { MetaConfig, StepCore } from '../tracers/types.js';
 import deepClone from '../utils/deep-clone.js';
@@ -36,9 +36,9 @@ function trace(tracer: string, code: string, config?: unknown): Promise<readonly
   }
 
   // 2. Check tracer exists (sync)
-  const tracerModule = dispatch[tracer];
+  const tracerModule = tracers[tracer];
   if (!tracerModule) {
-    throw new TracerUnknownError(tracer, { cause: { available: Object.keys(dispatch) } });
+    throw new TracerUnknownError(tracer, { cause: { available: Object.keys(tracers) } });
   }
 
   // 3. Validate code type (sync)
@@ -65,8 +65,8 @@ function trace(tracer: string, code: string, config?: unknown): Promise<readonly
   const meta = prepareConfig(userConfig.meta ?? {}, metaSchema as JSONSchema) as MetaConfig;
 
   // 6. Prepare tracer options (sync) — skip if tracer has no schema
-  const options = tracerModule.schema
-    ? prepareConfig(userConfig.options ?? {}, tracerModule.schema as JSONSchema)
+  const options = tracerModule.optionsSchema
+    ? prepareConfig(userConfig.options ?? {}, tracerModule.optionsSchema as JSONSchema)
     : {};
 
   // 7. Semantic validation (sync) — only if tracer exports verifyOptions

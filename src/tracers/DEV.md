@@ -8,14 +8,17 @@ Guide for creating new language tracers as npm workspaces within embody.
 
 ```
 src/tracers/<tracer-id>/
+├── index.ts               # Barrel: re-exports all pieces as named exports
+├── tracer-id.ts           # Tracer ID constant (e.g. 'my-tracer')
 ├── package.json           # Workspace package
 ├── tsconfig.json          # Extends root tsconfig
 ├── record.ts              # Main entry point
 ├── types.ts               # Options and step types
-├── schema.json            # JSON Schema for options
+├── options.schema.json    # JSON Schema for options
+├── verify-options.ts      # Semantic validation (optional)
 ├── README.md              # Overview, quick start, config options
 ├── DOCS.md                # API reference (optional)
-├── DEV.md                # API reference (optional)
+├── DEV.md                 # Development guide (optional)
 └── tests/
     └── record.test.ts     # Integration tests
 ```
@@ -180,7 +183,7 @@ export type MyTracerStep = {
 };
 ```
 
-### schema.json
+### options.schema.json
 
 JSON Schema for options validation with defaults:
 
@@ -235,19 +238,36 @@ If config includes options for features that aren't traced:
 - Pedagogically harmful — misleading about what the tracer can show
 - Wastes cognitive load on useless options
 
-## Wiring Into Dispatch
+## Wiring Into Registry
 
-Add entry to `src/tracers/dispatch.ts`:
+### 1. Create per-tracer barrel (`index.ts`)
+
+Each tracer directory gets a barrel that re-exports its default exports as named exports. This is a **scoped exception** to the "no barrel files" convention — tracers are plugin-like modules with a fixed contract, so barrels enforce that contract and keep the registry clean.
 
 ```typescript
-import myTracerRecord from './my-tracer/record.js';
-import myTracerSchema from './my-tracer/schema.json';
+// src/tracers/my-tracer/index.ts
+export { default as tracerId } from './tracer-id.js';
+export { default as record } from './record.js';
+export { default as optionsSchema } from './options.schema.json';
+// export { default as verifyOptions } from './verify-options.js'; // if applicable
+```
 
-const dispatch: Record<string, TracerEntry> = {
+### 2. Add to registry (`src/tracers/index.ts`)
+
+The registry file imports each tracer's barrel as a namespace and builds the lookup:
+
+```typescript
+import * as myTracer from './my-tracer/index.js';
+
+// Add to named re-exports
+export { myTracer };
+
+// Add to registry (default export)
+const tracers: Record<string, TracerEntry> = {
   // ... existing entries
-  'my-tracer': {
-    record: myTracerRecord as TracerEntry['record'],
-    schema: myTracerSchema,
+  [myTracer.tracerId]: {
+    record: myTracer.record as TracerEntry['record'],
+    optionsSchema: myTracer.optionsSchema,
   },
 };
 ```
@@ -255,12 +275,10 @@ const dispatch: Record<string, TracerEntry> = {
 If your tracer has semantic validation (cross-field constraints):
 
 ```typescript
-import myTracerVerifyOptions from './my-tracer/verify-options.js';
-
-'my-tracer': {
-  record: myTracerRecord as TracerEntry['record'],
-  schema: myTracerSchema,
-  verifyOptions: myTracerVerifyOptions as (options: unknown) => void,
+[myTracer.tracerId]: {
+  record: myTracer.record as TracerEntry['record'],
+  optionsSchema: myTracer.optionsSchema,
+  verifyOptions: myTracer.verifyOptions as (options: unknown) => void,
 },
 ```
 
@@ -349,4 +367,6 @@ If your tracer needs to run in browsers:
 - [ ] Config options map 1-to-1 with traced features
 - [ ] Step numbers are 1-indexed
 - [ ] Errors use embody error classes
-- [ ] Wired into dispatch.ts
+- [ ] `index.ts` barrel re-exports all pieces
+- [ ] `tracer-id.ts` defines unique tracer ID
+- [ ] Wired into `tracers/index.ts` registry

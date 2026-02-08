@@ -25,7 +25,7 @@ import type { JsKlveOptions, JsKlveStep } from './types.js';
  * @returns Promise resolving to filtered trace steps
  * @throws ParseError if code has syntax errors
  * @throws RuntimeError if code has runtime errors
- * @throws LimitExceededError if trace exceeds meta.max.steps
+ * @throws LimitExceededError if trace exceeds meta.max.steps or meta.max.time
  */
 async function record(
   code: string,
@@ -33,11 +33,19 @@ async function record(
 ): Promise<readonly JsKlveStep[]> {
   const { meta, options } = config;
 
-  // Trace the code (may throw on parse/runtime errors)
+  // Trace the code with limits enforced during execution
   let rawSteps;
   try {
-    rawSteps = await trace(code);
+    rawSteps = await trace(code, {
+      maxSteps: meta.max.steps,
+      maxTime: meta.max.time,
+    });
   } catch (error) {
+    // Let embody errors pass through (LimitExceededError from report())
+    if (error instanceof LimitExceededError) {
+      throw error;
+    }
+
     // Convert Babel syntax errors to ParseError
     if (error instanceof SyntaxError) {
       // Extract location from Babel error message if possible
@@ -54,15 +62,6 @@ async function record(
     }
 
     throw error;
-  }
-
-  // Check step limit from meta config
-  if (meta.max.steps !== null && rawSteps.length > meta.max.steps) {
-    throw new LimitExceededError(
-      `Trace has ${rawSteps.length} steps, exceeds max ${meta.max.steps}`,
-      'steps',
-      rawSteps.length,
-    );
   }
 
   // Apply filter configuration from options

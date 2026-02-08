@@ -6,22 +6,27 @@ This directory contains tracer implementations. Each tracer module exports a `re
 
 ```
 tracers/
-├── dispatch.ts        # Registry mapping tracer IDs to record functions
+├── index.ts           # Tracer registry (default) + barrel re-exports (named)
 ├── types.ts           # Shared types (StepCore, TracerModule, TracerEntry, MetaConfig)
 ├── meta.schema.json   # Cross-tracer execution limits schema (SHARED)
 ├── chars/             # Test tracer for architecture validation
-│   ├── record.ts      # Tracing implementation (async)
-│   ├── schema.json    # Options schema (optional, tracer-specific)
-│   ├── types.ts       # Tracer-specific types
-│   └── README.md      # Tracer documentation
+│   ├── index.ts              # Barrel: re-exports all pieces as named exports
+│   ├── tracer-id.ts          # Tracer ID constant ('chars')
+│   ├── record.ts             # Tracing implementation (async)
+│   ├── options.schema.json   # Options schema (optional, tracer-specific)
+│   ├── verify-options.ts     # Semantic validation (optional)
+│   ├── types.ts              # Tracer-specific types
+│   └── README.md             # Tracer documentation
 └── README.md          # This file
 ```
+
+**Barrel exception**: Tracer directories use `index.ts` barrel files — a scoped exception to the "no barrel files" convention. Tracers are plugin-like modules with a fixed contract (`tracerId`, `record`, `optionsSchema?`, `verifyOptions?`), so barrels enforce that contract and keep the registry clean. See [DEV.md § Wiring Into Registry](./DEV.md#wiring-into-registry).
 
 **Linting**: Tracer subdirectories are repo-linted by default. Tracers that need different conventions can opt out — see [DEV.md § Linting](./DEV.md#linting).
 
 ## Meta Schema (Execution Limits)
 
-The `meta.schema.json` file defines cross-tracer execution limits and debugging options. Unlike tracer-specific `schema.json` files, this schema is **shared** across all tracers.
+The `meta.schema.json` file defines cross-tracer execution limits and debugging options. Unlike tracer-specific `options.schema.json` files, this schema is **shared** across all tracers.
 
 ```typescript
 type MetaConfig = {
@@ -41,27 +46,28 @@ type MetaConfig = {
 
 ### Meta vs Options
 
-| Schema             | Location                        | Scope       | Purpose                        |
-| ------------------ | ------------------------------- | ----------- | ------------------------------ |
-| `meta.schema.json` | `/tracers/meta.schema.json`     | All tracers | Execution limits, debugging    |
-| `schema.json`      | `/tracers/<tracer>/schema.json` | Per-tracer  | Tracer-specific tracing config |
+| Schema                | Location                                  | Scope       | Purpose                        |
+| --------------------- | ----------------------------------------- | ----------- | ------------------------------ |
+| `meta.schema.json`    | `/tracers/meta.schema.json`               | All tracers | Execution limits, debugging    |
+| `options.schema.json` | `/tracers/<tracer>/options.schema.json`   | Per-tracer  | Tracer-specific tracing config |
 
 The API layer validates both schemas independently before calling `record()`.
 
 ## What Tracers Export
 
-Each tracer module MUST export:
+Each tracer module MUST export (via its `index.ts` barrel):
 
-| Export   | Type     | Description                               |
-| -------- | -------- | ----------------------------------------- |
-| `record` | Function | Async tracing function (see TracerModule) |
+| Export              | Type     | Description                               |
+| ------------------- | -------- | ----------------------------------------- |
+| `tracerId`          | string   | Unique tracer identifier (e.g. `'chars'`) |
+| `record`            | Function | Async tracing function (see TracerModule) |
 
 Each tracer module MAY export:
 
-| Export          | Type        | Description                             |
-| --------------- | ----------- | --------------------------------------- |
-| `schema.json`   | JSON Schema | Options validation and defaults         |
-| `verifyOptions` | Function    | Semantic validation (cross-field rules) |
+| Export              | Type        | Description                             |
+| ------------------- | ----------- | --------------------------------------- |
+| `optionsSchema`     | JSON Schema | Options validation and defaults         |
+| `verifyOptions`     | Function    | Semantic validation (cross-field rules) |
 
 ### Schema Export (Optional)
 
@@ -113,15 +119,18 @@ function verifyOptions(options: TracerOptions): void {
 export default verifyOptions;
 ```
 
-## Dispatch
+## Tracer Registry
 
-The `dispatch` object maps tracer IDs to their `record` functions:
+The `tracers` registry maps tracer IDs to their modules. It serves dual purpose:
+
+- **Default export**: `Record<string, TracerEntry>` for dynamic string-based lookup (API layer)
+- **Named exports**: `chars`, `jsKlve` namespaces for direct tree-shakeable access
 
 ```typescript
-import dispatch from './dispatch.js';
+import tracers from './index.js';
 
-// Get the tracer entry (record function, schema, verifyOptions?)
-const charsTracer = dispatch['chars'];
+// Dynamic lookup (API layer uses this)
+const charsTracer = tracers['chars'];
 
 // Call record (async) - returns Promise<readonly TStep[]>
 // Note: In practice, API layer prepares meta and options before calling record()
@@ -129,7 +138,10 @@ const steps = await charsTracer.record('abc', {
   meta: { max: { steps: null, iterations: null, callstack: null, time: null }, ... },
   options: { direction: 'lr' }
 });
-// steps: [{ step: 1, loc: { start: { line: 1, column: 0 }, end: { line: 1, column: 0 } }, char: 'a' }, ...]
+
+// Tree-shakeable direct access (consumers can use this)
+import { chars } from './index.js';
+chars.record('abc', { meta, options });
 ```
 
 ## TracerModule Interface
@@ -158,12 +170,12 @@ type TracerModule<TOptions = unknown, TStep extends StepCore = StepCore> = (
 
 ## TracerEntry Type
 
-The dispatch registry maps tracer IDs to `TracerEntry` objects:
+The tracer registry maps tracer IDs to `TracerEntry` objects:
 
 ```typescript
 type TracerEntry<TStep extends StepCore = StepCore> = {
   readonly record: TracerModule<unknown, TStep>;
-  readonly schema?: Record<string, unknown>; // Optional for simple tracers
+  readonly optionsSchema?: Record<string, unknown>; // Optional for simple tracers
   readonly verifyOptions?: (options: unknown) => void;
 };
 ```
@@ -197,7 +209,14 @@ Tracer-specific fields extend this base type.
 
 1. Create `tracers/<tracer>/` directory
 
-2. (Optional) Create `schema.json` if your tracer has configurable options:
+2. Create `tracer-id.ts` with a unique identifier:
+
+   ```typescript
+   const tracerId = 'my-tracer';
+   export default tracerId;
+   ```
+
+3. (Optional) Create `options.schema.json` if your tracer has configurable options:
 
    ```json
    {
@@ -216,7 +235,7 @@ Tracer-specific fields extend this base type.
 
    Simple tracers with no options can skip this file — the API layer passes `options: {}`.
 
-3. Implement `record.ts` with tracing logic:
+4. Implement `record.ts` with tracing logic:
 
    ```typescript
    /**
@@ -242,13 +261,20 @@ Tracer-specific fields extend this base type.
    export default record;
    ```
 
-4. Define `types.ts` with step and options types
+5. Define `types.ts` with step and options types
 
-5. (Optional) Create `verify-options.ts` if you need semantic validation
+6. (Optional) Create `verify-options.ts` if you need semantic validation
 
-6. Add to `dispatch.ts` registry
+7. Create `index.ts` barrel that re-exports all pieces as named exports:
 
-7. API layer imports schema directly (no registry needed)
+   ```typescript
+   export { default as tracerId } from './tracer-id.js';
+   export { default as record } from './record.js';
+   export { default as optionsSchema } from './options.schema.json';
+   // export { default as verifyOptions } from './verify-options.js'; // if applicable
+   ```
+
+8. Add to `tracers/index.ts` registry
 
 See `chars/` for a minimal reference implementation.
 

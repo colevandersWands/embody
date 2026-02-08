@@ -565,7 +565,7 @@ The library has four layers with distinct responsibilities:
 │  - Validates `tracer` type (must be string)                 │
 │  - Validates `code` type (must be string)                   │
 │  - COORDINATES config preparation:                          │
-│    1. Check tracer exists (dispatch lookup)                 │
+│    1. Check tracer exists (registry lookup)                 │
 │    2. Validate meta: prepareConfig(meta, metaSchema)        │
 │    3. Validate options: prepareConfig(options, tracerSchema)│
 │    4. Call tracer's verifyOptions() for semantic validation │
@@ -582,9 +582,9 @@ The library has four layers with distinct responsibilities:
 │  - Pipeline order: expand → fill → validate                 │
 │  - Errors: OptionsInvalidError                              │
 ├─────────────────────────────────────────────────────────────┤
-│  Dispatch (/tracers/dispatch.ts)                            │
-│  - Maps tracer IDs ('chars', 'js') to record functions      │
-│  - Simple registry pattern                                  │
+│  Tracer Registry (/tracers/index.ts)                        │
+│  - Maps tracer IDs ('chars', 'js:klve') to record functions │
+│  - Registry + barrel (named re-exports for tree-shaking)    │
 ├─────────────────────────────────────────────────────────────┤
 │  Tracer Modules (/tracers/*/record.ts)                      │
 │  - Receives FULLY FILLED { meta, options } (never partial)  │
@@ -605,8 +605,8 @@ The API layer orchestrates config preparation by importing schemas and calling p
 import prepareConfig from './prepare-config.js';
 
 // API layer coordinates the flow:
-// 1. Get tracer module from dispatch (includes schema, record, verifyOptions?)
-const tracerModule = dispatch(tracer);
+// 1. Get tracer module from registry (includes optionsSchema, record, verifyOptions?)
+const tracerModule = tracers[tracer];
 
 // 2. Prepare both meta and options using the API's prepareConfig
 //    (internally calls /configuring pure functions for each)
@@ -652,7 +652,7 @@ const result = validateConfig(fillDefaults(expandShorthand(userOptions, schema),
 | Error Class                   | Layer                | Cause                                |
 | ----------------------------- | -------------------- | ------------------------------------ |
 | `ArgumentInvalidError`        | API                  | `tracer`/`code`/`config` wrong type  |
-| `TracerUnknownError`          | API                  | Tracer ID not in dispatch registry   |
+| `TracerUnknownError`          | API                  | Tracer ID not in tracer registry     |
 | `OptionsInvalidError`         | /configuring         | meta/options don't match JSON Schema |
 | `OptionsSemanticInvalidError` | Tracer verifyOptions | Cross-field constraints violated     |
 | `ParseError`                  | Tracer module        | Code cannot be parsed                |

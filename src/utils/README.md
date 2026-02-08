@@ -33,7 +33,7 @@ const config = deepFreeze({ nested: { value: 1 } });
 config.nested.value = 2; // TypeError in strict mode
 ```
 
-Used in the dispatch layer to freeze default event configurations, preventing accidental
+Used in the tracer registry layer to freeze default event configurations, preventing accidental
 mutation of shared defaults.
 
 ### deep-merge

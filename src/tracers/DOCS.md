@@ -187,7 +187,7 @@ Returns `Promise<RecordResult<TStep>>` — see RecordResult.
 Tracer modules receive **fully filled** config from the API layer:
 
 - `meta` validated against `meta.schema.json` with defaults applied
-- `options` validated against tracer's `schema.json` with defaults applied
+- `options` validated against tracer's `options.schema.json` with defaults applied
 - Semantic validation already passed (verifyOptions called by API)
 
 Tracer modules do **pure tracing** — no validation except limit checking.

@@ -6,7 +6,7 @@
  *
  * Error triggers for testing:
  * - PARSE_ERROR: input contains interrobang (‽)
- * - RUNTIME_ERROR: input contains any emoji
+ * - RUNTIME_ERROR: input contains 3+ consecutive identical characters
  * - LIMIT_EXCEEDED: input exceeds maxLength
  *
  * Note: OPTIONS_INVALID and OPTIONS_SEMANTIC_INVALID are thrown
@@ -20,8 +20,8 @@ import type { MetaConfig } from '../types.js';
 
 import type { CharClass, CharsOptions, CharsStep } from './types.js';
 
-/** Regex to detect emoji characters */
-const EMOJI_REGEX = /\p{Emoji}/u;
+/** Regex to detect 3+ consecutive identical characters */
+const TRIPLE_CHAR_REGEX = /(.)\1{2}/s;
 
 /**
  * Classifies a character into a character class.
@@ -61,13 +61,13 @@ async function record(
     throw new ParseError('Unexpected interrobang (‽)', { line: 1, column: index });
   }
 
-  // RUNTIME_ERROR: emoji (ESTree: 0-indexed column)
-  const emojiMatch = EMOJI_REGEX.exec(code);
-  if (emojiMatch) {
-    throw new RuntimeError(`Emoji not allowed: ${emojiMatch[0]}`, {
-      line: 1,
-      column: emojiMatch.index ?? 0,
-    });
+  // RUNTIME_ERROR: triple consecutive chars (ESTree: 0-indexed column)
+  const tripleMatch = TRIPLE_CHAR_REGEX.exec(code);
+  if (tripleMatch) {
+    throw new RuntimeError(
+      `Triple character not allowed: "${tripleMatch[1]}" repeated 3 times`,
+      { line: 1, column: tripleMatch.index },
+    );
   }
 
   // LIMIT_EXCEEDED: maxLength (tracer-specific limit)

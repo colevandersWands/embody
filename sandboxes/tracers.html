@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>embody tracers sandbox</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: monospace;
+        max-width: 780px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      h1 {
+        margin-bottom: 0.5rem;
+      }
+      textarea {
+        width: 100%;
+        font-family: inherit;
+        font-size: 0.9rem;
+        tab-size: 2;
+      }
+      pre {
+        background: #f4f4f4;
+        padding: 1rem;
+        overflow: auto;
+        max-height: 60vh;
+        margin: 0;
+      }
+      button {
+        margin: 0.5rem 0;
+        padding: 0.4rem 1rem;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      select {
+        font-family: inherit;
+        padding: 0.2rem;
+      }
+      label {
+        font-weight: bold;
+      }
+      .error {
+        color: #c00;
+      }
+      .stats {
+        color: #666;
+        margin: 0.5rem 0;
+      }
+
+      details {
+        margin: 0.5rem 0;
+      }
+      details summary {
+        cursor: pointer;
+        font-weight: bold;
+      }
+      details[open] summary {
+        margin-bottom: 0.5rem;
+      }
+
+      fieldset {
+        border: 1px solid #ccc;
+        padding: 0.5rem 0.8rem;
+        margin: 0.3rem 0;
+      }
+      fieldset legend {
+        font-weight: bold;
+        font-size: 0.85rem;
+        padding: 0 0.3rem;
+      }
+
+      .field {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0.2rem 0;
+        font-size: 0.85rem;
+      }
+      .field label {
+        font-weight: normal;
+        min-width: 100px;
+      }
+      .field input[type='checkbox'] {
+        margin: 0;
+      }
+      .field input[type='text'],
+      .field input[type='number'],
+      .field select {
+        font-family: inherit;
+        font-size: 0.85rem;
+        padding: 0.15rem 0.3rem;
+      }
+      .field input[type='number'] {
+        width: 80px;
+      }
+      .field input[type='text'] {
+        width: 200px;
+      }
+
+      .null-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+      .null-toggle input[type='number']:disabled {
+        opacity: 0.4;
+      }
+
+      .kv-editor .kv-row {
+        display: flex;
+        gap: 0.3rem;
+        margin: 0.2rem 0;
+        align-items: center;
+      }
+      .kv-editor input {
+        width: 80px;
+        font-family: inherit;
+        font-size: 0.85rem;
+        padding: 0.15rem 0.3rem;
+      }
+      .kv-editor button {
+        padding: 0.1rem 0.4rem;
+        margin: 0;
+        font-size: 0.8rem;
+      }
+      .code-section {
+        margin-top: 0.5rem;
+      }
+      .config-section {
+        margin-top: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>embody sandbox</h1>
+
+    <div>
+      <label for="tracer">tracer:</label>
+      <select id="tracer"></select>
+    </div>
+
+    <div class="code-section">
+      <label for="code">code:</label>
+      <textarea id="code" rows="12"></textarea>
+    </div>
+
+    <details id="options-section">
+      <summary>tracer options</summary>
+      <form id="options-form"></form>
+    </details>
+
+    <details id="meta-section">
+      <summary>meta config</summary>
+      <form id="meta-form"></form>
+    </details>
+
+    <button type="button" id="run">trace</button>
+
+    <div class="stats" id="stats"></div>
+    <pre id="output">click "trace" to run</pre>
+
+    <details id="config-section" class="config-section">
+      <summary>resolved config</summary>
+      <pre id="resolved-config"></pre>
+    </details>
+
+    <script type="module">
+      import { embodify, tracers, metaSchema } from '/dist/embody.browser.js';
+
+      // -- default code per tracer --
+
+      const defaultCode = {
+        chars: 'hello world',
+        'js:klve': [
+          'let x = 2;',
+          'let y = 1;',
+          'let temp;',
+          '',
+          'temp = x;',
+          'x = y;',
+          'y = temp;',
+          '',
+          'console.log("x:", x);',
+          'console.log("y:", y);',
+        ].join('\n'),
+      };
+
+      // -- DOM refs --
+
+      const tracerSelect = document.getElementById('tracer');
+      const codeArea = document.getElementById('code');
+      const optionsForm = document.getElementById('options-form');
+      const metaForm = document.getElementById('meta-form');
+      const outputPre = document.getElementById('output');
+      const statsPre = document.getElementById('stats');
+      const resolvedPre = document.getElementById('resolved-config');
+
+      // -- populate tracer dropdown --
+
+      const tracerIds = Object.keys(tracers);
+      for (const id of tracerIds) {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = id;
+        tracerSelect.appendChild(opt);
+      }
+
+      // -- schema -> form renderer --
+
+      function renderSchema(schema, parentPath, container) {
+        if (!schema || schema.type !== 'object') return;
+
+        const props = schema.properties || {};
+        for (const [key, prop] of Object.entries(props)) {
+          const path = parentPath ? `${parentPath}.${key}` : key;
+
+          if (prop.type === 'boolean') {
+            renderBoolean(key, path, prop, container);
+          } else if (prop.type === 'string' && prop.enum) {
+            renderEnum(key, path, prop, container);
+          } else if (prop.type === 'string') {
+            renderText(key, path, prop, container);
+          } else if (prop.type === 'integer' || prop.type === 'number') {
+            renderNumber(key, path, prop, container);
+          } else if (
+            Array.isArray(prop.type) &&
+            prop.type.includes('integer') &&
+            prop.type.includes('null')
+          ) {
+            renderNullableNumber(key, path, prop, container);
+          } else if (prop.type === 'object' && prop.properties) {
+            renderNestedObject(key, path, prop, container);
+          } else if (prop.type === 'object' && prop.additionalProperties) {
+            renderKVEditor(key, path, prop, container);
+          } else if (prop.type === 'array' && prop.items && prop.items.type === 'string') {
+            renderStringArray(key, path, prop, container);
+          } else if (prop.oneOf) {
+            // handle range-like [int, int] | null
+            const arrOption = prop.oneOf.find((o) => o.type === 'array');
+            if (arrOption) {
+              renderText(
+                key,
+                path,
+                { ...prop, default: prop.default ? prop.default.join(', ') : '' },
+                container,
+              );
+            }
+          }
+        }
+      }
+
+      function renderBoolean(key, path, prop, container) {
+        const div = document.createElement('div');
+        div.className = 'field';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.name = path;
+        cb.dataset.type = 'boolean';
+        cb.checked = prop.default !== false;
+        const lbl = document.createElement('label');
+        lbl.textContent = key;
+        lbl.title = prop.description || '';
+        div.appendChild(cb);
+        div.appendChild(lbl);
+        container.appendChild(div);
+      }
+
+      function renderEnum(key, path, prop, container) {
+        const div = document.createElement('div');
+        div.className = 'field';
+        const lbl = document.createElement('label');
+        lbl.textContent = key;
+        const sel = document.createElement('select');
+        sel.name = path;
+        sel.dataset.type = 'string';
+        for (const val of prop.enum) {
+          const opt = document.createElement('option');
+          opt.value = val;
+          opt.textContent = val;
+          if (val === prop.default) opt.selected = true;
+          sel.appendChild(opt);
+        }
+        div.appendChild(lbl);
+        div.appendChild(sel);
+        container.appendChild(div);
+      }
+
+      function renderText(key, path, prop, container) {
+        const div = document.createElement('div');
+        div.className = 'field';
+        const lbl = document.createElement('label');
+        lbl.textContent = key;
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.name = path;
+        inp.dataset.type = 'string';
+        inp.value = prop.default != null ? String(prop.default) : '';
+        inp.placeholder = prop.description || '';
+        div.appendChild(lbl);
+        div.appendChild(inp);
+        container.appendChild(div);
+      }
+
+      function renderNumber(key, path, prop, container) {
+        const div = document.createElement('div');
+        div.className = 'field';
+        const lbl = document.createElement('label');
+        lbl.textContent = key;
+        const inp = document.createElement('input');
+        inp.type = 'number';
+        inp.name = path;
+        inp.dataset.type = 'number';
+        if (prop.minimum != null) inp.min = prop.minimum;
+        if (prop.default != null) inp.value = prop.default;
+        div.appendChild(lbl);
+        div.appendChild(inp);
+        container.appendChild(div);
+      }
+
+      function renderNullableNumber(key, path, prop, container) {
+        const div = document.createElement('div');
+        div.className = 'field';
+        const lbl = document.createElement('label');
+        lbl.textContent = key;
+        lbl.title = prop.description || '';
+
+        const wrap = document.createElement('span');
+        wrap.className = 'null-toggle';
+
+        const inp = document.createElement('input');
+        inp.type = 'number';
+        inp.name = path;
+        inp.dataset.type = 'nullable-number';
+        if (prop.minimum != null) inp.min = prop.minimum;
+        inp.disabled = prop.default === null;
+        if (prop.default != null) inp.value = prop.default;
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = prop.default === null;
+        cb.title = 'unlimited (null)';
+        cb.addEventListener('change', () => {
+          inp.disabled = cb.checked;
+          if (cb.checked) inp.value = '';
+        });
+
+        const nullLbl = document.createElement('span');
+        nullLbl.textContent = 'null';
+        nullLbl.style.fontSize = '0.8rem';
+        nullLbl.style.color = '#888';
+
+        wrap.appendChild(inp);
+        wrap.appendChild(cb);
+        wrap.appendChild(nullLbl);
+
+        div.appendChild(lbl);
+        div.appendChild(wrap);
+        container.appendChild(div);
+      }
+
+      function renderNestedObject(key, path, prop, container) {
+        const fs = document.createElement('fieldset');
+        const legend = document.createElement('legend');
+        legend.textContent = key;
+        if (prop.description) legend.title = prop.description;
+        fs.appendChild(legend);
+        renderSchema(prop, path, fs);
+        container.appendChild(fs);
+      }
+
+      function renderKVEditor(key, path, prop, container) {
+        const fs = document.createElement('fieldset');
+        fs.className = 'kv-editor';
+        const legend = document.createElement('legend');
+        legend.textContent = key;
+        fs.appendChild(legend);
+        fs.dataset.path = path;
+        fs.dataset.type = 'kv';
+
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.textContent = '+ add';
+        addBtn.addEventListener('click', () => addKVRow(fs));
+        fs.appendChild(addBtn);
+
+        // render defaults if they exist
+        if (prop.default && typeof prop.default === 'object') {
+          for (const [k, v] of Object.entries(prop.default)) {
+            addKVRow(fs, k, v);
+          }
+        }
+
+        container.appendChild(fs);
+      }
+
+      function addKVRow(container, k = '', v = '') {
+        const row = document.createElement('div');
+        row.className = 'kv-row';
+        const keyInp = document.createElement('input');
+        keyInp.placeholder = 'key';
+        keyInp.value = k;
+        keyInp.className = 'kv-key';
+        const valInp = document.createElement('input');
+        valInp.placeholder = 'value';
+        valInp.value = v;
+        valInp.className = 'kv-val';
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.textContent = 'x';
+        removeBtn.addEventListener('click', () => row.remove());
+        row.appendChild(keyInp);
+        row.appendChild(valInp);
+        row.appendChild(removeBtn);
+        // insert before the add button
+        const addBtn = container.querySelector('button');
+        container.insertBefore(row, addBtn);
+      }
+
+      function renderStringArray(key, path, prop, container) {
+        const div = document.createElement('div');
+        div.className = 'field';
+        const lbl = document.createElement('label');
+        lbl.textContent = key;
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.name = path;
+        inp.dataset.type = 'string-array';
+        inp.value = (prop.default || []).join(', ');
+        inp.placeholder = 'comma-separated';
+        div.appendChild(lbl);
+        div.appendChild(inp);
+        container.appendChild(div);
+      }
+
+      // -- collect form data -> nested config object --
+
+      function collectFormData(form) {
+        const result = {};
+
+        // named inputs
+        for (const el of form.querySelectorAll('[name]')) {
+          const path = el.name;
+          const type = el.dataset.type;
+          let value;
+
+          if (type === 'boolean') {
+            value = el.checked;
+          } else if (type === 'nullable-number') {
+            const nullCb = el.parentElement.querySelector('input[type="checkbox"]');
+            value = nullCb && nullCb.checked ? null : el.value === '' ? null : Number(el.value);
+          } else if (type === 'number') {
+            value = el.value === '' ? undefined : Number(el.value);
+          } else if (type === 'string-array') {
+            value =
+              el.value.trim() === ''
+                ? []
+                : el.value
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter(Boolean);
+          } else {
+            value = el.value;
+          }
+
+          if (value === undefined) continue;
+          setNestedValue(result, path, value);
+        }
+
+        // kv editors
+        for (const fs of form.querySelectorAll('[data-type="kv"]')) {
+          const path = fs.dataset.path;
+          const obj = {};
+          for (const row of fs.querySelectorAll('.kv-row')) {
+            const k = row.querySelector('.kv-key').value.trim();
+            const v = row.querySelector('.kv-val').value;
+            if (k) obj[k] = v;
+          }
+          setNestedValue(result, path, obj);
+        }
+
+        return result;
+      }
+
+      function setNestedValue(obj, path, value) {
+        const parts = path.split('.');
+        let current = obj;
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (!(parts[i] in current)) current[parts[i]] = {};
+          current = current[parts[i]];
+        }
+        current[parts[parts.length - 1]] = value;
+      }
+
+      // -- UI wiring --
+
+      function onTracerChange() {
+        const id = tracerSelect.value;
+        codeArea.value = defaultCode[id] || '';
+        optionsForm.innerHTML = '';
+        const entry = tracers[id];
+        if (entry && entry.optionsSchema) {
+          renderSchema(entry.optionsSchema, '', optionsForm);
+        }
+      }
+
+      tracerSelect.addEventListener('change', onTracerChange);
+
+      // init with first tracer
+      if (tracerIds.length > 0) {
+        tracerSelect.value = tracerIds[0];
+        onTracerChange();
+      }
+
+      // render meta form
+      renderSchema(metaSchema, '', metaForm);
+
+      // trace button
+      document.getElementById('run').addEventListener('click', async () => {
+        const tracer = tracerSelect.value;
+        const code = codeArea.value;
+        const options = collectFormData(optionsForm);
+        const meta = collectFormData(metaForm);
+
+        outputPre.textContent = 'tracing...';
+        outputPre.className = '';
+        statsPre.textContent = '';
+        resolvedPre.textContent = '';
+
+        const t0 = performance.now();
+
+        try {
+          const result = await embodify({ tracer })
+            .set({ code, config: { meta, options } })
+            .trace();
+
+          const elapsed = (performance.now() - t0).toFixed(1);
+
+          if (result.ok) {
+            statsPre.textContent = `steps: ${result.steps.length} | time: ${elapsed}ms`;
+            outputPre.textContent = JSON.stringify(result.steps, null, 2);
+            resolvedPre.textContent = JSON.stringify({ meta, options, tracer }, null, 2);
+            console.log({ tracer, code, meta, options });
+            console.log(result);
+            console.log(result.steps);
+          } else {
+            const err = result.error;
+            const errType = err?.constructor?.name || 'Error';
+            statsPre.textContent = `error (${elapsed}ms)`;
+            outputPre.className = 'error';
+            outputPre.textContent = `[${errType}] ${err?.message || 'Unknown error'}`;
+            if (err?.loc) {
+              outputPre.textContent += `\n  at line ${err.loc.line}, column ${err.loc.column}`;
+            }
+            console.error(err);
+          }
+        } catch (err) {
+          const elapsed = (performance.now() - t0).toFixed(1);
+          statsPre.textContent = `uncaught error (${elapsed}ms)`;
+          outputPre.className = 'error';
+          outputPre.textContent = `[Uncaught ${err.constructor?.name || 'Error'}] ${err.message}`;
+          console.error(err);
+        }
+      });
+    </script>
+  </body>
+</html>

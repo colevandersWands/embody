@@ -20,9 +20,9 @@ describe('ParseError', () => {
   });
 
   describe('properties', () => {
-    it('has name set to "ParseError"', () => {
+    it('has name set to "(EmbodyError) ParseError"', () => {
       const error = new ParseError('Unexpected token', { line: 1, column: 5 });
-      expect(error.name).toBe('ParseError');
+      expect(error.name).toBe('(EmbodyError) ParseError');
     });
 
     it('stores the provided message', () => {

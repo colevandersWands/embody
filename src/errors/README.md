@@ -75,7 +75,7 @@ Error (built-in)
 
 | Error Class                   | Thrown By                | When                                     |
 | ----------------------------- | ------------------------ | ---------------------------------------- |
-| `TracerUnknownError`          | API layer                | Tracer not in dispatch registry          |
+| `TracerUnknownError`          | API layer                | Tracer not in tracer registry            |
 | `ArgumentInvalidError`        | API layer                | Required arguments have wrong type/value |
 | `OptionsInvalidError`         | `/configuring`           | meta/options don't match JSON Schema     |
 | `OptionsSemanticInvalidError` | Tracer's `verifyOptions` | Cross-field constraints violated         |

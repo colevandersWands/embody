@@ -190,15 +190,13 @@ describe('record (async)', () => {
     });
 
     it('excludes numbers when number is false', async () => {
-      // Note: Can't test digits directly - emoji regex matches them
-      // This test verifies the mechanism works via uppercase/lowercase
       const steps = await record(
-        'aAbB',
+        'a1b2c',
         config({
-          allowedCharClasses: { ...DEFAULT_OPTIONS.allowedCharClasses, lowercase: false },
+          allowedCharClasses: { ...DEFAULT_OPTIONS.allowedCharClasses, number: false },
         }),
       );
-      expect(steps.map((s) => s.char)).toEqual(['A', 'B']);
+      expect(steps.map((s) => s.char)).toEqual(['a', 'b', 'c']);
     });
 
     it('excludes punctuation when punctuation is false', async () => {
@@ -301,31 +299,39 @@ describe('record (async)', () => {
       });
     });
 
-    describe('RuntimeError (emoji)', () => {
-      it('rejects with RuntimeError for emoji character', async () => {
-        await expect(record('ab🎉cd', defaultConfig)).rejects.toThrow(/emoji not allowed/i);
+    describe('RuntimeError (triple consecutive chars)', () => {
+      it('rejects with RuntimeError for triple consecutive characters', async () => {
+        await expect(record('abaaa', defaultConfig)).rejects.toThrow(
+          /triple character not allowed/i,
+        );
       });
 
       it('throws RuntimeError type', async () => {
-        await expect(record('ab🎉cd', defaultConfig)).rejects.toBeInstanceOf(RuntimeError);
+        await expect(record('abaaa', defaultConfig)).rejects.toBeInstanceOf(RuntimeError);
       });
 
-      it('includes location at column 2 for ab🎉cd (0-indexed)', async () => {
-        await expect(record('ab🎉cd', defaultConfig)).rejects.toThrow(
+      it('includes location at column 2 for abaaa (0-indexed)', async () => {
+        await expect(record('abaaa', defaultConfig)).rejects.toThrow(
           errorWith({ loc: { line: 1, column: 2 } }),
         );
       });
 
-      it('rejects for grinning face emoji', async () => {
-        await expect(record('a😀b', defaultConfig)).rejects.toThrow(/emoji not allowed/i);
+      it('includes location at column 0 when triple starts at beginning', async () => {
+        await expect(record('aaab', defaultConfig)).rejects.toThrow(
+          errorWith({ loc: { line: 1, column: 0 } }),
+        );
       });
 
-      it('rejects for heart emoji', async () => {
-        await expect(record('a❤️b', defaultConfig)).rejects.toThrow(/emoji not allowed/i);
+      it('rejects for triple spaces', async () => {
+        await expect(record('a   b', defaultConfig)).rejects.toThrow(
+          /triple character not allowed/i,
+        );
       });
 
-      it('rejects for rocket emoji', async () => {
-        await expect(record('a🚀b', defaultConfig)).rejects.toThrow(/emoji not allowed/i);
+      it('rejects for triple digits', async () => {
+        await expect(record('a111b', defaultConfig)).rejects.toThrow(
+          /triple character not allowed/i,
+        );
       });
     });
 
@@ -354,7 +360,7 @@ describe('record (async)', () => {
       });
 
       it('does not check maxLength when undefined', async () => {
-        const steps = await record('a'.repeat(1000), defaultConfig);
+        const steps = await record('ab'.repeat(500), defaultConfig);
         expect(steps).toHaveLength(1000);
       });
     });
@@ -374,7 +380,7 @@ describe('record (async)', () => {
       });
 
       it('does not check meta.max.steps when null', async () => {
-        const steps = await record('a'.repeat(1000), defaultConfig);
+        const steps = await record('ab'.repeat(500), defaultConfig);
         expect(steps).toHaveLength(1000);
       });
     });

@@ -109,7 +109,10 @@
       "WebFetch(domain:www.jsboundaries.dev)",
       "Bash(npx ts-node:*)",
       "Bash(find:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git -C /Users/master/Documents/0-teach-code/0---the-big-idea/00--evancole-be/0--snippetry/dump/00-claude-refactoring/0--study-lenses--it-begins/aran-spering/embody status --short)",
+      "Bash(npx esbuild:*)",
+      "Bash(kill:*)"
     ],
     "deny": [],
     "ask": []

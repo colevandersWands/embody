@@ -1,7 +1,7 @@
 /**
  * @file Main entry point for the embody execution tracer
  *
- * This is the ONLY file in the codebase that exports multiple named exports.
+ * This is the entry point in the codebase for exporting multiple named exports.
  * All internal files follow the default-only export convention.
  * This exception exists to provide a flexible public API for consumers.
  */
@@ -25,6 +25,13 @@ export { default as OptionsInvalidError } from './errors/options-invalid-error.j
 export { default as OptionsSemanticInvalidError } from './errors/options-semantic-invalid-error.js';
 export { default as ParseError } from './errors/parse-error.js';
 export { default as RuntimeError } from './errors/runtime-error.js';
+
+// ============================================================================
+// Tracer Registry (for discovery, schema access, dynamic bundling)
+// ============================================================================
+
+export { default as tracers } from './tracers/index.js';
+export { default as metaSchema } from './tracers/meta.schema.json';
 
 // ============================================================================
 // Main Public API - Named Exports

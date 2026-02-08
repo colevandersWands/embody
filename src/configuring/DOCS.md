@@ -306,8 +306,8 @@ OptionsInvalidError: options.direction must be string; options.remove must be ar
 Schemas follow JSON Schema draft 2020-12. They live with their tracer module:
 
 ```text
-src/tracers/chars/schema.json
-src/tracers/js/schema.json      (future)
+src/tracers/chars/options.schema.json
+src/tracers/js/options.schema.json      (future)
 ```
 
 ### Example Schema
@@ -408,8 +408,8 @@ The **API layer** calls `verifyOptions()` — not `/configuring`. This keeps `/c
 // In API layer
 import prepareConfig from '../configuring/prepare-config.js';
 
-// API orchestrates — schema comes from tracer module via dispatch
-const filled = prepareConfig(userOptions, tracerModule.schema);
+// API orchestrates — schema comes from tracer module via registry
+const filled = prepareConfig(userOptions, tracerModule.optionsSchema);
 tracerModule.verifyOptions?.(filled); // called by API, not /configuring
 ```
 

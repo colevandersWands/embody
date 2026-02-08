@@ -1,7 +1,7 @@
 /**
  * @file Tracer unknown error class.
  *
- * Thrown when the requested tracer is not in the dispatch registry.
+ * Thrown when the requested tracer is not in the tracer registry.
  */
 
 import EmbodyError from './embody-error.js';

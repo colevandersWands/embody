@@ -15,7 +15,7 @@ import prepareConfig from '../configuring/prepare-config.js';
 import type { JSONSchema } from '../configuring/types.js';
 import ArgumentInvalidError from '../errors/argument-invalid-error.js';
 import TracerUnknownError from '../errors/tracer-unknown-error.js';
-import dispatch from '../tracers/dispatch.js';
+import tracers from '../tracers/index.js';
 import metaSchema from '../tracers/meta.schema.json';
 import type { MetaConfig, ResolvedConfig, StepCore } from '../tracers/types.js';
 import deepClone from '../utils/deep-clone.js';
@@ -64,9 +64,9 @@ function tracifyChain(state: TracifyState = {}): TracifyChain {
         throw new ArgumentInvalidError('tracer', 'tracify.tracer(): expected a non-empty string');
       }
 
-      const tracerModule = dispatch[_tracer];
+      const tracerModule = tracers[_tracer];
       if (!tracerModule) {
-        throw new TracerUnknownError(_tracer, { cause: { available: Object.keys(dispatch) } });
+        throw new TracerUnknownError(_tracer, { cause: { available: Object.keys(tracers) } });
       }
 
       // Invalidate cache when tracer changes (drops steps and resolvedConfig)
@@ -127,9 +127,9 @@ function tracifyChain(state: TracifyState = {}): TracifyChain {
       }
 
       // 3. Check tracer exists
-      const tracerModule = dispatch[state.tracer];
+      const tracerModule = tracers[state.tracer];
       if (!tracerModule) {
-        throw new TracerUnknownError(state.tracer, { cause: { available: Object.keys(dispatch) } });
+        throw new TracerUnknownError(state.tracer, { cause: { available: Object.keys(tracers) } });
       }
 
       // 4-6. Reuse cached config if available, otherwise prepare
@@ -140,8 +140,8 @@ function tracifyChain(state: TracifyState = {}): TracifyChain {
         };
         const meta = prepareConfig(userConfig.meta ?? {}, metaSchema as JSONSchema) as MetaConfig;
         // Skip options prep if tracer has no schema
-        const options = tracerModule.schema
-          ? (prepareConfig(userConfig.options ?? {}, tracerModule.schema as JSONSchema) as Record<
+        const options = tracerModule.optionsSchema
+          ? (prepareConfig(userConfig.options ?? {}, tracerModule.optionsSchema as JSONSchema) as Record<
               string,
               unknown
             >)
@@ -170,9 +170,9 @@ function tracifyChain(state: TracifyState = {}): TracifyChain {
       }
 
       // 2. Check tracer exists
-      const tracerModule = dispatch[state.tracer];
+      const tracerModule = tracers[state.tracer];
       if (!tracerModule) {
-        throw new TracerUnknownError(state.tracer, { cause: { available: Object.keys(dispatch) } });
+        throw new TracerUnknownError(state.tracer, { cause: { available: Object.keys(tracers) } });
       }
 
       // 3. Prepare config (no code validation needed for config-only access)
@@ -182,8 +182,8 @@ function tracifyChain(state: TracifyState = {}): TracifyChain {
       };
       const meta = prepareConfig(userConfig.meta ?? {}, metaSchema as JSONSchema) as MetaConfig;
       // Skip options prep if tracer has no schema
-      const options = tracerModule.schema
-        ? (prepareConfig(userConfig.options ?? {}, tracerModule.schema as JSONSchema) as Record<
+      const options = tracerModule.optionsSchema
+        ? (prepareConfig(userConfig.options ?? {}, tracerModule.optionsSchema as JSONSchema) as Record<
             string,
             unknown
           >)

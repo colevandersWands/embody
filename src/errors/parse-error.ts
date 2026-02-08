@@ -26,7 +26,7 @@ import type { SourceLoc } from './types.js';
  * ```
  */
 class ParseError extends EmbodyError {
-  override readonly name = 'ParseError' as const;
+  override readonly name = '(EmbodyError) ParseError' as const;
   readonly loc: SourceLoc;
 
   constructor(message: string, loc: SourceLoc, options?: ErrorOptions) {

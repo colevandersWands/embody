@@ -21,7 +21,7 @@ import ArgumentInvalidError from '../errors/argument-invalid-error.js';
 import EmbodyError from '../errors/embody-error.js';
 import InternalError from '../errors/internal-error.js';
 import TracerUnknownError from '../errors/tracer-unknown-error.js';
-import dispatch from '../tracers/dispatch.js';
+import tracers from '../tracers/index.js';
 import metaSchema from '../tracers/meta.schema.json';
 import type { MetaConfig, ResolvedConfig, StepCore } from '../tracers/types.js';
 import deepClone from '../utils/deep-clone.js';
@@ -108,7 +108,7 @@ function embodifyChain(state: EmbodifyState): EmbodifyChain {
       }
 
       // Can't compute if tracer is unknown
-      const tracerModule = dispatch[state.tracer];
+      const tracerModule = tracers[state.tracer];
       if (!tracerModule) {
         // eslint-disable-next-line unicorn/no-useless-undefined -- consistent returns
         return undefined;
@@ -121,8 +121,8 @@ function embodifyChain(state: EmbodifyState): EmbodifyChain {
       };
       const meta = prepareConfig(userConfig.meta ?? {}, metaSchema as JSONSchema) as MetaConfig;
       // Skip options prep if tracer has no schema
-      const options = tracerModule.schema
-        ? (prepareConfig(userConfig.options ?? {}, tracerModule.schema as JSONSchema) as Record<
+      const options = tracerModule.optionsSchema
+        ? (prepareConfig(userConfig.options ?? {}, tracerModule.optionsSchema as JSONSchema) as Record<
             string,
             unknown
           >)
@@ -210,7 +210,7 @@ function embodifyChain(state: EmbodifyState): EmbodifyChain {
       }
 
       // 4. Find tracer module
-      const tracerModule = dispatch[tracer];
+      const tracerModule = tracers[tracer];
       if (!tracerModule) {
         return embodifyChain({
           tracer,
@@ -219,7 +219,7 @@ function embodifyChain(state: EmbodifyState): EmbodifyChain {
           resolvedConfig: undefined,
           steps: undefined,
           ok: false,
-          error: new TracerUnknownError(tracer, { cause: { available: Object.keys(dispatch) } }),
+          error: new TracerUnknownError(tracer, { cause: { available: Object.keys(tracers) } }),
         });
       }
 
@@ -234,8 +234,8 @@ function embodifyChain(state: EmbodifyState): EmbodifyChain {
           };
           const meta = prepareConfig(userConfig.meta ?? {}, metaSchema as JSONSchema) as MetaConfig;
           // Skip options prep if tracer has no schema
-          const options = tracerModule.schema
-            ? (prepareConfig(userConfig.options ?? {}, tracerModule.schema as JSONSchema) as Record<
+          const options = tracerModule.optionsSchema
+            ? (prepareConfig(userConfig.options ?? {}, tracerModule.optionsSchema as JSONSchema) as Record<
                 string,
                 unknown
               >)

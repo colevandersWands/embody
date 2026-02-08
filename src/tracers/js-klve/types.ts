@@ -54,6 +54,39 @@ export type HeapObject = {
  */
 export type DescribedValue = readonly [ValueDescriptor, readonly HeapObject[]];
 
+// === Step Detail (AST metadata) ===
+
+/**
+ * Node-type-specific AST metadata included in trace steps.
+ * Contains static properties from the AST node (known at compile time).
+ * Present on all non-init steps. `action` is always set.
+ */
+export type JsKlveDetail = {
+  readonly action: string;
+  readonly operator?: string;
+  readonly prefix?: boolean;
+  readonly kind?: string;
+  readonly computed?: boolean;
+  readonly name?: string | null;
+  readonly arity?: number;
+  readonly target?: string | null;
+  readonly property?: string | null;
+  readonly callee?: string | null;
+  readonly method?: boolean;
+  readonly optional?: boolean;
+  readonly async?: boolean;
+  readonly generator?: boolean;
+  readonly hasAlternate?: boolean;
+  readonly hasCatch?: boolean;
+  readonly hasFinally?: boolean;
+  readonly hasInit?: boolean;
+  readonly hasTest?: boolean;
+  readonly hasUpdate?: boolean;
+  readonly expressionBody?: boolean;
+  readonly elementCount?: number;
+  readonly propertyCount?: number;
+};
+
 // === Raw Step (from tracer) ===
 
 /**
@@ -69,6 +102,7 @@ export type RawStep = {
   readonly scopes?: readonly Record<string, unknown>[];
   readonly value?: unknown;
   readonly logs?: readonly (readonly unknown[])[];
+  readonly detail?: JsKlveDetail;
 };
 
 // === Filter Configuration ===
@@ -133,10 +167,24 @@ export type JsKlveNodeConfig = {
 };
 
 /**
+ * Name-based step filtering.
+ * include: whitelist — only keep steps mentioning these names.
+ * exclude: blacklist — remove steps mentioning these names.
+ * Mutually exclusive: if both provided, include wins.
+ * Nameless steps (ForStatement, literals, etc.) always pass through.
+ */
+export type JsKlveNameConfig = {
+  readonly include?: readonly string[];
+  readonly exclude?: readonly string[];
+};
+
+/**
  * Filter configuration for post-trace filtering.
  */
 export type JsKlveFilterConfig = {
   readonly nodes?: JsKlveNodeConfig;
+
+  readonly names?: JsKlveNameConfig;
 
   readonly timing?: {
     readonly before?: boolean;
@@ -175,4 +223,5 @@ export type JsKlveStep = {
   readonly scopes?: readonly Record<string, unknown>[];
   readonly value?: unknown;
   readonly logs?: readonly (readonly unknown[])[];
+  readonly detail?: JsKlveDetail;
 };

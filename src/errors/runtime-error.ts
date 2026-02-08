@@ -30,7 +30,7 @@ import type { SourceLoc } from './types.js';
  * ```
  */
 class RuntimeError extends EmbodyError {
-  override readonly name = 'RuntimeError' as const;
+  override readonly name = '(EmbodyError) RuntimeError' as const;
   readonly loc?: SourceLoc;
 
   constructor(message: string, loc?: SourceLoc, options?: ErrorOptions) {

@@ -5,10 +5,9 @@
  * Collects all validation errors, not just the first.
  */
 
-import Ajv from 'ajv';
-
 import OptionsInvalidError from '../errors/options-invalid-error.js';
 
+import Ajv from './ajv.js';
 import type { JSONSchema } from './types.js';
 
 /** Configured Ajv instance for validation */

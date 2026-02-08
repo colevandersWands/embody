@@ -21,7 +21,7 @@ import type { JSONSchema } from '../configuring/types.js';
 import EmbodyError from '../errors/embody-error.js';
 import InternalError from '../errors/internal-error.js';
 import TracerUnknownError from '../errors/tracer-unknown-error.js';
-import dispatch from '../tracers/dispatch.js';
+import tracers from '../tracers/index.js';
 import metaSchema from '../tracers/meta.schema.json';
 import type { MetaConfig, ResolvedConfig, StepCore } from '../tracers/types.js';
 import deepClone from '../utils/deep-clone.js';
@@ -94,11 +94,11 @@ async function executeTrace(
   config: object | undefined,
 ): Promise<EmbodyResult> {
   // 1. Find tracer module
-  const tracerModule = dispatch[tracer];
+  const tracerModule = tracers[tracer];
   if (!tracerModule) {
     return {
       ok: false as const,
-      error: new TracerUnknownError(tracer, { cause: { available: Object.keys(dispatch) } }),
+      error: new TracerUnknownError(tracer, { cause: { available: Object.keys(tracers) } }),
       tracer,
       code,
       config,
@@ -113,8 +113,8 @@ async function executeTrace(
     };
     const meta = prepareConfig(userConfig.meta ?? {}, metaSchema as JSONSchema) as MetaConfig;
     // Skip options prep if tracer has no schema
-    const options = tracerModule.schema
-      ? (prepareConfig(userConfig.options ?? {}, tracerModule.schema as JSONSchema) as Record<
+    const options = tracerModule.optionsSchema
+      ? (prepareConfig(userConfig.options ?? {}, tracerModule.optionsSchema as JSONSchema) as Record<
           string,
           unknown
         >)

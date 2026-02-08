@@ -20,9 +20,9 @@ describe('RuntimeError', () => {
   });
 
   describe('properties', () => {
-    it('has name set to "RuntimeError"', () => {
+    it('has name set to "(EmbodyError) RuntimeError"', () => {
       const error = new RuntimeError('undefined is not a function');
-      expect(error.name).toBe('RuntimeError');
+      expect(error.name).toBe('(EmbodyError) RuntimeError');
     });
 
     it('stores the provided message', () => {

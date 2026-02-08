@@ -10,6 +10,8 @@
 
 import * as Babel from '@babel/standalone';
 
+import LimitExceededError from '../../errors/limit-exceeded-error.js';
+
 import type { RawStep, SourceLocation, DescribedValue, HeapObject } from './types.js';
 
 // Re-export Babel.types for plugin use
@@ -22,18 +24,23 @@ type BabelStatement = Babel.types.Statement;
  * Traces JavaScript code execution and returns an array of steps.
  *
  * @param code - JavaScript source code to trace
+ * @param limits - Execution limits (steps and time)
  * @returns Promise resolving to array of execution steps
  * @throws SyntaxError if code has parse errors
  * @throws Error if code has runtime errors
+ * @throws LimitExceededError if execution exceeds step or time limits
  */
-async function trace(code: string): Promise<readonly RawStep[]> {
+async function trace(
+  code: string,
+  limits: { readonly maxSteps: number | null; readonly maxTime: number | null },
+): Promise<readonly RawStep[]> {
   const ns = '__V__';
 
   // Step 1: Transpile the code with instrumentation
   const transpiled = transpile(code, { ns });
 
-  // Step 2: Execute and collect steps
-  const steps = executeInstrumented(transpiled, ns);
+  // Step 2: Execute and collect steps (limits enforced during execution)
+  const steps = executeInstrumented(transpiled, ns, limits);
 
   return steps;
 }
@@ -55,8 +62,13 @@ function transpile(code: string, config: { readonly ns: string }): string {
 
 /**
  * Execute instrumented code and collect execution steps.
+ * Limits are enforced during execution via the report() callback.
  */
-function executeInstrumented(transpiled: string, ns: string = '__V__'): readonly RawStep[] {
+function executeInstrumented(
+  transpiled: string,
+  ns: string = '__V__',
+  limits: { readonly maxSteps: number | null; readonly maxTime: number | null },
+): readonly RawStep[] {
   // Create execution context with dynamic properties
   const context: Record<string, unknown> = {
     describe,
@@ -85,7 +97,27 @@ function executeInstrumented(transpiled: string, ns: string = '__V__'): readonly
         readonly _logs: readonly (readonly DescribedValue[])[];
         readonly describe: typeof describe;
       };
-      meta.dt = Date.now() - nsObject._t0;
+      const dt = Date.now() - nsObject._t0;
+      meta.dt = dt;
+
+      // Enforce time limit (checked every step during execution)
+      if (limits.maxTime !== null && dt > limits.maxTime) {
+        throw new LimitExceededError(
+          `Trace exceeded ${limits.maxTime}ms time limit at ${dt}ms`,
+          'time',
+          dt,
+        );
+      }
+
+      // Enforce step limit (checked every step during execution)
+      if (limits.maxSteps !== null && nsObject._steps.length >= limits.maxSteps) {
+        throw new LimitExceededError(
+          `Trace has ${nsObject._steps.length + 1} steps, exceeds max ${limits.maxSteps}`,
+          'steps',
+          nsObject._steps.length + 1,
+        );
+      }
+
       meta.step = nsObject._steps.push(meta as unknown as RawStep) - 1;
       meta.value = nsObject.describe(value);
       meta.logs = nsObject._logs;
@@ -296,6 +328,106 @@ function transpilerPlugin(
     }
   }
 
+  // Extract node-type-specific AST metadata for trace steps.
+  // Uses node.type string comparison instead of t.is*() type guards
+  // because @babel/standalone type defs are incomplete.
+  function extractDetail(
+    node: BabelNode & { readonly type: string },
+  ): Record<string, unknown> | undefined {
+    const n = node as unknown as Record<string, unknown>;
+    const { type } = node;
+
+    if (type === 'BinaryExpression' || type === 'LogicalExpression') {
+      return { operator: n['operator'] as string };
+    }
+    if (type === 'AssignmentExpression') {
+      const left = n['left'] as Record<string, unknown>;
+      return {
+        operator: n['operator'] as string,
+        target: left['type'] === 'Identifier' ? (left['name'] as string) : null,
+      };
+    }
+    if (type === 'UnaryExpression') {
+      return { operator: n['operator'] as string, prefix: n['prefix'] as boolean };
+    }
+    if (type === 'UpdateExpression') {
+      const arg = n['argument'] as Record<string, unknown>;
+      return {
+        operator: n['operator'] as string,
+        prefix: n['prefix'] as boolean,
+        target: arg['type'] === 'Identifier' ? (arg['name'] as string) : null,
+      };
+    }
+    if (type === 'VariableDeclaration') {
+      const decls = n['declarations'] as readonly Record<string, unknown>[];
+      const firstId = decls[0]?.['id'] as Record<string, unknown> | undefined;
+      return {
+        kind: n['kind'] as string,
+        target: firstId?.['type'] === 'Identifier' ? (firstId['name'] as string) : null,
+      };
+    }
+    if (type === 'MemberExpression') {
+      const computed = n['computed'] as boolean;
+      const prop = n['property'] as Record<string, unknown>;
+      const result: Record<string, unknown> = {
+        computed,
+        property: !computed && prop['type'] === 'Identifier' ? (prop['name'] as string) : null,
+      };
+      if (n['optional'] === true) {
+        result['optional'] = true;
+      }
+      return result;
+    }
+    if (type === 'Identifier') {
+      return { name: n['name'] as string };
+    }
+    if (type === 'CallExpression' || type === 'NewExpression') {
+      const callee = n['callee'] as Record<string, unknown>;
+      let calleeName: string | null = null;
+      let isMethod = false;
+
+      if (callee['type'] === 'Identifier') {
+        calleeName = callee['name'] as string;
+      } else if (callee['type'] === 'MemberExpression') {
+        isMethod = true;
+        const prop = callee['property'] as Record<string, unknown>;
+        if (prop['type'] === 'Identifier') {
+          calleeName = prop['name'] as string;
+        }
+      }
+
+      return {
+        arity: (n['arguments'] as readonly unknown[]).length,
+        callee: calleeName,
+        method: isMethod,
+      };
+    }
+    if (type === 'ArrowFunctionExpression') {
+      const result: Record<string, unknown> = {
+        arity: (n['params'] as readonly unknown[]).length,
+      };
+      if (n['async'] === true) {
+        result['async'] = true;
+      }
+      return result;
+    }
+    if (type === 'FunctionExpression') {
+      const id = n['id'] as { readonly name?: string } | null;
+      const result: Record<string, unknown> = {
+        name: id?.name ?? null,
+        arity: (n['params'] as readonly unknown[]).length,
+      };
+      if (n['async'] === true) {
+        result['async'] = true;
+      }
+      if (n['generator'] === true) {
+        result['generator'] = true;
+      }
+      return result;
+    }
+    return undefined;
+  }
+
   // Build metadata object for a step
   type ScopeWithBindings = {
     readonly bindings: Record<string, unknown>;
@@ -343,12 +475,15 @@ function transpilerPlugin(
       currentScope = currentScope.parent;
     }
 
+    const detail = extractDetail(node);
+
     const metadata = {
       category,
       time,
       loc: node.loc,
       type: node.type,
       scopes,
+      ...(detail !== undefined ? { detail } : {}),
     };
 
     return json(metadata);

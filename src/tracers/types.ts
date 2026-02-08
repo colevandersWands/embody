@@ -108,14 +108,14 @@ type TracerModule<TOptions = unknown, TStep extends StepCore = StepCore> = (
 ) => Promise<readonly TStep[]>;
 
 /**
- * Registry entry for a tracer module in dispatch.
- * Each tracer exports these three pieces to the dispatch registry.
+ * Registry entry for a tracer module.
+ * Each tracer exports these pieces via its barrel index.
  */
 type TracerEntry<TStep extends StepCore = StepCore> = {
   /** The record function that traces code */
   readonly record: TracerModule<unknown, TStep>;
   /** JSON Schema for tracer-specific options (optional for simple tracers) */
-  readonly schema?: Record<string, unknown>;
+  readonly optionsSchema?: Record<string, unknown>;
   /** Optional semantic validation for cross-field constraints */
   readonly verifyOptions?: (options: unknown) => void;
 };

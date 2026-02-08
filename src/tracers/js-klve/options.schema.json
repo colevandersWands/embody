@@ -116,6 +116,25 @@
             }
           }
         },
+        "names": {
+          "type": "object",
+          "description": "Filter steps by variable/function/property names in step detail",
+          "properties": {
+            "include": {
+              "type": "array",
+              "items": { "type": "string" },
+              "uniqueItems": true,
+              "description": "Whitelist: only keep steps mentioning these names (+ nameless structural steps)"
+            },
+            "exclude": {
+              "type": "array",
+              "items": { "type": "string" },
+              "uniqueItems": true,
+              "description": "Blacklist: remove steps mentioning these names"
+            }
+          },
+          "additionalProperties": false
+        },
         "timing": {
           "type": "object",
           "description": "Filter by step timing phase",

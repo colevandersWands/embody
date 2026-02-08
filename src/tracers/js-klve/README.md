@@ -1,4 +1,4 @@
-# js-klve Language Module
+# js-klve Tracer Module
 
 JavaScript execution tracer adapted from [jsviz.klve.nl](https://jsviz.klve.nl). Uses Babel to instrument code and captures step-by-step execution data including variable scopes, expression values, and console output.
 
@@ -12,10 +12,11 @@ Adapted from:
 
 ## Exports
 
-| Export        | Type        | Required | Description                     |
-| ------------- | ----------- | -------- | ------------------------------- |
-| `schema.json` | JSON Schema | Yes      | Options validation and defaults |
-| `record`      | Function    | Yes      | JavaScript execution tracer     |
+| Export              | Type        | Required | Description                     |
+| ------------------- | ----------- | -------- | ------------------------------- |
+| `tracerId`          | string      | Yes      | `'js:klve'`                     |
+| `record`            | Function    | Yes      | JavaScript execution tracer     |
+| `optionsSchema`     | JSON Schema | Yes      | Options validation and defaults |
 
 js-klve does NOT export `verifyOptions` — the hierarchical filter config has no cross-field constraints.
 
@@ -39,6 +40,13 @@ const options: JsKlveOptions = {
     data: { scopes: false, value: true },
   },
 };
+
+// Focus trace on specific variable(s)
+const options: JsKlveOptions = {
+  filter: {
+    names: { include: ['x', 'y'] }, // only steps mentioning x or y
+  },
+};
 ```
 
 ## Output
@@ -56,6 +64,7 @@ type JsKlveStep = {
   readonly value?: unknown; // Expression value (after evaluation)
   readonly logs?: readonly unknown[][]; // console.log captures
   readonly dt?: number; // Milliseconds since trace start
+  readonly detail?: JsKlveDetail; // Node-type-specific AST metadata
 };
 ```
 
@@ -82,25 +91,36 @@ The tracer captures execution of:
 
 Uses `@babel/standalone` for browser-compatible code transformation. Bundle size is ~2.8MB but provides drop-in Babel functionality without Node.js dependencies.
 
+## Execution Limits
+
+| Limit                  | Supported | Enforcement    | Notes                                      |
+| ---------------------- | --------- | -------------- | ------------------------------------------ |
+| `meta.max.steps`       | Yes       | During tracing | Throws when step count exceeds limit       |
+| `meta.max.time`        | Yes       | During tracing | Throws when elapsed ms exceeds limit       |
+| `meta.max.iterations`  | No        | —              | Not implemented (requires instrumentation) |
+| `meta.max.callstack`   | No        | —              | Not implemented (requires instrumentation) |
+
 ## Limitations
 
 - Executes code using `Function()` constructor (similar security implications as `eval`)
 - Converts `let`/`const` to `var` internally for scope tracking
 - Async/await timing may not perfectly reflect actual execution order
-- Large or infinite loops may cause performance issues
+- Large or infinite loops are terminated by `meta.max.time` if set; without a time limit, they may hang
 
 ## Files
 
-| File              | Purpose                            |
-| ----------------- | ---------------------------------- |
-| `schema.json`     | JSON Schema for filter options     |
-| `record.ts`       | Entry point (adapts tracer to API) |
-| `tracer.ts`       | Core Babel instrumentation         |
-| `filter-steps.ts` | Post-execution step filtering      |
-| `ast-map.ts`      | Config key → AST node type mapping |
-| `types.ts`        | JsKlveOptions, JsKlveStep, etc.    |
-| `DOCS.md`         | Complete API reference             |
-| `README.md`       | This file                          |
+| File                  | Purpose                            |
+| --------------------- | ---------------------------------- |
+| `index.ts`            | Barrel: re-exports as named        |
+| `tracer-id.ts`        | Tracer ID constant (`'js:klve'`)   |
+| `record.ts`           | Entry point (adapts tracer to API) |
+| `options.schema.json` | JSON Schema for filter options     |
+| `tracer.ts`           | Core Babel instrumentation         |
+| `filter-steps.ts`     | Post-execution step filtering      |
+| `ast-map.ts`          | Config key → AST node type mapping |
+| `types.ts`            | JsKlveOptions, JsKlveStep, etc.    |
+| `DOCS.md`             | Complete API reference             |
+| `README.md`           | This file                          |
 
 ## Links
 

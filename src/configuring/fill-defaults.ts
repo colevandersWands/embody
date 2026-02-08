@@ -6,8 +6,7 @@
  * removes unknown properties silently.
  */
 
-import Ajv from 'ajv';
-
+import Ajv from './ajv.js';
 import type { JSONSchema } from './types.js';
 
 /** Configured Ajv instance for default filling */

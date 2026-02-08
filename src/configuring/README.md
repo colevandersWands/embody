@@ -91,6 +91,13 @@ const result = prepareConfig(options, schema);
   - `coerceTypes: true` for forgiving input (`"5"` → `5`)
   - Battle-tested, fast, industry standard
 
+### CJS/ESM Interop (`ajv.ts`)
+
+ajv v7 is CJS-only. esbuild's `format=esm` wraps CJS `module.exports` as `.default`, creating double-wrapping for modules that already set `exports.default`. The `ajv.ts` module detects which shape the import has and always exports the Ajv constructor.
+
+- **Node (tsc)**: `import Ajv` → constructor directly
+- **esbuild bundle**: `import Ajv` → exports object → `.default` is constructor
+
 ## File Structure
 
 ```text
@@ -98,11 +105,13 @@ src/configuring/
 ├── README.md               # This file
 ├── DOCS.md                 # API reference
 ├── types.ts                # TypeScript types (JSONSchema)
+├── ajv.ts                  # CJS/ESM interop — resolves Ajv constructor
 ├── expand-shorthand.ts     # expandShorthand(options, schema)
 ├── fill-defaults.ts        # fillDefaults(options, schema)
-├── validate-config.ts     # validateConfig(options, schema)
+├── validate-config.ts      # validateConfig(options, schema)
 ├── prepare-config.ts       # prepareConfig(options, schema) — wrapper
 └── tests/
+    ├── ajv.test.ts
     ├── expand-shorthand.test.ts
     ├── fill-defaults.test.ts
     ├── validate-config.test.ts

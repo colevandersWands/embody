@@ -170,20 +170,6 @@ export type EmbodyTraceFunction = {
 };
 
 // ============================================================================
-// Execution Limits (for record function)
-// ============================================================================
-
-/**
- * Limits that can be configured in the meta field of config
- */
-export type ExecutionLimits = {
-  readonly maxSteps?: number;
-  readonly maxMemory?: number; // in MB
-  readonly maxRecursionDepth?: number;
-  readonly maxExecutionTime?: number; // in milliseconds
-};
-
-// ============================================================================
 // Re-exports for public API consumers
 // ============================================================================
 

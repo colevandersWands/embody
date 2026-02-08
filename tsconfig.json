@@ -8,7 +8,7 @@
 
     // Output
     "outDir": "./dist",
-    "rootDir": ".",
+    "rootDir": "./src",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -52,7 +52,7 @@
     // Completeness
     "skipDefaultLibCheck": true
   },
-  "include": ["**/*.ts", "**/*.js", "**/*.mjs"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.js", "test.js", ".plann/**/*"],
   "ts-node": {
     "esm": true,

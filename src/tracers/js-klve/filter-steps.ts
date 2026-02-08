@@ -6,7 +6,13 @@
  */
 
 import { AST_TO_CONFIG } from './ast-map.js';
-import type { RawStep, JsKlveFilterConfig, JsKlveNodeConfig, JsKlveStep } from './types.js';
+import type {
+  RawStep,
+  JsKlveFilterConfig,
+  JsKlveNodeConfig,
+  JsKlveNameConfig,
+  JsKlveStep,
+} from './types.js';
 
 /**
  * Fully resolved node config (all fields required, no undefined).
@@ -37,10 +43,20 @@ type ResolvedNodeConfig = {
 };
 
 /**
+ * Resolved name filter config.
+ * mode: 'include' (whitelist), 'exclude' (blacklist), or 'none' (no filtering).
+ */
+type ResolvedNameConfig = {
+  readonly mode: 'include' | 'exclude' | 'none';
+  readonly names: ReadonlySet<string>;
+};
+
+/**
  * Fully resolved filter config (all fields required, no undefined).
  */
 type ResolvedFilterConfig = {
   readonly nodes: ResolvedNodeConfig;
+  readonly names: ResolvedNameConfig;
   readonly timing: { readonly before: boolean; readonly after: boolean };
   readonly data: {
     readonly scopes: boolean;
@@ -73,6 +89,7 @@ const DEFAULT_FILTER_CONFIG: ResolvedFilterConfig = {
     literals: { numeric: true, string: true, boolean: true, array: true, object: true },
     functions: { arrow: true, expression: true },
   },
+  names: { mode: 'none' as const, names: new Set<string>() },
   timing: { before: true, after: true },
   data: { scopes: true, value: true, logs: true, dt: true, loc: true },
 };
@@ -85,6 +102,7 @@ function fillConfig(config: JsKlveFilterConfig): ResolvedFilterConfig {
 
   return {
     nodes: fillNodes(config.nodes ?? {}),
+    names: fillNameConfig(config.names),
     timing: {
       before: config.timing?.before ?? d.timing.before,
       after: config.timing?.after ?? d.timing.after,
@@ -149,6 +167,56 @@ function fillNodes(nodes: JsKlveNodeConfig): ResolvedNodeConfig {
       expression: nodes.functions?.expression ?? d.functions.expression,
     },
   };
+}
+
+/**
+ * Resolves name filter config to a mode + set.
+ * include takes precedence if both provided.
+ */
+function fillNameConfig(config?: JsKlveNameConfig): ResolvedNameConfig {
+  if (!config) return { mode: 'none', names: new Set() };
+
+  if (config.include && config.include.length > 0) {
+    return { mode: 'include', names: new Set(config.include) };
+  }
+  if (config.exclude && config.exclude.length > 0) {
+    return { mode: 'exclude', names: new Set(config.exclude) };
+  }
+
+  return { mode: 'none', names: new Set() };
+}
+
+/**
+ * Extracts name-like strings from a step's detail fields.
+ * Returns empty array if step has no detail or no name fields.
+ */
+function extractStepNames(step: RawStep): readonly string[] {
+  if (!step.detail) return [];
+  const result: string[] = [];
+  const d = step.detail;
+  if (typeof d.name === 'string') result.push(d.name);
+  if (typeof d.target === 'string') result.push(d.target);
+  if (typeof d.callee === 'string') result.push(d.callee);
+  if (typeof d.property === 'string') result.push(d.property);
+  return result;
+}
+
+/**
+ * Tests whether a step passes the name filter.
+ * Init steps and nameless steps always pass.
+ */
+function passesNameFilter(step: RawStep, nameConfig: ResolvedNameConfig): boolean {
+  if (nameConfig.mode === 'none') return true;
+  if (step.category === 'init') return true;
+
+  const names = extractStepNames(step);
+  if (names.length === 0) return true;
+
+  if (nameConfig.mode === 'include') {
+    return names.some((n) => nameConfig.names.has(n));
+  }
+  // exclude mode
+  return !names.some((n) => nameConfig.names.has(n));
 }
 
 /**
@@ -231,6 +299,10 @@ function stripData(step: RawStep, dataConfig: ResolvedFilterConfig['data']): JsK
     (result as { readonly logs?: readonly (readonly unknown[])[] }).logs = step.logs;
   }
 
+  if (step.detail !== undefined) {
+    (result as { readonly detail?: typeof step.detail }).detail = step.detail;
+  }
+
   return result;
 }
 
@@ -261,8 +333,9 @@ function filterSteps(
 
       return true;
     })
+    .filter((step) => passesNameFilter(step, filled.names))
     .map((step) => stripData(step, filled.data));
 }
 
 export default filterSteps;
-export { fillConfig, buildNodeLookup, DEFAULT_FILTER_CONFIG };
+export { fillConfig, fillNameConfig, buildNodeLookup, extractStepNames, DEFAULT_FILTER_CONFIG };

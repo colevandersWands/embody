@@ -1,7 +1,7 @@
 /**
  * @file Deep freeze utility for making objects and their nested properties immutable.
  *
- * Used at the dispatch layer to freeze default event configurations,
+ * Used at the tracer registry layer to freeze default event configurations,
  * preventing accidental mutation of shared defaults.
  *
  * Contract: Returns a frozen COPY of the input. The original is NOT modified.

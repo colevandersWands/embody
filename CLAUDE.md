@@ -73,7 +73,7 @@ Each stage uses object-threading: receives an object, adds data, returns enriche
 #### 1. Export Conventions
 
 - **One default export per file**: Named function/const, then `export default` at bottom
-- **No barrel files**: Import directly from source files (no `index.ts` re-exports except `/src/index.ts`)
+- **No barrel files**: Import directly from source files (no `index.ts` re-exports except `/src/index.ts` and `src/tracers/**/index.ts` — tracer barrels are a scoped exception for plugin-like modules)
 - **Always `.js` extension** in imports
 
 ```javascript

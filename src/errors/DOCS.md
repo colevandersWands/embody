@@ -137,7 +137,7 @@ if (result.ok) {
 
 ### TracerUnknownError
 
-Thrown when the requested tracer is not in the dispatch registry.
+Thrown when the requested tracer is not in the tracer registry.
 
 #### Thrown By
 
