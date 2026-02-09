@@ -9,15 +9,22 @@ API overview for the `@study-lenses/embody` execution tracer. For complete detai
   - [`tracify`](#tracify)
   - [`embody`](#embody-tracer-code-config-)
   - [`embodify`](#embodify)
+  - [`Tracer`](#tracer) (class-based, throws)
+  - [`Embodier`](#embodier) (class-based, safe)
+  - [`embodyTrace`](#embodytrace) (callback-style, ES5)
 - [Error Handling](#error-handling)
 - [Configuration](#configuration)
 - [TypeScript Types](#typescript-types)
 
 ## Main API Functions
 
-Four APIs in two families: **trace family** (throws on error) and **embody family** (returns `{ ok, error }`).
+Seven APIs in three families:
 
-All APIs are **async** — trace execution returns a Promise.
+- **Trace family** (throws on error): `trace`, `tracify`, `Tracer` class
+- **Embody family** (returns `{ ok, error }`): `embody`, `embodify`, `Embodier` class
+- **Callback-style API** (ES5 compatible): `embodyTrace`
+
+All APIs are **async** — trace execution returns a Promise (or invokes callback for `embodyTrace`).
 
 ### `trace(tracer, code, config?)`
 
@@ -87,6 +94,65 @@ fixed.ok; // true
 ```
 
 For `.set()`, `.trace()`, and error recovery, see [API Reference](./src/api/DOCS.md#embodify).
+
+### `Tracer`
+
+Class-based API with OOP style. Throws on error. Lazy evaluation with `.steps` getter.
+
+```typescript
+import { Tracer } from '@study-lenses/embody';
+
+const tracer = new Tracer('txt:chars');
+tracer.code = 'hello';
+tracer.config = { meta: { max: { steps: 50 } } };
+
+const steps = await tracer.steps; // Lazy trace on first access
+```
+
+For complete class interface, cache invalidation, and setter behavior, see [API Reference](./src/api/DOCS.md#tracer-class).
+
+### `Embodier`
+
+Class-based API with explicit error handling. Returns `.ok`/`.error` state. Explicit `.trace()` method.
+
+```typescript
+import { Embodier } from '@study-lenses/embody';
+
+const embodier = new Embodier('txt:chars');
+embodier.code = 'hello';
+embodier.config = {};
+
+await embodier.trace(); // Explicit execution, mutates instance
+if (embodier.ok) {
+  console.log(embodier.steps); // Sync access after trace()
+} else {
+  console.error(embodier.error);
+}
+```
+
+For complete class interface, error state management, and trace method, see [API Reference](./src/api/DOCS.md#embodier-class).
+
+### `embodyTrace`
+
+Node.js error-first callback API. Pure ES5 implementation (learning tool to explore pre-ES6 patterns). Supports argument overloading for optional config.
+
+```typescript
+import { embodyTrace } from '@study-lenses/embody';
+
+// With config
+embodyTrace('txt:chars', 'hello', { meta: { max: { steps: 50 } } }, function (err, result) {
+  if (err) throw err;
+  console.log('Steps:', result.steps.length);
+});
+
+// Without config (3-arg form)
+embodyTrace('txt:chars', 'hello', function (err, result) {
+  if (err) return console.error(err);
+  console.log(result.steps);
+});
+```
+
+For complete callback signature, error delivery semantics, and result structure, see [API Reference](./src/api/DOCS.md#embodytrace).
 
 ## Error Handling
 

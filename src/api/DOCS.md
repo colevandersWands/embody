@@ -73,6 +73,81 @@ All APIs distinguish two error categories:
 
 ---
 
+## Cache Invalidation
+
+The API uses smart cache invalidation to preserve state when possible.
+
+### Invalidation Rules
+
+| You change | Invalidates                   | Keeps                          | Why                                                                                     |
+| ---------- | ----------------------------- | ------------------------------ | --------------------------------------------------------------------------------------- |
+| `tracer`   | config, resolvedConfig, steps | code                           | Different tracers have incompatible option shapes, but same-language code is compatible |
+| `code`     | steps                         | tracer, config, resolvedConfig | Same tracer with different code needs re-tracing                                        |
+| `config`   | resolvedConfig, steps         | tracer, code                   | Same tracer and code with different options needs re-tracing                            |
+
+### Why Config is Cleared When Tracer Changes
+
+Even though `meta` (execution limits) is universal across all tracers, we clear the **entire config** when tracer changes:
+
+- **Simplicity**: Config is an atomic unit — no partial state to reason about
+- **Safety**: Can't accidentally use `js:klve` options with a different tracer
+- **Explicit > implicit**: To preserve meta, explicitly pass it in new config
+
+### Examples
+
+**Compare two tracers on same code** (tracify):
+
+```js
+const chain1 = tracify
+  .tracer('js:klve')
+  .code('let x = 1;')
+  .config({
+    meta: { max: { steps: 100 } },
+    options: {
+      /* js:klve options */
+    },
+  });
+const steps1 = await chain1.steps;
+
+// Switching tracer clears config but keeps code
+const chain2 = chain1.tracer('js:other').config({
+  meta: { max: { steps: 100 } }, // Must re-provide config
+  options: {
+    /* js:other options */
+  },
+});
+
+console.log(chain2.code); // 'let x = 1;' (PRESERVED)
+const steps2 = await chain2.steps; // Different tracer's steps
+```
+
+**Preserve meta when switching tracers** (explicit pattern):
+
+```js
+const oldMeta = chain1.resolvedConfig.meta;
+const chain2 = chain1.tracer('js:other').config({
+  meta: oldMeta, // Explicitly preserve execution limits
+  options: {
+    /* js:other options */
+  },
+});
+```
+
+**embodify example**:
+
+```js
+const chain1 = await embodify({ tracer: 'js:klve' })
+  .set({ code: 'let x = 1;', config: { meta: { max: { steps: 50 } } } })
+  .trace();
+
+// Switch tracer, config is cleared
+const chain2 = chain1.set({ tracer: 'chars', config: {} });
+console.log(chain2.config); // {} (had to re-provide)
+console.log(chain2.code); // 'let x = 1;' (PRESERVED)
+```
+
+---
+
 ## `trace(tracer, code, config?)`
 
 Positional API. Throws on error. **Async** — returns Promise.
@@ -456,6 +531,291 @@ const traced = await embodify({ tracer: 'chars', code: 'ab' }).trace();
 const modified = traced.set({ code: 'xyz' });
 modified.resolvedConfig; // Same as traced (code doesn't affect config)
 ```
+
+---
+
+## Class-Based APIs
+
+OOP-style alternatives to the functional APIs. Each instance locks to one tracer at construction and provides mutable setters for code and config.
+
+### `Tracer` (Throws Errors, Lazy Evaluation)
+
+Rhymes with `tracify`: throws errors, lazy `.steps` getter traces on first access.
+
+**Constructor:**
+
+```typescript
+new Tracer(tracerId: string): Tracer
+```
+
+**Throws:**
+
+- `ArgumentInvalidError` if `tracerId` is not a non-empty string
+- `TracerUnknownError` if `tracerId` is not registered
+
+**Properties:**
+
+| Property          | Type                                      | Description                              |
+| ----------------- | ----------------------------------------- | ---------------------------------------- |
+| `.id`             | `string` (readonly)                       | The tracer ID this instance is locked to |
+| `.code`           | `string \| undefined` (mutable)           | Source code to trace                     |
+| `.config`         | `object \| undefined` (mutable)           | Trace configuration                      |
+| `.resolvedConfig` | `ResolvedConfig` (readonly)               | Computed config (user + defaults), lazy  |
+| `.steps`          | `Promise<readonly StepCore[]>` (readonly) | Lazy trace on first access, cached       |
+
+**Setters throw on validation errors.** The `.steps` getter triggers trace execution on first access.
+
+**Cache invalidation:**
+
+- Code changes → clear `.steps` only
+- Config changes → clear `.resolvedConfig` + `.steps`
+
+**Example:**
+
+```typescript
+import { Tracer } from '@study-lenses/embody';
+
+const tracer = new Tracer('txt:chars');
+tracer.code = 'hello';
+tracer.config = { meta: { max: { steps: 50 } } };
+
+const steps = await tracer.steps; // Lazy trace on first access
+console.log(steps.length); // 5
+
+// Modify code and re-trace
+tracer.code = 'world';
+const steps2 = await tracer.steps; // Re-traces with new code
+```
+
+**Comparison with `tracify`:**
+
+| Aspect           | tracify                     | Tracer                      |
+| ---------------- | --------------------------- | --------------------------- |
+| Style            | Functional, immutable chain | OOP, mutable instance       |
+| Errors           | Throws                      | Throws                      |
+| Execution        | Lazy (`.steps` getter)      | Lazy (`.steps` getter)      |
+| Tracer switching | Yes (returns new chain)     | No (locked at construction) |
+
+---
+
+### `Embodier` (Catches Errors, Explicit Execution)
+
+Rhymes with `embodify`: catches errors, explicit `.trace()` method for execution.
+
+**Constructor:**
+
+```typescript
+new Embodier(tracerId: string): Embodier
+```
+
+**Never throws.** Constructor errors are stored in `.ok`/`.error` state.
+
+**Properties:**
+
+| Property          | Type                                          | Description                                     |
+| ----------------- | --------------------------------------------- | ----------------------------------------------- |
+| `.id`             | `string \| undefined` (readonly)              | The tracer ID (undefined if constructor failed) |
+| `.code`           | `string \| undefined` (mutable)               | Source code to trace                            |
+| `.config`         | `object \| undefined` (mutable)               | Trace configuration                             |
+| `.resolvedConfig` | `ResolvedConfig \| undefined` (readonly)      | Computed config, undefined if error             |
+| `.steps`          | `readonly StepCore[] \| undefined` (readonly) | Cached steps (sync, NOT Promise)                |
+| `.ok`             | `boolean` (readonly)                          | Success state (`true` if no errors)             |
+| `.error`          | `EmbodyError \| undefined` (readonly)         | Error (only set when `.ok` is `false`)          |
+
+**Methods:**
+
+```typescript
+async trace(): Promise<void>
+```
+
+Executes the trace and mutates instance state. Returns `Promise<void>` with explicit `return void undefined;`. Catches errors and stores them in `.ok`/`.error`.
+
+**Constructor errors are fatal:** If the constructor fails (invalid tracer ID), the instance is permanently in error state. Setters and `.trace()` become no-ops.
+
+**Cache invalidation:**
+
+- Code changes → clear `.steps` only
+- Config changes → clear `.resolvedConfig` + `.steps`
+
+**Example:**
+
+```typescript
+import { Embodier } from '@study-lenses/embody';
+
+const embodier = new Embodier('txt:chars');
+if (!embodier.ok) {
+  console.error('Constructor failed:', embodier.error);
+  return;
+}
+
+embodier.code = 'hello';
+embodier.config = {};
+await embodier.trace(); // Explicit execution
+
+if (embodier.ok) {
+  console.log(embodier.steps); // Sync access to cached array
+} else {
+  console.error('Trace failed:', embodier.error);
+}
+
+// Modify and re-trace
+embodier.code = 'world';
+await embodier.trace();
+console.log(embodier.ok ? embodier.steps : embodier.error);
+```
+
+**Comparison with `embodify`:**
+
+| Aspect           | embodify                         | Embodier                           |
+| ---------------- | -------------------------------- | ---------------------------------- |
+| Style            | Functional, immutable chain      | OOP, mutable instance              |
+| Errors           | Catches (returns `.ok`/`.error`) | Catches (stores in `.ok`/`.error`) |
+| Execution        | Explicit (`.trace()` method)     | Explicit (`.trace()` method)       |
+| Steps access     | Sync getter after trace          | Sync getter after trace            |
+| Tracer switching | Yes (`.set()` returns new chain) | No (locked at construction)        |
+
+**Error recovery example:**
+
+```typescript
+const embodier = new Embodier('txt:chars');
+embodier.code = 'ab';
+embodier.config = { meta: { max: { steps: 1 } } }; // Too restrictive
+await embodier.trace();
+
+if (!embodier.ok) {
+  console.log('Failed, retrying with higher limit');
+  embodier.config = { meta: { max: { steps: 10 } } };
+  await embodier.trace();
+
+  if (embodier.ok) {
+    console.log('Success:', embodier.steps);
+  }
+}
+```
+
+---
+
+## Callback-Style API (Historical Exploration)
+
+Pure ES5 implementation exploring pre-ES6 JavaScript patterns. Built with self-imposed ES5 constraints (no `const`/`let`, no arrows, no template literals, no destructuring) to understand why modern conventions arose and how Node.js error-first callbacks work.
+
+### `embodyTrace(tracer, code, [config,] callback)`
+
+**Signature:**
+
+```javascript
+embodyTrace(tracer: string, code: string, config?: object, callback: (err, result) => void): void
+```
+
+**Parameters:**
+
+- `tracer` (string, required): Tracer ID (e.g., 'txt:chars', 'js:klve')
+- `code` (string, required): Source code to trace
+- `config` (object, optional): Config with `meta` and `options` (defaults to `{}`)
+- `callback` (function, required): Error-first callback `function(err, result)`
+
+**Callback signature:**
+
+```javascript
+function callback(
+  err: Error | null,
+  result: {
+    steps: StepCore[],
+    config: { meta: MetaConfig, options: object },
+    tracer: string,
+    code: string
+  } | null
+): void
+```
+
+**Throws (synchronously):**
+
+- `ArgumentInvalidError` if `callback` is not a function
+
+**Delivers via callback (asynchronously):**
+
+- All other validation errors (tracer, code, config)
+- Runtime errors during trace execution
+- `AggregateError` if multiple validation errors occur
+
+**Result structure:**
+
+```javascript
+{
+  steps: [...],           // Trace steps from tracer
+  config: {               // Resolved config (user + defaults)
+    meta: {...},
+    options: {...}
+  },
+  tracer: 'txt:chars',   // Tracer ID used
+  code: 'hello'          // Code that was traced
+}
+```
+
+**Examples:**
+
+With config:
+
+```javascript
+import { embodyTrace } from '@study-lenses/embody';
+
+embodyTrace('txt:chars', 'hello', { meta: { max: { steps: 50 } } }, function (err, result) {
+  if (err) throw err;
+  console.log('Steps:', result.steps.length);
+});
+```
+
+Without config:
+
+```javascript
+embodyTrace('txt:chars', 'hello', function (err, result) {
+  if (err) {
+    console.error('Trace failed:', err.message);
+    return;
+  }
+  console.log('Steps:', result.steps);
+});
+```
+
+Error handling (graceful):
+
+```javascript
+embodyTrace('txt:chars', code, function (err, result) {
+  if (err) {
+    // Log error and continue
+    console.warn('Trace failed, using default steps:', err);
+    return processSteps([]);
+  }
+  processSteps(result.steps);
+});
+```
+
+**Comparison with other APIs:**
+
+| Aspect            | embodyTrace              | trace()      | embody()         |
+| ----------------- | ------------------------ | ------------ | ---------------- |
+| Style             | Callback-based           | Async/await  | Async/await      |
+| Error handling    | Error-first callback     | Throws       | Catches (ok)     |
+| Language features | Pure ES5 (learning tool) | Modern ES6+  | Modern ES6+      |
+| Result structure  | Full context (4 fields)  | Steps only   | Safe wrapper     |
+| Validation errors | Async delivery via `cb`  | Sync throws  | Sync `ok=false`  |
+| Runtime errors    | Async delivery via `cb`  | Async throws | Async `ok=false` |
+
+**When to use:**
+
+- You want to understand pre-ES6 JavaScript patterns (var, function expressions, CommonJS)
+- You're learning about error-first callbacks and why async/await was introduced
+- You're exploring how modern conventions evolved from historical patterns
+- You want to see how the same API can be expressed with different era constraints
+
+**What you'll learn:**
+
+- ✅ Why `const`/`let` replaced `var` (hoisting, single-var pattern, scope clarity)
+- ✅ Why arrow functions emerged (callback readability, anonymous vs named functions)
+- ✅ Why async/await replaced callbacks (callback ergonomics, error handling complexity)
+- ✅ How Node.js error-first callbacks work (sync throws vs async delivery, Zalgo prevention)
+- ✅ Why modern module systems replaced CommonJS (`.default` dance, static analysis)
+- ⚠️ Implementation uses period-appropriate patterns (explicit hoisting, named inline functions, single-var declarations)
 
 ---
 

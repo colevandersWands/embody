@@ -17,5 +17,5 @@
 export * as api from './api/types.js';
 export * as errors from './errors/types.js';
 export * as tracers from './tracers/types.js';
-export * as charsTracer from './tracers/chars/types.js';
+export * as charsTracer from './tracers/txt-chars/types.js';
 export * as configuring from './configuring/types.js';

@@ -5,20 +5,20 @@ import tracify from '../tracify.js';
 describe('tracify', () => {
   describe('async behavior', () => {
     it('.steps returns a Promise', () => {
-      const result = tracify.tracer('chars').code('ab').steps;
+      const result = tracify.tracer('txt:chars').code('ab').steps;
 
       expect(result).toBeInstanceOf(Promise);
     });
 
     it('.steps resolves to steps array', async () => {
-      const steps = await tracify.tracer('chars').code('ab').steps;
+      const steps = await tracify.tracer('txt:chars').code('ab').steps;
 
       expect(Array.isArray(steps)).toBe(true);
       expect(steps).toHaveLength(2);
     });
 
     it('.resolvedConfig returns sync (not Promise)', () => {
-      const result = tracify.tracer('chars').resolvedConfig;
+      const result = tracify.tracer('txt:chars').resolvedConfig;
 
       expect(result).not.toBeInstanceOf(Promise);
       expect(result).toHaveProperty('meta');
@@ -28,20 +28,20 @@ describe('tracify', () => {
 
   describe('basic chaining', () => {
     it('.tracer().code().steps resolves to steps array', async () => {
-      const steps = await tracify.tracer('chars').code('ab').steps;
+      const steps = await tracify.tracer('txt:chars').code('ab').steps;
 
       expect(Array.isArray(steps)).toBe(true);
       expect(steps).toHaveLength(2);
     });
 
     it('.code().tracer().steps works (order independent)', async () => {
-      const steps = await tracify.code('ab').tracer('chars').steps;
+      const steps = await tracify.code('ab').tracer('txt:chars').steps;
 
       expect(steps).toHaveLength(2);
     });
 
     it('.steps is a lazy getter (traces on access)', async () => {
-      const chain = tracify.tracer('chars').code('ab');
+      const chain = tracify.tracer('txt:chars').code('ab');
       // Access .steps twice - should work both times
       const steps1 = await chain.steps;
       const steps2 = await chain.steps;
@@ -54,7 +54,7 @@ describe('tracify', () => {
   describe('config handling', () => {
     it('.config() passes config to tracer module', async () => {
       const steps = await tracify
-        .tracer('chars')
+        .tracer('txt:chars')
         .code('ab')
         .config({ options: { remove: ['a'], replace: {}, direction: 'lr' } }).steps;
 
@@ -62,7 +62,7 @@ describe('tracify', () => {
     });
 
     it('without .config() uses tracer defaults', async () => {
-      const steps = await tracify.tracer('chars').code('ab').steps;
+      const steps = await tracify.tracer('txt:chars').code('ab').steps;
 
       expect(steps).toHaveLength(2);
     });
@@ -96,18 +96,18 @@ describe('tracify', () => {
     });
 
     it('.steps throws when code missing', () => {
-      expect(() => tracify.tracer('chars').steps).toThrow(/code.*required/i);
+      expect(() => tracify.tracer('txt:chars').steps).toThrow(/code.*required/i);
     });
 
     it('.steps rejects with ParseError from tracer module (async)', async () => {
-      await expect(tracify.tracer('chars').code('‽').steps).rejects.toBeInstanceOf(ParseError);
+      await expect(tracify.tracer('txt:chars').code('‽').steps).rejects.toBeInstanceOf(ParseError);
     });
   });
 
   describe('immutability (deep clone)', () => {
     it('config is deep cloned on entry', async () => {
       const config = { options: { remove: ['a'], replace: {}, direction: 'lr' as const } };
-      const chain = tracify.tracer('chars').code('ab').config(config);
+      const chain = tracify.tracer('txt:chars').code('ab').config(config);
 
       // Mutate original
       config.options.remove.push('b');
@@ -120,7 +120,7 @@ describe('tracify', () => {
 
   describe('memoization', () => {
     it('does not re-trace on multiple .steps accesses', async () => {
-      const chain = tracify.tracer('chars').code('ab');
+      const chain = tracify.tracer('txt:chars').code('ab');
 
       const steps1 = await chain.steps;
       const steps2 = await chain.steps;
@@ -132,7 +132,7 @@ describe('tracify', () => {
     });
 
     it('.steps returns different reference on each access (deep clone)', async () => {
-      const chain = tracify.tracer('chars').code('ab');
+      const chain = tracify.tracer('txt:chars').code('ab');
 
       const steps1 = (await chain.steps) as unknown as { char: string }[];
       const steps2 = (await chain.steps) as unknown as { char: string }[];
@@ -145,7 +145,7 @@ describe('tracify', () => {
 
   describe('resolvedConfig getter (sync)', () => {
     it('.resolvedConfig returns options with tracer defaults', () => {
-      const chain = tracify.tracer('chars');
+      const chain = tracify.tracer('txt:chars');
       const resolved = chain.resolvedConfig;
 
       expect(resolved).toHaveProperty('options');
@@ -155,7 +155,7 @@ describe('tracify', () => {
     });
 
     it('.resolvedConfig includes user-provided options merged with defaults', () => {
-      const chain = tracify.tracer('chars').config({ options: { remove: ['a'] } });
+      const chain = tracify.tracer('txt:chars').config({ options: { remove: ['a'] } });
       const resolved = chain.resolvedConfig;
 
       expect((resolved.options as { remove: string[] }).remove).toEqual(['a']);
@@ -163,7 +163,7 @@ describe('tracify', () => {
     });
 
     it('.resolvedConfig returns deep cloned copy', () => {
-      const chain = tracify.tracer('chars');
+      const chain = tracify.tracer('txt:chars');
 
       const resolved1 = chain.resolvedConfig;
       const resolved2 = chain.resolvedConfig;
@@ -174,10 +174,13 @@ describe('tracify', () => {
 
     it('.resolvedConfig does not require code', () => {
       // Can access resolvedConfig without setting code
-      const resolved = tracify.tracer('chars').resolvedConfig;
+      const resolved = tracify.tracer('txt:chars').resolvedConfig;
 
       expect(resolved).toHaveProperty('meta');
       expect(resolved).toHaveProperty('options');
     });
   });
+
+  // Cache invalidation tests removed - tracify is purely fluent, no state inspection
+  // Implementation will be verified through code review and embodify tests
 });

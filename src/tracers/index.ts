@@ -5,8 +5,8 @@
  * Default export: registry Record<string, TracerEntry> for dynamic lookup.
  */
 
-import * as chars from './chars/index.js';
 import * as jsKlve from './js-klve/index.js';
+import * as chars from './txt-chars/index.js';
 import type { TracerEntry } from './types.js';
 
 // Barrel re-exports (tree-shakeable).

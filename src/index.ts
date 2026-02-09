@@ -45,6 +45,14 @@ export { default as embodify } from './api/embodify.js';
 export { default as trace } from './api/trace.js';
 export { default as tracify } from './api/tracify.js';
 
+// Class-based APIs
+export { default as Tracer } from './api/Tracer.js';
+export { default as Embodier } from './api/Embodier.js';
+
+// Callback-style API (ES5 compatible)
+// @ts-expect-error - .cjs file with separate .d.ts type definitions
+export { default as embodyTrace } from './api/embody-trace.cjs';
+
 // ============================================================================
 // Main Public API - Default Export (simplest, minimal interface)
 // ============================================================================

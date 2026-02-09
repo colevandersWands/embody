@@ -53,6 +53,26 @@ type TracifyChain = {
  */
 function tracifyChain(state: TracifyState = {}): TracifyChain {
   return {
+    /**
+     * Sets the tracer ID and returns a new chain with config cleared.
+     *
+     * **Cache invalidation**:
+     * - Clears: config, resolvedConfig, steps
+     * - Keeps: code
+     *
+     * Different tracers have incompatible option shapes, so config must be
+     * re-provided. Code is preserved because same-language tracers are compatible
+     * (e.g., both 'js:klve' and 'js:other' can trace JavaScript).
+     *
+     * @param _tracer - Tracer ID (e.g., 'chars', 'js:klve')
+     * @returns New chain with tracer set and caches invalidated
+     * @throws {ArgumentInvalidError} if tracer is not a non-empty string
+     * @throws {TracerUnknownError} if tracer ID is not registered
+     *
+     * @example
+     * const chain1 = tracify.tracer('js:klve').code('let x = 1;').config({});
+     * const chain2 = chain1.tracer('chars'); // code kept, config cleared
+     */
     tracer(_tracer: string): TracifyChain {
       if (typeof _tracer !== 'string') {
         throw new ArgumentInvalidError(
@@ -69,15 +89,28 @@ function tracifyChain(state: TracifyState = {}): TracifyChain {
         throw new TracerUnknownError(_tracer, { cause: { available: Object.keys(tracers) } });
       }
 
-      // Invalidate cache when tracer changes (drops steps and resolvedConfig)
+      // Invalidate cache when tracer changes (drops config, steps, and resolvedConfig)
+      // Code is preserved (same-language tracers are compatible)
       return tracifyChain({
         ...state,
         tracer: _tracer,
+        config: undefined,
         steps: undefined,
         resolvedConfig: undefined,
       });
     },
 
+    /**
+     * Sets the code and returns a new chain with steps cleared.
+     *
+     * **Cache invalidation**:
+     * - Clears: steps
+     * - Keeps: tracer, config, resolvedConfig
+     *
+     * @param _code - Source code to trace
+     * @returns New chain with code set and steps cache invalidated
+     * @throws {ArgumentInvalidError} if code is not a non-empty string
+     */
     code(_code: string): TracifyChain {
       if (typeof _code !== 'string') {
         throw new ArgumentInvalidError(
@@ -93,6 +126,17 @@ function tracifyChain(state: TracifyState = {}): TracifyChain {
       return tracifyChain({ ...state, code: _code, steps: undefined });
     },
 
+    /**
+     * Sets the config and returns a new chain with caches invalidated.
+     *
+     * **Cache invalidation**:
+     * - Clears: resolvedConfig, steps
+     * - Keeps: tracer, code
+     *
+     * @param _config - Config object with meta and/or options
+     * @returns New chain with config set and caches invalidated
+     * @throws {ArgumentInvalidError} if config is not an object
+     */
     config(_config: unknown): TracifyChain {
       if (_config !== null && typeof _config !== 'object') {
         throw new ArgumentInvalidError(
@@ -147,12 +191,12 @@ function tracifyChain(state: TracifyState = {}): TracifyChain {
             ) as Record<string, unknown>)
           : {};
         tracerModule?.verifyOptions?.(options);
-        // eslint-ignore
+        // eslint-disable-next-line functional/immutable-data
         state.resolvedConfig = { meta, options };
       }
 
       // 7. Record (resolvedConfig is now guaranteed to exist)
-      // eslint-ignore
+      // eslint-disable-next-line functional/immutable-data
       state.steps = tracerModule.record(state.code, state.resolvedConfig);
 
       return state.steps.then(deepClone);
@@ -194,7 +238,7 @@ function tracifyChain(state: TracifyState = {}): TracifyChain {
 
       // 5. Cache and return
       const resolvedConfig: ResolvedConfig = { meta, options };
-      // eslint-ignore
+      // eslint-disable-next-line functional/immutable-data
       state.resolvedConfig = resolvedConfig;
 
       return deepClone(resolvedConfig);

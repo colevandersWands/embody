@@ -5,13 +5,13 @@ import trace from '../trace.js';
 describe('trace', () => {
   describe('async behavior', () => {
     it('returns a Promise', () => {
-      const result = trace('chars', 'ab');
+      const result = trace('txt:chars', 'ab');
 
       expect(result).toBeInstanceOf(Promise);
     });
 
     it('resolves to steps array', async () => {
-      const steps = await trace('chars', 'ab');
+      const steps = await trace('txt:chars', 'ab');
 
       expect(Array.isArray(steps)).toBe(true);
       expect(steps).toHaveLength(2);
@@ -24,7 +24,7 @@ describe('trace', () => {
     });
 
     it('throws immediately for non-string code', () => {
-      expect(() => trace('chars', 456 as unknown as string)).toThrow(/string/);
+      expect(() => trace('txt:chars', 456 as unknown as string)).toThrow(/string/);
     });
   });
 
@@ -36,7 +36,7 @@ describe('trace', () => {
 
   describe('config handling', () => {
     it('passes config to tracer module', async () => {
-      const steps = await trace('chars', 'ab', {
+      const steps = await trace('txt:chars', 'ab', {
         options: { remove: ['a'], replace: {}, direction: 'lr' },
       });
 
@@ -44,14 +44,14 @@ describe('trace', () => {
     });
 
     it('uses tracer defaults when no config', async () => {
-      const steps = await trace('chars', 'ab');
+      const steps = await trace('txt:chars', 'ab');
 
       expect(steps).toHaveLength(2);
     });
 
     it('fills defaults for partial options', async () => {
       // User provides only direction, API fills remove and replace from schema
-      const steps = await trace('chars', 'abc', {
+      const steps = await trace('txt:chars', 'abc', {
         options: { direction: 'rl' },
       });
 
@@ -64,7 +64,7 @@ describe('trace', () => {
     it('throws sync OptionsSemanticInvalidError for constraint violation', () => {
       // chars verifyOptions: maxLength must be >= remove.length
       expect(() =>
-        trace('chars', 'abc', {
+        trace('txt:chars', 'abc', {
           options: { maxLength: 1, remove: ['a', 'b'] },
         }),
       ).toThrow(OptionsSemanticInvalidError);
@@ -72,7 +72,7 @@ describe('trace', () => {
 
     it('includes descriptive message about the constraint violation', () => {
       expect(() =>
-        trace('chars', 'abc', {
+        trace('txt:chars', 'abc', {
           options: { maxLength: 1, remove: ['a', 'b', 'c'] },
         }),
       ).toThrow(/maxLength/);

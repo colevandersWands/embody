@@ -112,8 +112,27 @@ console.log(steps); // Array of execution events
 // Chainable API for multi-step workflows
 import { embodify } from '@study-lenses/embody';
 
-const chain = await embodify({ tracer: 'chars', code: 'hello' }).trace();
+const chain = await embodify({ tracer: 'txt:chars', code: 'hello' }).trace();
 if (chain.ok) console.log(chain.steps); // Array of execution events
+```
+
+```javascript
+// Class-based API for OOP style
+import { Tracer } from '@study-lenses/embody';
+
+const tracer = new Tracer('txt:chars');
+tracer.code = 'hello';
+const steps = await tracer.steps; // Lazy trace on access
+```
+
+```javascript
+// Node.js callback style (learn pre-ES6 patterns)
+import { embodyTrace } from '@study-lenses/embody';
+
+embodyTrace('txt:chars', 'hello', function (err, result) {
+  if (err) throw err;
+  console.log('Steps:', result.steps.length);
+});
 ```
 
 ```javascript

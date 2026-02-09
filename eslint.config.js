@@ -17,6 +17,8 @@ export default tseslint.config(
       // Tracer sub-projects that manage their own linting.
       // See src/tracers/DEV.md § Linting for how to opt out.
       'src/tracers/js-klve/**',
+      // ES5 callback API (no TypeScript, pure CommonJS)
+      'src/api/embody-trace.cjs',
     ],
   },
 
@@ -352,6 +354,7 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 
@@ -371,6 +374,25 @@ export default tseslint.config(
       'functional/no-classes': 'off',
       'functional/no-this-expressions': 'off',
       'no-invalid-this': 'off',
+    },
+  },
+
+  // --- Class-based APIs (class/this allowed for OOP style APIs) ---
+  {
+    files: [
+      'src/api/Tracer.ts',
+      'src/api/Embodier.ts',
+      'src/api/tests/Tracer.test.ts',
+      'src/api/tests/Embodier.test.ts',
+    ],
+    rules: {
+      'functional/no-classes': 'off',
+      'functional/no-this-expressions': 'off',
+      'no-invalid-this': 'off',
+      'functional/prefer-readonly-type': 'off', // Private fields mutated by design
+      'functional/immutable-data': 'off', // Class methods mutate instance state
+      'sonarjs/void-use': 'off', // Explicit void return for clarity
+      'unicorn/filename-case': 'off', // PascalCase for class files
     },
   },
 );

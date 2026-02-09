@@ -31,7 +31,7 @@ const DEFAULT_OPTIONS = {
 describe('tracer module integration', () => {
   describe('registry routing', () => {
     it('routes to chars and records', async () => {
-      const { record } = tracers.chars;
+      const { record } = tracers['txt:chars'];
       const steps = await record('ab', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
@@ -45,17 +45,17 @@ describe('tracer module integration', () => {
 
     it('can iterate over available tracers', () => {
       const tracerIds = Object.keys(tracers);
-      expect(tracerIds).toContain('chars');
+      expect(tracerIds).toContain('txt:chars');
     });
   });
 
   describe('record function signature', () => {
     it('chars.record is a function', () => {
-      expect(typeof tracers.chars.record).toBe('function');
+      expect(typeof tracers['txt:chars'].record).toBe('function');
     });
 
     it('accepts code and config object', async () => {
-      const { record } = tracers.chars;
+      const { record } = tracers['txt:chars'];
       const steps = await record('test', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
@@ -66,7 +66,7 @@ describe('tracer module integration', () => {
 
   describe('StepCore contract (ESTree format)', () => {
     it('all steps have required StepCore fields', async () => {
-      const steps = await tracers.chars.record('abc', {
+      const steps = await tracers['txt:chars'].record('abc', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
@@ -80,7 +80,7 @@ describe('tracer module integration', () => {
     });
 
     it('step numbers are 1-indexed', async () => {
-      const steps = await tracers.chars.record('abc', {
+      const steps = await tracers['txt:chars'].record('abc', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
@@ -88,7 +88,7 @@ describe('tracer module integration', () => {
     });
 
     it('line numbers are 1-indexed (ESTree standard)', async () => {
-      const steps = await tracers.chars.record('abc', {
+      const steps = await tracers['txt:chars'].record('abc', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
@@ -96,7 +96,7 @@ describe('tracer module integration', () => {
     });
 
     it('column numbers are 0-indexed (ESTree standard)', async () => {
-      const steps = await tracers.chars.record('abc', {
+      const steps = await tracers['txt:chars'].record('abc', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
@@ -104,7 +104,7 @@ describe('tracer module integration', () => {
     });
 
     it('steps are in execution order', async () => {
-      const steps = await tracers.chars.record('abc', {
+      const steps = await tracers['txt:chars'].record('abc', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });
@@ -116,7 +116,7 @@ describe('tracer module integration', () => {
   describe('immutability guarantees', () => {
     it('returned steps are readonly', async () => {
       // Note: registry tests call record() directly with FULLY-FILLED config
-      const steps = await tracers.chars.record('ab', {
+      const steps = await tracers['txt:chars'].record('ab', {
         meta: DEFAULT_META,
         options: DEFAULT_OPTIONS,
       });

@@ -142,11 +142,33 @@ function embodifyChain(state: EmbodifyState): EmbodifyChain {
       return state.error;
     },
 
+    /**
+     * Sets one or more fields and returns a new chain with smart cache invalidation.
+     *
+     * **Cache invalidation rules**:
+     * - Tracer change → clears config, resolvedConfig, steps (keeps code)
+     * - Code change → clears steps only (keeps tracer, config, resolvedConfig)
+     * - Config change → clears resolvedConfig, steps (keeps tracer, code)
+     *
+     * @param input - Fields to update (tracer, code, and/or config)
+     * @returns New chain with updated fields and invalidated caches
+     *
+     * @example
+     * const chain1 = embodify({ tracer: 'js:klve' })
+     *   .set({ code: 'let x = 1;', config: {} });
+     *
+     * // Switch tracer, config is cleared
+     * const chain2 = chain1.set({ tracer: 'chars', config: {} });
+     */
     set(input: EmbodifyInput): EmbodifyChain {
       // Merge values
       const tracer = input.tracer ?? state.tracer;
       const code = input.code ?? state.code;
-      const config = input.config ?? state.config;
+      // Config: when tracer changes, clear it (unless explicitly provided in input)
+      const config =
+        input.tracer !== undefined && input.config === undefined
+          ? undefined
+          : (input.config ?? state.config);
 
       // Detect what ACTUALLY changed (not just whether key was provided)
       const tracerChanged = tracer !== state.tracer;
@@ -156,9 +178,9 @@ function embodifyChain(state: EmbodifyState): EmbodifyChain {
         input.config !== undefined && JSON.stringify(config) !== JSON.stringify(state.config);
 
       // Smart invalidation:
-      // - tracer change: invalidate both resolvedConfig and steps
-      // - config change: invalidate both resolvedConfig and steps
-      // - code change: invalidate only steps (resolvedConfig independent of code)
+      // - tracer change: invalidate config, resolvedConfig, steps (keep code)
+      // - config change: invalidate resolvedConfig, steps (keep tracer, code)
+      // - code change: invalidate steps only (keep tracer, config, resolvedConfig)
       // - nothing changed: preserve all cached state
       const invalidateResolvedConfig = tracerChanged || configChanged;
       const invalidateSteps = tracerChanged || codeChanged || configChanged;
@@ -166,7 +188,7 @@ function embodifyChain(state: EmbodifyState): EmbodifyChain {
       return embodifyChain({
         tracer,
         code,
-        config: deepClone(config),
+        config: config === undefined ? undefined : deepClone(config),
         resolvedConfig: invalidateResolvedConfig ? undefined : state.resolvedConfig,
         steps: invalidateSteps ? undefined : state.steps,
         ok: true,

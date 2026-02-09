@@ -8,10 +8,10 @@ const EXPECT_FUNCTION = 'expected function';
 describe('embody', () => {
   describe('closure with properties (function-as-object)', () => {
     it('partial closure has inspectable .tracer property', () => {
-      const partial = embody({ tracer: 'chars' });
+      const partial = embody({ tracer: 'txt:chars' });
 
       expect(typeof partial).toBe('function');
-      expect((partial as { tracer: unknown }).tracer).toBe('chars');
+      expect((partial as { tracer: unknown }).tracer).toBe('txt:chars');
     });
 
     it('partial closure has inspectable .code property', () => {
@@ -29,13 +29,13 @@ describe('embody', () => {
     });
 
     it('partial closure has .ok = true (valid so far)', () => {
-      const partial = embody({ tracer: 'chars' });
+      const partial = embody({ tracer: 'txt:chars' });
 
       expect((partial as { ok: unknown }).ok).toBe(true);
     });
 
     it('partial closure has .error = undefined (not errored)', () => {
-      const partial = embody({ tracer: 'chars' });
+      const partial = embody({ tracer: 'txt:chars' });
 
       expect((partial as { error: unknown }).error).toBeUndefined();
     });
@@ -55,17 +55,17 @@ describe('embody', () => {
 
   describe('key overwriting (no duplicate-key error)', () => {
     it('later tracer value overwrites earlier', async () => {
-      const partial = embody({ tracer: 'chars' });
+      const partial = embody({ tracer: 'txt:chars' });
       const result = await (
         partial as (input: {
           tracer: string;
           code: string;
           config: object;
         }) => Promise<{ ok: boolean; tracer: string }>
-      )({ tracer: 'chars', code: 'ab', config: {} });
+      )({ tracer: 'txt:chars', code: 'ab', config: {} });
 
       expect(result.ok).toBe(true);
-      expect(result.tracer).toBe('chars');
+      expect(result.tracer).toBe('txt:chars');
     });
 
     it('later code value overwrites earlier', async () => {
@@ -76,7 +76,7 @@ describe('embody', () => {
           code: string;
           config: object;
         }) => Promise<{ ok: boolean; code: string }>
-      )({ tracer: 'chars', code: 'cd', config: {} });
+      )({ tracer: 'txt:chars', code: 'cd', config: {} });
 
       expect(result.ok).toBe(true);
       expect(result.code).toBe('cd');
@@ -90,7 +90,7 @@ describe('embody', () => {
           code: string;
           config: object;
         }) => Promise<{ ok: boolean }>
-      )({ tracer: 'chars', code: 'ab', config: { options: { remove: ['a'] } } });
+      )({ tracer: 'txt:chars', code: 'ab', config: { options: { remove: ['a'] } } });
 
       expect(result.ok).toBe(true);
     });
@@ -98,13 +98,13 @@ describe('embody', () => {
 
   describe('full calls (all three fields present) - async', () => {
     it('returns Promise when tracer, code, and config: null provided', () => {
-      const resultPromise = embody({ tracer: 'chars', code: 'ab', config: null });
+      const resultPromise = embody({ tracer: 'txt:chars', code: 'ab', config: null });
 
       expect(resultPromise).toBeInstanceOf(Promise);
     });
 
     it('Promise resolves to { ok: true, steps }', async () => {
-      const result = await embody({ tracer: 'chars', code: 'ab', config: null });
+      const result = await embody({ tracer: 'txt:chars', code: 'ab', config: null });
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -114,7 +114,7 @@ describe('embody', () => {
 
     it('passes custom config to tracer module', async () => {
       const result = await embody({
-        tracer: 'chars',
+        tracer: 'txt:chars',
         code: 'ab',
         config: { options: { remove: ['a'], replace: {}, direction: 'lr' } },
       });
@@ -138,7 +138,7 @@ describe('embody', () => {
 
   describe('partial calls (return closures)', () => {
     it('returns function when only tracer provided', () => {
-      const result = embody({ tracer: 'chars' });
+      const result = embody({ tracer: 'txt:chars' });
 
       expect(typeof result).toBe('function');
     });
@@ -150,13 +150,13 @@ describe('embody', () => {
     });
 
     it('returns function when tracer and code but no config', () => {
-      const result = embody({ tracer: 'chars', code: 'ab' });
+      const result = embody({ tracer: 'txt:chars', code: 'ab' });
 
       expect(typeof result).toBe('function');
     });
 
     it('closure completes trace when remaining pieces provided (async)', async () => {
-      const step1 = embody({ tracer: 'chars' });
+      const step1 = embody({ tracer: 'txt:chars' });
       if (typeof step1 !== 'function') throw new Error(EXPECT_FUNCTION);
       const step2 = step1({ code: 'ab' });
       if (typeof step2 !== 'function') throw new Error(EXPECT_FUNCTION);
@@ -169,7 +169,7 @@ describe('embody', () => {
     });
 
     it('closure accepts all remaining pieces at once (async)', async () => {
-      const withTracer = embody({ tracer: 'chars' });
+      const withTracer = embody({ tracer: 'txt:chars' });
       if (typeof withTracer !== 'function') throw new Error(EXPECT_FUNCTION);
       const result = await withTracer({ code: 'ab', config: null });
 
@@ -182,26 +182,26 @@ describe('embody', () => {
 
   describe('config semantics', () => {
     it('config: null triggers trace with tracer defaults (async)', async () => {
-      const result = await embody({ tracer: 'chars', code: 'ab', config: null });
+      const result = await embody({ tracer: 'txt:chars', code: 'ab', config: null });
 
       expect(result.ok).toBe(true);
     });
 
     it('config: undefined returns closure (waiting)', () => {
-      const result = embody({ tracer: 'chars', code: 'ab', config: undefined });
+      const result = embody({ tracer: 'txt:chars', code: 'ab', config: undefined });
 
       expect(typeof result).toBe('function');
     });
 
     it('missing config key returns closure (waiting)', () => {
-      const result = embody({ tracer: 'chars', code: 'ab' });
+      const result = embody({ tracer: 'txt:chars', code: 'ab' });
 
       expect(typeof result).toBe('function');
     });
 
     it('config object triggers trace with custom config (async)', async () => {
       const result = await embody({
-        tracer: 'chars',
+        tracer: 'txt:chars',
         code: 'ab',
         config: { options: { remove: [], replace: {}, direction: 'rl' } },
       });
@@ -217,7 +217,7 @@ describe('embody', () => {
   describe('error handling', () => {
     it('catches ParseError and returns as ok: false (async)', async () => {
       // interrobang triggers ParseError in chars module
-      const result = await embody({ tracer: 'chars', code: 'ab‽', config: null });
+      const result = await embody({ tracer: 'txt:chars', code: 'ab‽', config: null });
 
       expect(result.ok).toBe(false);
       if (!result.ok) {
@@ -226,7 +226,7 @@ describe('embody', () => {
     });
 
     it('preserves ParseError details (async)', async () => {
-      const result = await embody({ tracer: 'chars', code: '‽', config: null });
+      const result = await embody({ tracer: 'txt:chars', code: '‽', config: null });
 
       expect(result.ok).toBe(false);
       if (!result.ok) {
@@ -237,7 +237,7 @@ describe('embody', () => {
 
     it('wraps invalid options in OptionsInvalidError (async)', async () => {
       const result = await embody({
-        tracer: 'chars',
+        tracer: 'txt:chars',
         code: 'ab',
         config: { options: { remove: 'not-array', replace: {}, direction: 'lr' } },
       });
@@ -251,11 +251,11 @@ describe('embody', () => {
 
   describe('result shape (includes all input keys)', () => {
     it('success result includes tracer, code, config (async)', async () => {
-      const result = await embody({ tracer: 'chars', code: 'ab', config: null });
+      const result = await embody({ tracer: 'txt:chars', code: 'ab', config: null });
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.tracer).toBe('chars');
+        expect(result.tracer).toBe('txt:chars');
         expect(result.code).toBe('ab');
         expect(result.config).toBe(null);
       }
@@ -274,7 +274,7 @@ describe('embody', () => {
 
     it('result includes custom config object (async)', async () => {
       const customConfig = { options: { remove: ['a'], replace: {}, direction: 'lr' as const } };
-      const result = await embody({ tracer: 'chars', code: 'ab', config: customConfig });
+      const result = await embody({ tracer: 'txt:chars', code: 'ab', config: customConfig });
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -286,7 +286,7 @@ describe('embody', () => {
   describe('immutability (deep clone)', () => {
     it('caller cannot mutate internal state via config (async)', async () => {
       const config = { options: { remove: ['a'], replace: {}, direction: 'lr' as const } };
-      const closure = embody({ tracer: 'chars', config });
+      const closure = embody({ tracer: 'txt:chars', config });
 
       // Mutate the original config
       config.options.remove.push('b');
@@ -304,7 +304,7 @@ describe('embody', () => {
 
     it('returned config is a copy (cannot mutate result) (async)', async () => {
       const result = await embody({
-        tracer: 'chars',
+        tracer: 'txt:chars',
         code: 'ab',
         config: { options: { remove: ['a'], replace: {}, direction: 'lr' as const } },
       });
@@ -320,7 +320,7 @@ describe('embody', () => {
     });
 
     it('re-invoking closure does not share state (async)', async () => {
-      const closure = embody({ tracer: 'chars' });
+      const closure = embody({ tracer: 'txt:chars' });
       if (typeof closure !== 'function') throw new Error(EXPECT_FUNCTION);
 
       const result1 = await closure({ code: 'a', config: null });
@@ -337,7 +337,7 @@ describe('embody', () => {
 
   describe('resolvedConfig', () => {
     it('success result includes resolvedConfig with tracer defaults (async)', async () => {
-      const result = await embody({ tracer: 'chars', code: 'ab', config: null });
+      const result = await embody({ tracer: 'txt:chars', code: 'ab', config: null });
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -350,7 +350,7 @@ describe('embody', () => {
 
     it('resolvedConfig includes user options merged with defaults (async)', async () => {
       const result = await embody({
-        tracer: 'chars',
+        tracer: 'txt:chars',
         code: 'ab',
         config: { options: { remove: ['a'] } },
       });
@@ -364,7 +364,7 @@ describe('embody', () => {
     });
 
     it('resolvedConfig is deep cloned (immutable) (async)', async () => {
-      const result = await embody({ tracer: 'chars', code: 'ab', config: null });
+      const result = await embody({ tracer: 'txt:chars', code: 'ab', config: null });
 
       expect(result.ok).toBe(true);
       if (result.ok) {

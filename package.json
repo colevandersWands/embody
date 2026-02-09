@@ -45,7 +45,7 @@
     "build": "tsc && npm run build:copy-json",
     "build:watch": "tsc --watch",
     "build:bundle": "esbuild src/index.ts --bundle --format=esm --outfile=dist/embody.browser.js",
-    "build:copy-json": "mkdir -p dist/tracers/chars dist/tracers/js-klve && cp src/tracers/meta.schema.json dist/tracers/ && cp src/tracers/chars/options.schema.json dist/tracers/chars/ && cp src/tracers/js-klve/options.schema.json dist/tracers/js-klve/",
+    "build:copy-json": "mkdir -p dist/tracers/chars dist/tracers/js-klve dist/api && cp src/tracers/meta.schema.json dist/tracers/ && cp src/tracers/chars/options.schema.json dist/tracers/chars/ && cp src/tracers/js-klve/options.schema.json dist/tracers/js-klve/ && cp src/api/embody-trace.cjs dist/api/",
     "clean": "rm -rf dist",
     "dev": "tsc --watch",
     "dev:sandbox": "esbuild src/index.ts --bundle --format=esm --outfile=dist/embody.browser.js --servedir=. --serve=8080",

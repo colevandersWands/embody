@@ -12,7 +12,7 @@ const DEFAULT_META: MetaConfig = {
 describe('tracers', () => {
   describe('registry structure', () => {
     it('contains chars tracer', () => {
-      expect(tracers.chars).toBeDefined();
+      expect(tracers['txt:chars']).toBeDefined();
     });
 
     it('returns undefined for unknown tracer', () => {
@@ -20,15 +20,15 @@ describe('tracers', () => {
     });
 
     it('chars.record is a function', () => {
-      expect(typeof tracers.chars.record).toBe('function');
+      expect(typeof tracers['txt:chars'].record).toBe('function');
     });
 
     it('chars.optionsSchema is an object', () => {
-      expect(typeof tracers.chars.optionsSchema).toBe('object');
+      expect(typeof tracers['txt:chars'].optionsSchema).toBe('object');
     });
 
     it('chars.verifyOptions is a function', () => {
-      expect(typeof tracers.chars.verifyOptions).toBe('function');
+      expect(typeof tracers['txt:chars'].verifyOptions).toBe('function');
     });
   });
 
@@ -36,7 +36,7 @@ describe('tracers', () => {
     it('chars.record produces steps with fully-filled config', async () => {
       // Note: registry tests call record() directly, which expects FULLY-FILLED config
       // API layer handles default-filling; these tests pass complete config
-      const steps = await tracers.chars.record('ab', {
+      const steps = await tracers['txt:chars'].record('ab', {
         meta: DEFAULT_META,
         options: {
           remove: [],
@@ -55,7 +55,7 @@ describe('tracers', () => {
     });
 
     it('chars.record respects options configuration', async () => {
-      const steps = await tracers.chars.record('ab', {
+      const steps = await tracers['txt:chars'].record('ab', {
         meta: DEFAULT_META,
         options: {
           remove: [],
@@ -75,7 +75,7 @@ describe('tracers', () => {
     });
 
     it('chars.record removes specified characters', async () => {
-      const steps = await tracers.chars.record('abc', {
+      const steps = await tracers['txt:chars'].record('abc', {
         meta: DEFAULT_META,
         options: {
           remove: ['b'],
